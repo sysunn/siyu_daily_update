@@ -208,6 +208,15 @@ Input: \
 `-b` will be the sorted, and concatenated GAT coordinates file (both plus and minus); \
 
 **Prepare the input file -a: peak summit file (centered 1bp)** \
+load package
+```{r engine='R', eval=TRUE, echo=F}
+install.packages("devtools")
+library(devtools)
+devtools::install_github('andrelmartins/bigWig',
+              subdir='bigWig')
+library(bigWig)
+```
+
 ```{r engine='R', eval=TRUE, echo=TRUE}
 #load files contains ChIP summit info 
 chip.peak.summit=read.table("with_motif_2_100win.bed", header=FALSE)
