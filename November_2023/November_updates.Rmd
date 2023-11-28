@@ -1,0 +1,18 @@
+---
+title: \sf November_updates
+header-includes:
+- \usepackage{color}
+- \usepackage{float}
+- \DeclareUnicodeCharacter{2212}{-}
+date: "November 28, 2023"
+output:
+  bookdown::html_document2:
+    toc: true
+fontsize: 14pt
+geometry: margin=1in
+---
+
+# Goal
+The overall goal of this analysis is to visualize the distribution of 3mer-GAT corresponding to its closest ChIP peak summit. \
+Step1: find the closest 3mer-GAT to each ChIP peak summit. \
+Step2: 
