@@ -68,7 +68,7 @@ Command | Function
 
 Sections highlighted in grey are shell input or "standard input" (`stdin`).\
 Lines following it prefixed by `'##'` denote shell output or "standard output" (`stdout`):
-```{r engine='bash', eval=FRUE, echo=TRUE}
+```{r engine='bash', eval=F, echo=F}
 x='Welcome to MEDS 5420'
 echo $x
 ```
