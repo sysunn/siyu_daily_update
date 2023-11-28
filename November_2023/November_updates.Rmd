@@ -15,4 +15,4 @@ geometry: margin=1in
 # Goal
 The overall goal of this analysis is to visualize the distribution of 3mer-GAT corresponding to its closest ChIP peak summit. \
 Step1: find the closest 3mer-GAT to each ChIP peak summit. \
-Step2: 
+Step2: ,,,,
