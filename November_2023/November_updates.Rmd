@@ -290,23 +290,36 @@ bedTools.closest <- function(functionstring="/usr/local/bin/closestBed",bed1,bed
 ```
 
 Parameter `-d` will report the distance from the closest GAT to the peak summit. \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 plus.distance=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = plus.GAT.file, opt.string = '-d')
 minus.distance=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = minus.GAT.file, opt.string = '-d')
+write.table(plus.distance,file= 'plus.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(minus.distance,file= 'minus.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+```
+```{r engine='R', eval=TRUE, echo=TRUE}
+plus.distance=read.table('plus.distance.bed',header=F, comment.char='')
+minus.distance=read.table('minus.distance.bed',header=F, comment.char='')
 head(plus.distance)
 head(minus.distance)
 ```
+
 find the closest GAT to peak summit regardless of GAT strandedness \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 all.distance=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = all.GAT.file, opt.string = '-d')
+write.table(all.distance,file= 'all.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+```
+```{r engine='R', eval=TRUE, echo=TRUE}
+all.distance=read.table('all.distance.bed',header=F, comment.char='')
 head(all.distance)
 ```
+
+
 **coherence check 1**: the number of the closest minus GAT is comparable to the number of the closest plus GAT. \
 
 ```{r engine='R', eval=TRUE, echo=TRUE}
 nrow(all.distance)
-nrow(all.distance[all.distance$V6=="+",])
-nrow(all.distance[all.distance$V6=="-",])
+nrow(all.distance[all.distance$V9=="+",])
+nrow(all.distance[all.distance$V9=="-",])
 ```
 
 **coherence check 2**: check for ties \
@@ -332,10 +345,15 @@ all.distance[all.distance$V2=="13679943",]
 
 If tie occurs, report only the first GAT with `-t first`. \
 If tie occurs, report only the first GAT with `-t last`. \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 all.distance.first=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
 all.distance.last=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = all.GAT.file, opt.string = '-d -t last')
-
+write.table(all.distance.first,file= 'all.distance.first.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(all.distance.last,file= 'all.distance.last.bed', quote=F,sep="\t",col.names=F,row.names=F)
+```
+```{r engine='R', eval=TRUE, echo=TRUE}
+all.distance.first=read.table('all.distance.first.bed',header=F, comment.char='')
+all.distance.last=read.table('all.distance.last.bed',header=F, comment.char='')
 nrow(all.distance.first) #580
 nrow(all.distance.last) #580
 ```
@@ -368,7 +386,7 @@ different_rows_df <- do.call(rbind, different_rows)
 nrow(different_rows_df) # 40
 head(different_rows_df)
 ```
-20 peaks have tied closest GAT coordinates. 
+20 peaks have tied closest GAT coordinates. \
 
 
 ## step2: making composite profile
@@ -398,9 +416,9 @@ The bed6 file should define the following columns: "chrom - start - end - name -
 ```{r engine='R', eval=TRUE, echo=TRUE}
 bed6=all.distance[, 4:9] # all.distance -- this is keeping both tied minus/plus GAT
 #bed6-plus
-bed6_plus=bed6[bed6$V6=="+",]
+bed6_plus=bed6[bed6$V9=="+",]
 #bed6-minus
-bed6_minus=bed6[bed6$V6=="-",]
+bed6_minus=bed6[bed6$V9=="-",]
 
 nrow(bed6)
 nrow(bed6_plus)
