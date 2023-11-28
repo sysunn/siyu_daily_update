@@ -27,8 +27,8 @@ devtools::install_github('andrelmartins/bigWig',
 library(bigWig)
 ```
 
-Install `closestBed` \
-```{r engine='bash', eval=TRUE, echo=F}
+Install `bedtools` \
+```{r engine='bash', eval=F, echo=F}
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install bedtools
 ```
@@ -255,7 +255,7 @@ tail(all.GAT.file)
 The below function will sort input bed1 and bed2 first, then run `bedtools closestBed` between bed1 and bed2. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 # define function 
-bedTools.closest <- function(functionstring="closestBed",bed1,bed2,opt.string="") {
+bedTools.closest <- function(functionstring="/usr/local/bin/closestBed",bed1,bed2,opt.string="") {
   
   options(scipen =99) # not use scientific notation when writing out
   
