@@ -12,8 +12,6 @@ fontsize: 14pt
 geometry: margin=1in
 ---
 
-
-tsting 33
 # Readings
 
 Practical Computing for Biologists: Chapters 1, 4, 5, Appendix 3.\
