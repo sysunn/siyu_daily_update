@@ -17,6 +17,22 @@ The overall goal of this analysis is to visualize the distribution of 3mer-GAT c
 **Step1**: find the closest 3mer-GAT to each ChIP peak summit. \
 **Step2**: set closest 3mer-GAT as the new anchor point; draw composite profile of 3mer-GAT distribution upstream/downstream of the anchor point. \
 
+## Install required packages
+Install `bigWig` package \
+```{r engine='R', eval=TRUE, echo=F}
+install.packages("devtools")
+library(devtools)
+devtools::install_github('andrelmartins/bigWig',
+              subdir='bigWig')
+library(bigWig)
+```
+
+Install `closestBed` \
+```{r engine='bash', eval=TRUE, echo=F}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install bedtools
+```
+
 ## step1: find the closest 3mer-GAT to each ChIP peak summit
 In this section, we first use `seqOutBias` to generate 3mer coordinates file, then we use Bedtools `closestbed` to find overlap/closest GAT to each provided peak summit. \
 
@@ -208,14 +224,6 @@ Input: \
 `-b` will be the sorted, and concatenated GAT coordinates file (both plus and minus); \
 
 **Prepare the input file -a: peak summit file (centered 1bp)** \
-load package
-```{r engine='R', eval=TRUE, echo=F}
-install.packages("devtools")
-library(devtools)
-devtools::install_github('andrelmartins/bigWig',
-              subdir='bigWig')
-library(bigWig)
-```
 
 ```{r engine='R', eval=TRUE, echo=TRUE}
 #load files contains ChIP summit info 
