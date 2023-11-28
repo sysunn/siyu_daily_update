@@ -26,5 +26,5 @@ jobs:
       - name: Commit and push changes
         run: |
           git add test/Lecture_2.html
-          git commit -m "Render Lecture_2.Rmd to HTML"
+          git commit -m "Render Lecture_2.Rmd to HTML "
           git push origin HEAD:main
