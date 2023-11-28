@@ -26,5 +26,5 @@ jobs:
       - name: Commit and push changes
         run: |
           git add November_2023/November_updates.html
-          git commit -m "Render November_updates.Rmd to HTML "
+          git commit -m "Render November_updates.Rmd to HTML"
           git push origin HEAD:main
