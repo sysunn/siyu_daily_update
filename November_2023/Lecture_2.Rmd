@@ -110,12 +110,6 @@ and is where your terminal sessions will open up.
 
 
 
-```{r  out.width = "100%", echo=F, fig.align = "center", fig.cap="Directory Structure"}
-#library(knitr)
-knitr::include_graphics("./fig/directory_fig_2018.png") 
-```
-
-
 To find out where you are in the directory listings type the following: 
 
 ```{r engine='bash', eval=F, echo=TRUE}
