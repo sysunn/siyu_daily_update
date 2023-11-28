@@ -1,1 +1,486 @@
+---
+title: \sf MEDS5420 - The Shell Part 1
+header-includes:
+- \usepackage{color}
+- \usepackage{float}
+- \DeclareUnicodeCharacter{2212}{-}
+date: "January 23, 2023"
+output:
+  bookdown::html_document2:
+    toc: true
+fontsize: 14pt
+geometry: margin=1in
+---
+xxxxx
+# Readings
 
+Practical Computing for Biologists: Chapters 1, 4, 5, Appendix 3.\
+
+Unix Basics from UConn CBC: http://bioinformatics.uconn.edu/unix-basics/ \
+
+Software Carpentry Shell Novice lesson: Episodes 1-4:
+https://swcarpentry.github.io/shell-novice/
+
+# Lesson overview
+
+Command | Function
+--------|------------------------------
+`pwd`   | **P**rint **W**orking **D**irectory
+`cd`    | **C**hange **D**irectoy (`cd`, `cd -`, `cd ~/<directory>`, `cd ..`)
+`ls`    | **L**i**s**t files (`ls -F`, `ls --help`)
+`man`   | **Man**ual page for a command
+`mkdir` | **M**a**k**e a new **dir**ectory
+`emacs`  | A rudimentary command-line text editor
+`rm`    | Delete file(s); use `rm -r <directory>` to delete directory and contents
+`touch` | Create empty file
+`cp`    | **C**o**p**y files and directories
+`mv`    | **M**o**v**e or rename files and directories
+`wc`    | **W**ord **C**ount (`wc -l`)
+`cat`   | Print an entire file, or con**cat**enate multiple files
+`less`  | Read a file, one page at a time
+`sort`  | Sort lines (`sort -n`, `sort -r`)
+`head`  | Read beginning lines of a file (`head -n #`)
+`tail`    | Read last few lines of a file (`tail -n #`)
+
+## Concepts:
+
+* Terminology and basic commands 
+* Directory structure 
+* Navigating through command line: relative vs absolute paths
+* Examining file contents
+* Using the `*` wildcard to select multiple files in a directory, using the `[]`
+  wildcard to select one or more letters, e.g. `*[AB].txt` for file names ending
+  in A or B.
+* Standard Output (stdout) and Standard Input (stdin) from commands can
+  be combined using with pipes (`|`).
+* Redirect stdout to files (`>`).
+
+## Why learn the command-line?
+
+* The majority of bioinformatics and computational software is developed for command-line use from the shell
+* Low system resource use (processor and memory)
+* Easier to automate and more adaptable than GUIs
+* Web-based tools are at risk of becoming obsolete (e.g. Galaxy, GenomeSpace) as more scientists devolop command-line competence 
+
+---
+
+**Notes about reading these documents:**
+
+Sections highlighted in grey are shell input or "standard input" (`stdin`).\
+Lines following it prefixed by `'##'` denote shell output or "standard output" (`stdout`):
+```{r engine='bash', eval=TRUE, echo=TRUE}
+x='Welcome to MEDS 5420'
+echo $x
+```
+
+---
+
+# Interacting with your computer: the terminal
+
+You will communicate with the operating system (OS) by typing commands into the **terminal window**.
+You can use the terminal window to:
+
+* navigate anywhere on your computer (including access to hidden files)
+* get information (e.g. list contents of a directory)
+* perform simple tasks (e.g. move files)
+* perform moderately complex tasks: (e.g. parse a file or invoke a pipeline)
+* launch applications (e.g. web browsers, bioinformatics utilities)
+* stop or 'kill' applications
+
+# Bash, Shell, Terminal, Command Line: What's the difference?
+**Command Line** is the most general and refers to typing commands directly into a terminal that can be executed by the computer.\
+**Shell** (sh) is specific program (language written by Steve Bourne while at Bell Labs) that processes commands and returns output.\
+**Bash** stands for **B**ourne **A**gain **Sh**ell and is an updated version of the Shell language. This is the most popular Shell.\
+**Terminal** is a user interface that takes input and provides an output in text format; the interface runs the input through Shell or Bash to process the command.\
+
+# Navigating and inspecting directories from the terminal
+
+## Opening terminal
+* On a Mac, use **Command-Space**, type "Terminal" and hit enter to open a terminal window.
+* On Ubuntu Linux, use the search tab (top left icon in launch pad) to search for "Terminal". Open it and lock it to the launch pad by right clicking.\
+* For Windows users see this link: [https://www.laptopmag.com/articles/use-bash-shell-windows-10](https://www.laptopmag.com/articles/use-bash-shell-windows-10)\
+
+## Directory structure
+Directories (or folders) are arranged based on how inclusive they are.
+Higher level directories are more inclusive and lower level directories are less inclusive or more specific.
+
+The highest directory is known as the root directory (`/`).
+The home directory is typically the directory of the user you logged in as,
+and is where your terminal sessions will open up.
+
+
+
+To find out where you are in the directory listings type the following: 
+
+```{r engine='bash', eval=F, echo=TRUE}
+pwd
+```
+**`pwd`** stands for **p**rint **w**orking **d**irectory.
+The answer you get from the shell is the **path** of your current location, which in this case is your home directory.
+
+To list the contents of the directory you can use **`ls`** (**l**i**s**t):
+```{r engine='bash', eval=F, echo=TRUE}
+ls
+```
+
+To differentiate between directories and files, use the `-F` argument:
+```{r engine='bash', eval=F, echo=TRUE}
+ls -F
+```
+
+**`ls`** like many shell programs can take on many arguments to change its behavior.
+To learn about the arguments of **`ls`**, one can use the `--help` argument or read the **`man`** (manual) pages:
+```{r engine='bash', eval=F, echo=TRUE}
+ls --help
+man ls
+```
+
+A few useful shortcuts inside manual pages are **Space** to move one page forward,
+**`b`** to move one page backward, and **`q`** to quit / exit.
+
+To move between directories you can use **`cd`** (**c**hange **d**irectories) followed by a destination:
+
+```{r engine='bash', eval=F, echo=TRUE}
+cd <path_to_destination>
+```
+
+Using the `-a` argument to **`ls`** we see every directory has two special
+directories: `.` and `..`:
+```{r engine='bash', eval=F, echo=TRUE}
+ls -F -a
+```
+
+The `.` directory points to the current directory.
+We will see why this is useful later with copy operations.
+The `..` directory points to the **parent** directory,
+namely the directory closer to the top level root (`/`).
+Therefore to move up one level in the directory list use:
+```{r engine='bash', eval=F, echo=TRUE}
+cd ../
+```
+
+To switch to the home directory just type `cd` without anything else:
+```{r engine='bash', eval=F, echo=TRUE}
+cd
+```
+
+To return to the directory you just came from, use the `-` argument
+```{r engine='bash', eval=F, echo=TRUE}
+cd -
+```
+
+The shell provides a shortcut symbol `~` (tilde) that substitutes for your home directory.
+Using tilde, you can specify a directory inside your home directory:
+```{r engine='bash', eval=F, echo=TRUE}
+echo ~
+cd ~/<folder_inside_your_home_path>
+```
+
+### To make a new directory*:
+```{r engine='bash', eval=F, echo=TRUE}
+mkdir <folder_name>
+```
+Make a directory with your name. \
+
+**\*Note on naming:** When creating directory and file names it is best to **avoid using spaces or symbols**.  Use of these will cause problem when calling files or navigating directories within a pipeline.  The are ways to get around this, but it adds needless complexity.  Using underscores '`_`', dashes '`-`', or camel case '`thisIsCamelCase`' instead of spaces is a good habit to start.
+
+### To remove a directory or file:
+```{r engine='bash', eval=F, echo=TRUE}
+rm <file_name>
+rm -r <folder_name>
+  OR
+rmdir <folder_name>
+```
+**WARNING!** Use **rm** wisely!  Items removed by the shell are permanently deleted.
+You will not be asked whether you are sure about deleting the file, nor will you be able to fish it out of the trash.
+We can change settings to add warnings before deleting files, but this will interfere with analysis pipeline development, so we will not do that now.
+
+*Move to your home directory and create a new directory called 'MEDS5420'.
+
+### Two main ways to specify or navigate to specific directories:
+
+1. By using the **full path** starting from the root directory (the part starts with a '`/`').
+Note that `~` is an absolute path because it expands to  (or is interpreted as) `/Users/<username>`
+
+Complete path:
+```{r engine='bash', eval=F, echo=TRUE}
+cd /Users/<username>/MEDS5420/ # on mac
+# or
+cd /home/<username>/MEDS5420/ # on Linux
+# or 
+cd ~/MEDS5420/ # on either
+```
+
+**OR**
+
+2. By using the **relative path** starting from where you are. 
+
+Relative path:
+```{r engine='bash', eval=F, echo=TRUE}
+
+cd ../..  # relative path moves up two directories
+```
+
+**Summary of directory specifications**
+
+current directory: \
+`./` or `.`     
+
+root directory: \
+`/`            
+
+home directory: \
+`~/` or `~`     
+
+one directory closer to the root: \
+`../` or `..`  
+
+
+## Terminal navigation shortcuts
+To save typing:
+
+1. To reuse or edit a failed command use the **up arrow**.
+2. Use **Tab complete** for finishing names of files or folders.
+3. **Drag and drop** files or folders into terminal to enter the full path.
+4. **`history`** will also show a list of previously used commands.
+5. *Control-a* will move cursor to the beginning of a line.
+6. *Control-e* will move cursor to the end of the line.
+7. *Control-k* to cut (kill) everything to the end of the line.
+
+---
+
+## Exercise 1: Absolute vs. Relative Paths
+
+Starting from:
+
+> `/home/mcclintock/data/`
+  
+which of the following commands could Dr. McClintock use to navigate to her
+home directory, which is:
+
+> `/home/mcclintock`
+
+1. `cd .`
+2. `cd /`
+3. `cd /home/mcclintock`
+4. `cd ../..`
+5. `cd ~`
+6. `cd home`
+7. `cd ~/data/..`
+8. `cd`
+9. `cd ..`
+
+*Note: Answers are at the end - no peeking
+
+---
+
+# Dealing with files and text:
+
+We're going to start using more system utilities or command line utilities.\ 
+The general format is:
+```{r engine='bash', eval=F, echo=TRUE}
+command [options] target_file(s)
+```
+
+First we will make a MEDS5420 folder in our home directory:
+
+```{r engine='bash', eval=F, echo=TRUE}
+cd ~
+mkdir MEDS5420
+```
+
+
+Go to GitHub */guertinlab/meds5420/Lecture2_command_line/* and download the *lec02_files.zip*. If your browser automatically unzips compressed files, you need to change this preference (on Safari: Preferences > General > uncheck open "safe" files after downloading)  
+
+Use the **Terminal** window to list the contents of the downloads folder to confirm the download.
+
+Let's move the dowloaded file to the 'MEDS5420' folder you created:\
+```{r engine='bash', eval=F, echo=TRUE}
+mv ~/Downloads/lec02_files.zip ~/MEDS5420/
+```
+If you are using Ubuntu in Windows, you can access your Windows C drive in the Ubuntu Terminal through the PATH: `/mnt/c/`, then it is usually `/mnt/c/Users/<username>/Downloads` to navigate to the location the file downloaded. The following command will move the file to your directory. 
+
+```{r engine='bash', eval=F, echo=TRUE}
+mv /mnt/c/Users/<username>/Downloads/lec02_files.zip ~/MEDS5420
+```
+
+
+Move (mv) can also be used to rename files:
+```{r engine='bash', eval=F, echo=TRUE}
+mv <old_name> <new_name>
+```
+
+Now switch (navigate) to the MEDS5420 folder.
+\
+```{r engine='bash', eval=F, echo=TRUE}
+cd ~/MEDS5420/
+```
+ 
+to unzip the file, use:
+```{r engine='bash', eval=F, echo=TRUE}
+
+unzip -v lec02_files.zip
+```
+The format is: 
+```{r engine='bash', eval=F, echo=TRUE}
+unzip [options] <target_directory> <file.zip>
+```
+Check the contents of the folder to see the results.
+\
+What happens if you run this without the '-v' option and without specifying the target directory?
+
+**\*Note on unzip usage:** Depending on your OS, the '-d' option may be needed in order to unzip the contents into a specific folder. In this case you will also need to designate the name of the output directory to where the files will be unpacked. example:
+```{r engine='bash', eval=F, echo=TRUE}
+unzip -d lec02_files lec02_files.zip
+```
+
+**Viewing file content**
+Data from HTS experiments is generally in the form of large text files.  These files will crash your computer if you try to open them with standard GUI programs (gEdit, textEdit or Word).  There are lots of ways to get around this.
+
+To view the beginning of a file:
+```{r engine='bash', eval=T, echo=TRUE}
+head Wonderful_world.txt
+```
+
+To view the end of a file:
+```{r engine='bash', eval=T, echo=TRUE}
+tail -n 3 Wonderful_world.txt
+```
+* Head and tail can be followed by an argument '-n' to specify the number of lines to be shown.
+
+You can incrementally load parts of a file with **less**:
+
+```{r engine='bash', eval=F, echo=TRUE}
+less the_raven.txt
+```
+When using less you can navigate with the following commands (see Appendix 3 for more):
+
+* up and down arrows
+* 'space' to advance a page
+* 'b' to go back a page
+* 'G' to go to end
+* 'q' to exit
+* '/' to search for text (e.g. /nevermore)
+
+Print entire contents to screen:
+
+```{r engine='bash', eval=F, echo=TRUE}
+cat the_raven.txt
+```
+
+**\* ** If you accidentally print a large file to the screen, stop it with **control-c** to Cancel it.
+\
+
+
+**Getting information about files**
+
+How many lines, words, or characters does my file have:
+```{r engine='bash', eval=T, echo=TRUE}
+wc the_raven.txt
+```
+
+Just count the number of lines:
+```{r engine='bash', eval=T, echo=TRUE}
+wc -l the_raven.txt
+```
+
+
+Have a look at the manual for `wc` to see other output options.
+\
+
+
+**Basic file manipulation**
+Use touch to create an empty file
+```{r engine='bash', eval=F, echo=TRUE}
+touch empty_file.txt
+```
+
+Anything that is printed to screen can be saved in a file using the redirection operator (>):
+```{r engine='bash', eval=T, echo=TRUE}
+cat the_raven.txt > raven_copy.txt
+```
+
+Screen output can also be appended to the end of an existing file:
+```{r engine='bash', eval=F, echo=TRUE}
+cat the_raven.txt >> empty_file.txt
+```
+
+Multiple files can be pooled in this way:
+```{r engine='bash', eval=T, echo=TRUE}
+cat the_raven.txt Wonderful_world.txt > pool.txt
+```
+
+## Exercise 2: Copy with Multiple Filenames
+
+What does `cp` do when given several filenames and a directory
+name, as in:
+
+```{r engine='bash', eval=F, echo=T}
+mkdir backup
+cp the_raven.txt Thoreau_quotes.txt backup
+```
+
+What does `cp` do when given three or more filenames, as in:
+
+
+```{r engine='bash', eval=F, echo=T}
+cp the_raven.txt Thoreau_quotes.txt animal.txt
+```
+
+
+# Next Time
+
+* More commands
+* File compression
+* Finding text in files
+* Finding files or folders within directories
+* Basic scripting
+
+## TO DO: Get a scripting text editor
+
+**MAC USERS:** \
+Download Text Wrangler here: [http://download.cnet.com/TextWrangler/3000-2351_4-10220012.html](http://download.cnet.com/TextWrangler/3000-2351_4-10220012.html) and then install it.
+
+OR \
+
+BBedit:
+[https://www.barebones.com/products/bbedit/](https://www.barebones.com/products/bbedit/)
+
+
+
+**PC USERS:**
+download notepad++ here: [https://notepad-plus-plus.org/](https://notepad-plus-plus.org/) \
+Can also use Sublime or Visual Studio
+
+\
+**Note:** You can also use emacs or other command line editors such as `nano` or `vim`.  We will be using `emacs` when we work on the server soon.\
+
+
+
+\pagebreak
+
+# Answers to Exercises
+
+## Answers to Exercise 1
+
+1. No: **`.`** stands for the current directory
+2. No: **`/`** stands for the root directory
+3. Yes: Dr. McClintock’s home directory is **`/home/mcclintock`**
+4. No: this goes up two levels, i.e. ends in **`/home`**
+5. Yes: **`~`** stands for the home directory, **`/home/mcclintock`**
+6. No: this would navigate into a directory **`home`**
+7. Yes: unnecessarily complicated, but correct
+8. Yes: shortcut to go back to the home directory
+9. Yes: goes up one level
+
+
+## Answers to Exercise 2
+
+In the first instance, `cp` will make a copy of each of the files,
+`citations.txt` and `quotations.txt` into the directory `backup/`.
+
+In the second instances, `cp` gives an error when we provide 3 files
+as arguments.  To understand the error, see the output of `cp --help`
+or `man cp`.  The usage line towards the top indicates that the last
+argument must be a directory when we are providing more than 2
+arguments.
