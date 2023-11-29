@@ -205,7 +205,7 @@ knitr::include_graphics("./GATA3_motif2.png")
 We also use `MAST` to finding this unique motif's occurence in ChIP peak. The motif coordinaes information is stored in "mast_GATA3_PSWM_in_peaks_round2.bed".  \
 
 Now, we can use `intersectBed` to find peak with this unique motif, and make a peak summit file. \
-`intersectBed -wa` reports original entry in A for each overlap. \
+`intersectBed -wa` (refer to https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html) reports original entry in A for each overlap. \
 ```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools
 #cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/de_novo_motif/
@@ -628,6 +628,7 @@ plot(seq(-25, 25, by = 1),colSums(tss.matrix),
                   xlab = 'stranded 3mer (ATC) position',
                   ylab = 'observed 3mer (ATC)', type = "h")
 ```
+
 ### coherence check: region or step? bp or probe?
 
 In the above `bed6.step.bpQuery.bigWig`, I choose `bed6.step` not `bed6.region` because we want to define step=1 to count the observations of 3mer at each 1bp position. \
@@ -748,9 +749,11 @@ tss.matrix = bed6.step.probeQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
 #head(tss.matrix)
 colnames(tss.matrix) = seq(-22, 22, by = 1)
 rownames(tss.matrix) = bedTSSwindow[,5]
+#replace all NA to 0
+tss.matrix[is.na(tss.matrix)] <- 0
 #filter out rows with no signal
-#tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
-#head(tss.matrix)
+tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+head(tss.matrix)
 ```
 
 ```{r engine='R', eval=TRUE, echo=TRUE}
@@ -791,8 +794,10 @@ tss.matrix = bed6.step.probeQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
 head(tss.matrix)
 colnames(tss.matrix) = seq(-21, 21, by = 3)
 rownames(tss.matrix) = bedTSSwindow[,5]
+#replace all NA to 0
+tss.matrix[is.na(tss.matrix)] <- 0
 #filter out rows with no signal
-#tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
 
