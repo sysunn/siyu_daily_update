@@ -54,7 +54,7 @@ The overall goal of this analysis is to visualize the distribution of 3mer-GAT c
 
 ## Install required packages
 Install `bigWig` package \
-```{r engine='R', eval=TRUE, echo=T}
+```{r engine='R', class.source = "watch-out", eval=TRUE, echo=T}
 install.packages("devtools")
 library(devtools)
 devtools::install_github('andrelmartins/bigWig',
