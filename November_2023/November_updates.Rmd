@@ -1,5 +1,5 @@
 ---
-title: \sf November_updates
+title: November_updates
 header-includes:
 - \usepackage{color}
 - \usepackage{float}
@@ -10,9 +10,12 @@ output:
     toc: true
 fontsize: 14pt
 geometry: margin=1in
+
 ---
 
-# Goal
+# Nov 28th
+
+## Goal
 The overall goal of this analysis is to visualize the distribution of 3mer-GAT corresponding to its closest ChIP peak summit. \
 **Step1**: find the closest 3mer-GAT to each ChIP peak summit. \
 **Step2**: set closest 3mer-GAT as the new anchor point; draw composite profile of 3mer-GAT distribution upstream/downstream of the anchor point. \
@@ -390,7 +393,7 @@ head(different_rows_df)
 
 
 ## step2: making composite profile
-In this section, we use the `bigWig` package to make a composite profile of GAT distribution relative to the anchored GAT (that is closest to peak summit). 
+In this section, we use the `bigWig` package to make a composite profile of GAT distribution relative to the anchored GAT (that is closest to peak summit). \
 **Input**: \
 **1)** two .bigWig files that contain the 3mer coordinates info. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
@@ -452,7 +455,13 @@ rownames(tss.matrix) = bedTSSwindow[,5]
 tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
-`follow.strand` not invoked. Since `follow.strand` only affect - strand output, the +strand outputs are not affected by this parameter. \
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+
+`follow.strand` not invoked. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
                   step = 1, as.matrix=TRUE, follow.strand=F)
@@ -463,6 +472,13 @@ rownames(tss.matrix) = bedTSSwindow[,5]
 tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+Since `follow.strand` only affect - strand output, the +strand outputs are not affected by this parameter. \
 
 **MINUS** \
 Take the closest **minus** 3mer-GAT as anchor point and define the new window using the anchor point. \
@@ -492,6 +508,12 @@ tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
 
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+
 `follow.strand` not invoked.\
 ```{r engine='R', eval=TRUE, echo=TRUE}
 tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
@@ -503,6 +525,12 @@ rownames(tss.matrix) = bedTSSwindow[,5]
 tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+`follow.strand` set to be TRUE reversed the -strand output. \
 
 
 **BOTH** \
@@ -532,6 +560,11 @@ rownames(tss.matrix) = bedTSSwindow[,5]
 tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
 
 `follow.strand` not invoked. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
@@ -544,12 +577,243 @@ rownames(tss.matrix) = bedTSSwindow[,5]
 tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
 head(tss.matrix)
 ```
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
 
-### making composite profile
+Since we aim to visualize distribution of the second GAT relative to the anchorred GAT, `follow.strand` set to be TRUE or FALSE doesn't change the conclusion. But set to be TRUE may be easier for visualizing accumulated GAT. \
+
 
 ### coherence check with 3mer-ATC coordinates
 
+**PLUS**
+```{r engine='R', eval=TRUE, echo=TRUE}
+#bwPlus_ATC=load.bigWig('testplus.14_ATC.bw')
+#bwMinus_ATC=load.bigWig('testminus.36_ATC.bw')
+bedTSS=bed6_plus
+bwPlus=bwMinus_ATC
+bwMinus=bwPlus_ATC
+bedTSSwindow=center.bed(bedTSS, upstreamWindow = 25, downstreamWindow = 25)
+tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+                  step = 1, as.matrix=TRUE, follow.strand=TRUE)
+colnames(tss.matrix) = seq(-25, 25, by = 1)
+rownames(tss.matrix) = bedTSSwindow[,5]
+#filter out rows with no signal
+tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+head(tss.matrix)
+
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (ATC) position',
+                  ylab = 'observed 3mer (ATC)', type = "h")
+```
+**MINUS**
+```{r engine='R', eval=TRUE, echo=TRUE}
+#bwPlus_ATC=load.bigWig('testplus.14_ATC.bw')
+#bwMinus_ATC=load.bigWig('testminus.36_ATC.bw')
+bedTSS=bed6_minus
+bwPlus=bwMinus_ATC
+bwMinus=bwPlus_ATC
+bedTSSwindow=center.bed(bedTSS, upstreamWindow = 25, downstreamWindow = 25)
+tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+                  step = 1, as.matrix=TRUE, follow.strand=TRUE)
+colnames(tss.matrix) = seq(-25, 25, by = 1)
+rownames(tss.matrix) = bedTSSwindow[,5]
+#filter out rows with no signal
+tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+head(tss.matrix)
+
+plot(seq(-25, 25, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (ATC) position',
+                  ylab = 'observed 3mer (ATC)', type = "h")
+```
+### coherence check: region or step? bp or probe?
+
+In the above `bed6.step.bpQuery.bigWig`, I choose `bed6.step` not `bed6.region` because we want to define step=1 to count the observations of 3mer at each 1bp position. \
+
+I also choose `bpQuery` not `probeQuery` because: `bpQuery` evaluate each base position of the original bigWig file without consider each genomic interval input. Consider the nature of our input bigWig files (which is 3mer's coordinates on genome), we want to treat each 3mer separately, and count only once without consider the genomic interval within the 3mer. \
+
+**coherence check 1: change step from 1 to 3?** \
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(bigWig)
+bwPlus_GAT=load.bigWig('testplus.36_GAT.bw')
+bwMinus_GAT=load.bigWig('testminus.14_GAT.bw')
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+bed6=all.distance[, 4:9] # all.distance -- this is keeping both tied minus/plus GAT
+#bed6-plus
+bed6_plus=bed6[bed6$V9=="+",]
+head(bed6_plus)
+#bed6-minus
+bed6_minus=bed6[bed6$V9=="-",]
+```
+
+**step=3**
+```{r engine='R', eval=TRUE, echo=TRUE}
+#bigWig input
+bwPlus=bwPlus_GAT
+bwMinus=bwMinus_GAT
+#bed6 input
+bedTSS=bed6_plus
+
+## define new window
+bedTSSwindow=center.bed(bedTSS, upstreamWindow = 22, downstreamWindow = 22) #from anchor point, add 25bp downstream and upstream
+#head(bedTSS)
+head(bedTSSwindow)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+                  step = 3, as.matrix=TRUE, follow.strand=TRUE)
+head(tss.matrix)
+colnames(tss.matrix) = seq(-21, 21, by = 3)
+rownames(tss.matrix) = bedTSSwindow[,5]
+#filter out rows with no signal
+tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+head(tss.matrix)
+```
+```{r engine='R', eval=TRUE, echo=TRUE}
+query1=as.data.frame(t(tss.matrix[1,]))
+colnames(query1) = c("297389-297391", "297392-297394","297395-297397","297398-297400","297401-297403","297404-297406","297407-297409","297410-297412","297413-297415","297416-297418","297419-297421","297422-297424","297425-297427","297428-297430","297431-297433")
+head(query1)
+```
+```{r engine='R', eval=TRUE, echo=TRUE}
+query.bigWig(bwPlus_GAT, 'chr10', 297389, 297434)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-21, 21, by = 3),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+
+**step=1**
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+#bigWig input
+bwPlus=bwPlus_GAT
+bwMinus=bwMinus_GAT
+#bed6 input
+bedTSS=bed6_plus
+
+## define new window
+bedTSSwindow=center.bed(bedTSS, upstreamWindow = 22, downstreamWindow = 22) #from anchor point, add 25bp downstream and upstream
+#head(bedTSS)
+#head(bedTSSwindow)
+
+tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+                  step = 1, as.matrix=TRUE, follow.strand=TRUE)
+#head(tss.matrix)
+colnames(tss.matrix) = seq(-22, 22, by = 1)
+rownames(tss.matrix) = bedTSSwindow[,5]
+#filter out rows with no signal
+tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+#head(tss.matrix)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+query1=as.data.frame(t(tss.matrix[1,]))
+colnames(query1) = seq(297389, 297433, by = 1)
+head(query1)
+```
+```{r engine='R', eval=TRUE, echo=TRUE}
+query.bigWig(bwPlus_GAT, 'chr10', 297389, 297434)
+```
+
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-22, 22, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+
+**coherence check2: probeQuery instead of bpQuery** \
+**probe, step=1**
+```{r engine='R', eval=TRUE, echo=TRUE}
+#bigWig input
+bwPlus=bwPlus_GAT
+bwMinus=bwMinus_GAT
+#bed6 input
+bedTSS=bed6_plus
+
+## define new window
+bedTSSwindow=center.bed(bedTSS, upstreamWindow = 22, downstreamWindow = 22) #from anchor point, add 25bp downstream and upstream
+#head(bedTSS)
+#head(bedTSSwindow)
+
+tss.matrix = bed6.step.probeQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+                  step = 1, as.matrix=TRUE, follow.strand=TRUE)
+#head(tss.matrix)
+colnames(tss.matrix) = seq(-22, 22, by = 1)
+rownames(tss.matrix) = bedTSSwindow[,5]
+#filter out rows with no signal
+#tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+#head(tss.matrix)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+query1=as.data.frame(t(tss.matrix[1,]))
+colnames(query1) = seq(297389, 297433, by = 1)
+head(query1)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+query.bigWig(bwPlus_GAT, 'chr10', 297389, 297434)
+```
+
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-22, 22, by = 1),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+
+**probe, step=3**
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+#bigWig input
+bwPlus=bwPlus_GAT
+bwMinus=bwMinus_GAT
+#bed6 input
+bedTSS=bed6_plus
+
+## define new window
+bedTSSwindow=center.bed(bedTSS, upstreamWindow = 22, downstreamWindow = 22) #from anchor point, add 25bp downstream and upstream
+#head(bedTSS)
+head(bedTSSwindow)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+tss.matrix = bed6.step.probeQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+                  step = 3, as.matrix=TRUE, follow.strand=TRUE)
+head(tss.matrix)
+colnames(tss.matrix) = seq(-21, 21, by = 3)
+rownames(tss.matrix) = bedTSSwindow[,5]
+#filter out rows with no signal
+#tss.matrix=tss.matrix[rowSums(tss.matrix) != 0,]
+head(tss.matrix)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+query1=as.data.frame(t(tss.matrix[1,]))
+colnames(query1) = c("297389-297391", "297392-297394","297395-297397","297398-297400","297401-297403","297404-297406","297407-297409","297410-297412","297413-297415","297416-297418","297419-297421","297422-297424","297425-297427","297428-297430","297431-297433")
+head(query1)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+query.bigWig(bwPlus_GAT, 'chr10', 297389, 297434)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+plot(seq(-21, 21, by = 3),colSums(tss.matrix),
+                  xlab = 'stranded 3mer (GAT) position',
+                  ylab = 'observed 3mer (GAT)', type = "h")
+```
+
 ### coherence check for tie
 
+In this coherence check, I want to check if keep both tied "closest" GAT would result in doubling the counts. \
 
 
