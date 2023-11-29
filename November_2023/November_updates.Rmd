@@ -39,6 +39,9 @@ pre[class] {
   font-weight: bold;
 }
 
+```
+
+```{r}
 knitr::opts_chunk$set(class.source = "watch-out")
 ```
 
@@ -51,7 +54,7 @@ The overall goal of this analysis is to visualize the distribution of 3mer-GAT c
 
 ## Install required packages
 Install `bigWig` package \
-```{r engine='R', eval=TRUE, echo=F}
+```{r engine='R', eval=TRUE, echo=T}
 install.packages("devtools")
 library(devtools)
 devtools::install_github('andrelmartins/bigWig',
@@ -60,7 +63,7 @@ library(bigWig)
 ```
 
 Install `bedtools` \
-```{r engine='bash', eval=F, echo=F}
+```{r engine='bash', eval=F, echo=T}
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install bedtools
 ```
