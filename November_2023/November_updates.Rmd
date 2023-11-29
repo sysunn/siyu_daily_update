@@ -13,6 +13,35 @@ geometry: margin=1in
 
 ---
 
+```{css, echo=FALSE}
+body .main-container {
+  max-width: 1600px !important;
+  width: 1600px !important;
+}
+body {
+  max-width: 1600px !important;
+}
+
+pre {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightblue;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+knitr::opts_chunk$set(class.source = "watch-out")
+```
+
 # Nov 28th
 
 ## Goal
@@ -446,7 +475,9 @@ Query.bigWig \
 `bed6.bpQuery` search for observations in the .bigWig file with region/range provided by each row in .bed6 file. \
 `step queries` breaking the region/range up into equal size steps as defined by "step =". \
 ```{r engine='R', eval=TRUE, echo=TRUE}
-tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+#tss.matrix = bed6.step.bpQuery.bigWig(bwPlus, bwMinus, bedTSSwindow,
+ #                 step = 1, as.matrix=TRUE, follow.strand=TRUE)
+tss.matrix = bed6.step.bpQuery.bigWig(bwMinus, bwPlus, bedTSSwindow,
                   step = 1, as.matrix=TRUE, follow.strand=TRUE)
 head(tss.matrix)
 colnames(tss.matrix) = seq(-25, 25, by = 1)
