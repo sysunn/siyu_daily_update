@@ -625,19 +625,19 @@ all.distance[all.distance$V2==71850201,]
 Regardless of strand information from the 3mer coordinates, if the 3mer coordinates is upstream of peak summit, `closestBed` will use the peak summit coordinates END to subtract the 3mer coordinates END; if the 3mer coordinates is downstream of peak summit, `closestBed` will use the 3mer coordinates START to subtract the peak summit coordinates START. \
 
 See UCSC genome browser shots here: \
-```{r  fig.align = "center", out.width="50%", out.height="50%", echo=F, fig.align = "center", fig.cap="closest upstream GAT to peak summit"}
+```{r  fig.align = "center", out.width="100%", out.height="100%", echo=F, fig.align = "center", fig.cap="closest upstream GAT to peak summit"}
 library(knitr)
 knitr::include_graphics("./upstream_closest.png") 
 ```
 
-```{r  fig.align = "center", out.width="50%", out.height="50%", echo=F, fig.align = "center", fig.cap="closest downstream GAT to peak summit"}
+```{r  fig.align = "center", out.width="100%", out.height="100%", echo=F, fig.align = "center", fig.cap="closest downstream GAT to peak summit"}
 library(knitr)
 knitr::include_graphics("./downstream_closest.png") 
 ```
 
 
 
-#[below need revise]
+# [below need revise]
 
 ## step2: making composite profile
 In this section, we use the `bigWig` package to make a composite profile of GAT distribution relative to the anchored GAT (that is closest to peak summit). \
