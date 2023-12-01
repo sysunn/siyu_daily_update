@@ -59,12 +59,8 @@ pre[class] {
 knitr::opts_chunk$set(class.source = "watch-out")
 ```
 
-# Dec 1st
 
-## Goal
-Keep working on the overrep-3mer analysis. Today I am starting the running of `seqOutbias` on full hg38 genome, use optimized parameters. \
-
-## Install required packages
+# Install required packages
 Install `bigWig` and `latticeExtra` package \
 ```{r engine='R', eval=TRUE, echo=T}
 install.packages("devtools")
@@ -82,93 +78,44 @@ Install `bedtools` \
 brew install bedtools
 ```
 
-## step1: find the closest 3mer-GAT to each ChIP peak summit
-In this section, we first use `seqOutBias` to generate all 3mer coordinates file, then we use Bedtools `closestbed` to find overlap/closest GAT to each provided peak summit. \
+# Dec 1st
 
-### Generate the 3mer coordinates file on the reference genome.
+## Goal: 
 
-**3mer_df**: generating a .txt file where the first column are all 64 3mer, second column are the index, and the third column are the corresponding reversed 3mer's index (indexrc). \
-```{r engine='R', eval=F, echo=TRUE}
-#define function to output the reverse compliment sequence
-revcomp <- function(sequence) {
-  complement_mapping <- c("A" = "T", "T" = "A", "C" = "G", "G" = "C")
-  complemented_sequence <- sapply(strsplit(rev(strsplit(sequence, "")[[1]]), NULL), function(base) complement_mapping[base])
-  complemented_sequence <- paste(complemented_sequence, collapse = "")
-  return(complemented_sequence)
-}
+<span class="highlighted">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT----ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. --This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span> \
 
-# 64 3mer with index
-all.64 = expand.grid(rep(list(c('A','C','G','T')), 3))
-all.64.df = data.frame(apply(all.64, 1 , paste, collapse = ""))
-all.64.df[,1] = all.64.df[order(all.64.df[,1]),]
-all.64.df[,2] = 1:64
+<span class="highlighted">With this analysis pipeline in hand, the real question we want to ask is:</span> \
 
-# 64 reversed 3mer with indexrc
-rev.df = data.frame(as.character(all.64.df[,1]))
-rev.df[] = apply(rev.df, 1, revcomp)
-rev.df[,2] = 1:64
-colnames(rev.df)= c('rc', 'indexrc')
+<span class="highlighted">**1) Is our GATA3 ChIP-seq library has predominant enrichment of such 3mer-3mer (GAT-GAT or GAT-ATC) structure compared to any other library that are not ChIPed by GATA3?**</span> \
+
+<span class="highlighted">**2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?**</span> \
 
 
-colnames(all.64.df) = c('three_mer', 'index')
-all.64.df.rc = merge(all.64.df, rev.df, by.x = 'three_mer', by.y = 'rc')
-write.table(all.64.df.rc, file = 'all_64_df.txt', quote=FALSE, row.names =FALSE, col.names = FALSE, sep = '\t')
+### A unioin peak set as control
+
+To answer the first big question, we need to prepare a control peak set. Here we are using the ENCODE union DNase HS sites: \
+Reference: Amaral, M. L., Erikson, G. A., & Shokhirev, M. N. (2018). BART: bioinformatics array research tool. BMC bioinformatics, 19(1), 1-6. \
+
+The full .bed file contains 2723010 regulatory regions. The below command uses a combination of `awk`, `sort`, and `shuf` in Linux to:  \
+Extracts unique chromosome names from the first column ($1) of input_regions.bed. \
+Iterates through each chromosome using a while loop. \
+For each chromosome, it uses `grep` to filter the peaks by chromosome name. \
+Then, it uses `shuf` to randomly select a specified number of peaks (`-n <desired_number_of_peaks>`) from each chromosome and appends them to randomized_subset.bed. \
+
+Here I am using this command to ramdomly pick single region from each chromosome to make this randomized_subset.bed. \
+````{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+awk '{print $1}' hg38_unionDHS_fc4_50merge.bed | sort -u | while read chrom; do
+    grep "^$chrom" hg38_unionDHS_fc4_50merge.bed | shuf -n 1 >> hg38_unionDHS_fc4_50merge_randomized_subset.bed
+done
+```
+The file has information of "chr-start-end-index-signal-strand" \
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+cat hg38_unionDHS_fc4_50merge_randomized_subset.bed 
 ```
 
-**Ref Genome**
-Here, I use the full hg38 genome as the input reference genome; \
-```{r engine='bash', eval=F, echo=TRUE}
-#cd /home/FCAM/ssun/Genome/
-wget https://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz
-gunzip hg38.fa.gz
-```
 
-**seqOutBias**
-`seqOutBias seqtable` will generate a seqtable file (.tbl) which is a compressed form that stores the mappability information (if you provide aligned reads info) as well as corresponding parameters (read length, k-mer size, and cut-site offsets). \
 
-`seqOutBias dump` can extract info from the seqtable file and output plain txt file in a form of “chrom:start-end”. It will also list the input parameters (read-size, kmer-size, etc.) that were used to build the sequence table file. \
 
-<span class="highlighted2">use  read-size=1000 --kmer-size=3 --plus-offset=3 --minus-offset=3</span> \
-```{r engine='R', eval=F, echo=TRUE}
-#! /bin/sh
-
-#SBATCH --job-name=getfull3mer_1000.sh     
-#SBATCH -N 1                  
-#SBATCH -n 1                 
-#SBATCH -c 32                  
-#SBATCH -p himem           
-#SBATCH --qos=himem      
-#SBATCH --mem=128G               
-#SBATCH --mail-type=ALL 
-#SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o getfull3mer_1000.sh_%j.out
-#SBATCH -e getfull3mer_1000.sh_%j.err
-
-hostname
-export PATH=$PATH:/home/FCAM/ssun/packages/://home/FCAM/ssun/scripts
-module load genometools/1.5.10
-module load ucsc_genome/2012.05.22
-module load rust
-
-genome=/home/FCAM/ssun/Genome/hg38.fa
-
-seqOutBias seqtable ${genome} --read-size=1000 --kmer-size=3 --plus-offset=3 --minus-offset=3 --out=hg38.3.3.3.tbl
-seqOutBias dump hg38.3.3.3.tbl > hg38.3.3.3.dump.txt
-mkdir seqdump
-mv hg38.3.3.3.dump.txt seqdump
-mv all_64_df.txt seqdump
-cd seqdump
-
-while read line; do
- mer=$(echo $line | awk -F" " '{print $1}')
- idx=$(echo $line | awk -F" " '{print $2}')
- rcidx=$(echo $line | awk -F" " '{print $3}')
- echo $mer
- echo $idx
- echo $rcidx
- python /home/FCAM/ssun/scripts/dump_to_kmer.py -i hg38.3.3.3.dump.txt -p $idx -m $rcidx -s $mer
-done <all_64_df.txt
-```
 
 
 
