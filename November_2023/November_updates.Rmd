@@ -1053,7 +1053,7 @@ plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
 <span class="highlighted">This composite profile is simply the previous two composite plot add together (note the y axis, now the highest accumulation counts for observed GAT is 580). Now we are taking consider of both plus and minus strand, to see where other GAT locate relative to the anchored closest GAT. </span> \
 
 
-###Anchor GAT -n- ATC (+/-) \
+### Anchor GAT -n- ATC (+/-) \
 In this section, we want to draw composite profile of ATC distribution relative to the anchored closest GAT. \
 Recall that our peak set are enriched with a GATA3 motif look like this: \
 
