@@ -343,26 +343,13 @@ wc -l testplus.14_ATC.bedGraph
 wc -l testminus.36_ATC.bedGraph
 ```
 
-<span class="highlighted">Most entry in plus_GAT.bed and minus_ATC.bed are overlapped/same (they should contain same information); **however**, there are some **different entries** in both file. See example below:</span> \
+<span class="highlighted">Most entry in plus_GAT.bed and minus_ATC.bed are overlapped/same (they should contain same information); **however**, there are some entries **different** in the two (supposely same) files. See example below:</span> \
 ```{r engine='bash', eval=TRUE, echo=TRUE}
 head -85 testplus.36_GAT_sorted.bed | tail -6
 wc -l testplus.36_GAT_sorted.bed
 echo ""
 head -85 testminus.36_ATC_sorted.bed | tail -6
 wc -l testminus.36_ATC_sorted.bed
-```
-
-Count and extract different entries from plus_GAT and minus_ATC .bed. \
-```{r engine='bash', eval=TRUE, echo=TRUE}
-awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testminus.36_ATC_sorted.bed testplus.36_GAT_sorted.bed > different_plus.36_GAT.bed
-awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testplus.36_GAT_sorted.bed testminus.36_ATC_sorted.bed > different_minus.36_ATC.bed
-wc -l different_plus.36_GAT.bed
-head -5 different_plus.36_GAT.bed
-tail -5 different_plus.36_GAT.bed
-echo ""
-wc -l different_minus.36_ATC.bed
-head -5 different_minus.36_ATC.bed
-tail -5 different_minus.36_ATC.bed
 ```
 
 <span class="highlighted">**Why seqoutbias generate different 3mer coordinates for reverse complimented 3mer??**</span> \
@@ -397,6 +384,68 @@ while read line; do
 done <all_64_df.txt
 ```
 
+<span class="highlighted">**use read size ==30**</span> \
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l chr10_4M.3.3.3minus.36_ATC.bed  
+wc -l chr10_4M.3.3.3plus.36_GAT.bed
+echo ""
+wc -l chr10_4M.3.3.3minus.14_GAT.bed  
+wc -l chr10_4M.3.3.3plus.14_ATC.bed
+```
+<span class="highlighted">Count and extract different entries from plus_GAT and minus_ATC .bed.</span> \
+```{r engine='bash', eval=TRUE, echo=TRUE}
+awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testminus.36_ATC_sorted.bed testplus.36_GAT_sorted.bed > different_plus.36_GAT.bed
+awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testplus.36_GAT_sorted.bed testminus.36_ATC_sorted.bed > different_minus.36_ATC.bed
+wc -l different_plus.36_GAT.bed
+head -5 different_plus.36_GAT.bed
+tail -5 different_plus.36_GAT.bed
+echo ""
+wc -l different_minus.36_ATC.bed
+head -5 different_minus.36_ATC.bed
+tail -5 different_minus.36_ATC.bed
+```
+<span class="highlighted">79582/1577317 ~ 5%</span> \
+<span class="highlighted">73947/1571682 ~4.7%</span> \
+
+<span class="highlighted">**use read size ==1000**</span> \
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l chr10_4M.3.3.3.1000minus.36_ATC.bed  
+wc -l chr10_4M.3.3.3.1000plus.36_GAT.bed
+echo ""
+wc -l chr10_4M.3.3.3.1000minus.14_GAT.bed  
+wc -l chr10_4M.3.3.3.1000plus.14_ATC.bed
+```
+<span class="highlighted">Count and extract different entries from plus_GAT and minus_ATC .bed. use read size ==1000:</span> \
+<span class="highlighted">sort the two corresponding file:</span> \
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+sort -k1,1 -k2,2n chr10_4M.3.3.3.1000plus.36_GAT.bed > testplus.36.1000_GAT_sorted.bed
+sort -k1,1 -k2,2n chr10_4M.3.3.3.1000minus.36_ATC.bed > testminus.36.1000_ATC_sorted.bed 
+wc -l chr10_4M.3.3.3.1000plus.36_GAT.bed
+wc -l testplus.36.1000_GAT_sorted.bed
+echo ""
+wc -l chr10_4M.3.3.3.1000minus.36_ATC.bed
+wc -l testminus.36.1000_ATC_sorted.bed
+```
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+#this awk command only report different lines in file2:
+awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testminus.36.1000_ATC_sorted.bed testplus.36.1000_GAT_sorted.bed > different_plus.36.1000_GAT.bed
+awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testplus.36.1000_GAT_sorted.bed testminus.36.1000_ATC_sorted.bed > different_minus.36.1000_ATC.bed
+
+wc -l different_plus.36.1000_GAT.bed
+head -5 different_plus.36.1000_GAT.bed
+tail -5 different_plus.36.1000_GAT.bed
+echo ""
+wc -l different_minus.36.1000_ATC.bed
+head -5 different_minus.36.1000_ATC.bed
+tail -5 different_minus.36.1000_ATC.bed
+```
+
+<span class="highlighted">388/1765438 ~0.02%</span> \
+<span class="highlighted">400/1765450 ~0.02%</span> \
+
+<span class="highlighted">Increasing `seqOutbias` read size parameter from 30 to 1000, causes the difference between plus_GAT and minus_ATC decreases from 5% to 0.02%.</span> \
+<span class="highlighted">Conclusion: we should use a large read size to limit the difference between the two corresponding files.</span> \
 
 ### Prepare the peak summit file
 As a positive control, we want to subset peaks with known GATA3-like de novo motif enriched. \
