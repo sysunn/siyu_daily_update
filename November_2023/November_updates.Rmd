@@ -70,6 +70,8 @@ library(devtools)
 devtools::install_github('andrelmartins/bigWig',
               subdir='bigWig')
 library(bigWig)
+
+install.packages("latticeExtra")
 ```
 
 Install `bedtools` \
