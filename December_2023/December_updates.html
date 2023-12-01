@@ -708,13 +708,12 @@ function toggle_visibility(id1) {
 <h1>Contents</h1>
 <div id="TOC">
 <ul>
-<li><a href="#dec-1st" id="toc-dec-1st"><span class="toc-section-number">1</span> Dec 1st</a>
+<li><a href="#install-required-packages" id="toc-install-required-packages"><span class="toc-section-number">1</span> Install required packages</a></li>
+<li><a href="#dec-1st" id="toc-dec-1st"><span class="toc-section-number">2</span> Dec 1st</a>
 <ul>
-<li><a href="#goal" id="toc-goal"><span class="toc-section-number">1.1</span> Goal</a></li>
-<li><a href="#install-required-packages" id="toc-install-required-packages"><span class="toc-section-number">1.2</span> Install required packages</a></li>
-<li><a href="#step1-find-the-closest-3mer-gat-to-each-chip-peak-summit" id="toc-step1-find-the-closest-3mer-gat-to-each-chip-peak-summit"><span class="toc-section-number">1.3</span> step1: find the closest 3mer-GAT to each ChIP peak summit</a>
+<li><a href="#goal" id="toc-goal"><span class="toc-section-number">2.1</span> Goal:</a>
 <ul>
-<li><a href="#generate-the-3mer-coordinates-file-on-the-reference-genome." id="toc-generate-the-3mer-coordinates-file-on-the-reference-genome."><span class="toc-section-number">1.3.1</span> Generate the 3mer coordinates file on the reference genome.</a></li>
+<li><a href="#a-unioin-peak-set-as-control" id="toc-a-unioin-peak-set-as-control"><span class="toc-section-number">2.1.1</span> A unioin peak set as control</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -756,29 +755,22 @@ color:red;
 color:blue;
 }
 </style>
-<div id="dec-1st" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Dec 1st</h1>
-<div id="goal" class="section level2" number="1.1">
-<h2><span class="header-section-number">1.1</span> Goal</h2>
-<p>Keep working on the overrep-3mer analysis. Today I am starting the running of <code>seqOutbias</code> on full hg38 genome, use optimized parameters.<br />
-</p>
-</div>
-<div id="install-required-packages" class="section level2" number="1.2">
-<h2><span class="header-section-number">1.2</span> Install required packages</h2>
+<div id="install-required-packages" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Install required packages</h1>
 <p>Install <code>bigWig</code> and <code>latticeExtra</code> package<br />
 </p>
 <pre class="r watch-out"><code>install.packages(&quot;devtools&quot;)</code></pre>
 <pre><code>## also installing the dependencies &#39;Rcpp&#39;, &#39;utf8&#39;, &#39;askpass&#39;, &#39;credentials&#39;, &#39;openssl&#39;, &#39;sys&#39;, &#39;zip&#39;, &#39;gitcreds&#39;, &#39;httr2&#39;, &#39;ini&#39;, &#39;httpuv&#39;, &#39;xtable&#39;, &#39;sourcetools&#39;, &#39;later&#39;, &#39;promises&#39;, &#39;fansi&#39;, &#39;systemfonts&#39;, &#39;textshaping&#39;, &#39;pillar&#39;, &#39;pkgconfig&#39;, &#39;diffobj&#39;, &#39;rematch2&#39;, &#39;clipr&#39;, &#39;crayon&#39;, &#39;curl&#39;, &#39;gert&#39;, &#39;gh&#39;, &#39;purrr&#39;, &#39;rprojroot&#39;, &#39;rstudioapi&#39;, &#39;whisker&#39;, &#39;shiny&#39;, &#39;callr&#39;, &#39;prettyunits&#39;, &#39;processx&#39;, &#39;downlit&#39;, &#39;httr&#39;, &#39;ragg&#39;, &#39;tibble&#39;, &#39;xml2&#39;, &#39;htmlwidgets&#39;, &#39;xopen&#39;, &#39;brew&#39;, &#39;commonmark&#39;, &#39;cpp11&#39;, &#39;brio&#39;, &#39;praise&#39;, &#39;ps&#39;, &#39;waldo&#39;, &#39;usethis&#39;, &#39;desc&#39;, &#39;miniUI&#39;, &#39;pkgbuild&#39;, &#39;pkgdown&#39;, &#39;pkgload&#39;, &#39;profvis&#39;, &#39;rcmdcheck&#39;, &#39;remotes&#39;, &#39;roxygen2&#39;, &#39;rversions&#39;, &#39;sessioninfo&#39;, &#39;testthat&#39;, &#39;urlchecker&#39;, &#39;withr&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/Rtmpr28Pdk/downloaded_packages</code></pre>
+##  /tmp/RtmpgUo5vc/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>library(devtools)</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre class="r watch-out"><code>devtools::install_github(&#39;andrelmartins/bigWig&#39;,
               subdir=&#39;bigWig&#39;)</code></pre>
 <pre><code>## Downloading GitHub repo andrelmartins/bigWig@HEAD</code></pre>
 <pre><code>## ── R CMD build ─────────────────────────────────────────────────────────────────
-## * checking for file ‘/private/tmp/Rtmpr28Pdk/remotesfd9686c6682/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
+## * checking for file ‘/private/tmp/RtmpgUo5vc/remotes1650533ed613/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
 ## * preparing ‘bigWig’:
 ## * checking DESCRIPTION meta-information ... OK
 ## * cleaning src
@@ -791,95 +783,67 @@ install.packages(&quot;latticeExtra&quot;)</code></pre>
 <pre><code>## also installing the dependencies &#39;deldir&#39;, &#39;RcppEigen&#39;, &#39;png&#39;, &#39;jpeg&#39;, &#39;RColorBrewer&#39;, &#39;interp&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/Rtmpr28Pdk/downloaded_packages</code></pre>
+##  /tmp/RtmpgUo5vc/downloaded_packages</code></pre>
 <p>Install <code>bedtools</code><br />
 </p>
 <pre class="bash watch-out"><code>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
 brew install bedtools</code></pre>
 </div>
-<div id="step1-find-the-closest-3mer-gat-to-each-chip-peak-summit" class="section level2" number="1.3">
-<h2><span class="header-section-number">1.3</span> step1: find the closest 3mer-GAT to each ChIP peak summit</h2>
-<p>In this section, we first use <code>seqOutBias</code> to generate all 3mer coordinates file, then we use Bedtools <code>closestbed</code> to find overlap/closest GAT to each provided peak summit.<br />
+<div id="dec-1st" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Dec 1st</h1>
+<div id="goal" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Goal:</h2>
+<p><span class="highlighted">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT—-ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. –This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span><br />
 </p>
-<div id="generate-the-3mer-coordinates-file-on-the-reference-genome." class="section level3" number="1.3.1">
-<h3><span class="header-section-number">1.3.1</span> Generate the 3mer coordinates file on the reference genome.</h3>
-<p><strong>3mer_df</strong>: generating a .txt file where the first column are all 64 3mer, second column are the index, and the third column are the corresponding reversed 3mer’s index (indexrc).<br />
+<p><span class="highlighted">With this analysis pipeline in hand, the real question we want to ask is:</span><br />
 </p>
-<pre class="r watch-out"><code>#define function to output the reverse compliment sequence
-revcomp &lt;- function(sequence) {
-  complement_mapping &lt;- c(&quot;A&quot; = &quot;T&quot;, &quot;T&quot; = &quot;A&quot;, &quot;C&quot; = &quot;G&quot;, &quot;G&quot; = &quot;C&quot;)
-  complemented_sequence &lt;- sapply(strsplit(rev(strsplit(sequence, &quot;&quot;)[[1]]), NULL), function(base) complement_mapping[base])
-  complemented_sequence &lt;- paste(complemented_sequence, collapse = &quot;&quot;)
-  return(complemented_sequence)
-}
-
-# 64 3mer with index
-all.64 = expand.grid(rep(list(c(&#39;A&#39;,&#39;C&#39;,&#39;G&#39;,&#39;T&#39;)), 3))
-all.64.df = data.frame(apply(all.64, 1 , paste, collapse = &quot;&quot;))
-all.64.df[,1] = all.64.df[order(all.64.df[,1]),]
-all.64.df[,2] = 1:64
-
-# 64 reversed 3mer with indexrc
-rev.df = data.frame(as.character(all.64.df[,1]))
-rev.df[] = apply(rev.df, 1, revcomp)
-rev.df[,2] = 1:64
-colnames(rev.df)= c(&#39;rc&#39;, &#39;indexrc&#39;)
-
-
-colnames(all.64.df) = c(&#39;three_mer&#39;, &#39;index&#39;)
-all.64.df.rc = merge(all.64.df, rev.df, by.x = &#39;three_mer&#39;, by.y = &#39;rc&#39;)
-write.table(all.64.df.rc, file = &#39;all_64_df.txt&#39;, quote=FALSE, row.names =FALSE, col.names = FALSE, sep = &#39;\t&#39;)</code></pre>
-<p><strong>Ref Genome</strong>
-Here, I use the full hg38 genome as the input reference genome;<br />
+<p><span class="highlighted"><strong>1) Is our GATA3 ChIP-seq library has predominant enrichment of such 3mer-3mer (GAT-GAT or GAT-ATC) structure compared to any other library that are not ChIPed by GATA3?</strong></span><br />
 </p>
-<pre class="bash watch-out"><code>#cd /home/FCAM/ssun/Genome/
-wget https://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz
-gunzip hg38.fa.gz</code></pre>
-<p><strong>seqOutBias</strong>
-<code>seqOutBias seqtable</code> will generate a seqtable file (.tbl) which is a compressed form that stores the mappability information (if you provide aligned reads info) as well as corresponding parameters (read length, k-mer size, and cut-site offsets).<br />
+<p><span class="highlighted"><strong>2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?</strong></span><br />
 </p>
-<p><code>seqOutBias dump</code> can extract info from the seqtable file and output plain txt file in a form of “chrom:start-end”. It will also list the input parameters (read-size, kmer-size, etc.) that were used to build the sequence table file.<br />
+<div id="a-unioin-peak-set-as-control" class="section level3" number="2.1.1">
+<h3><span class="header-section-number">2.1.1</span> A unioin peak set as control</h3>
+<p>To answer the first big question, we need to prepare a control peak set. Here we are using the ENCODE union DNase HS sites:<br />
+Reference: Amaral, M. L., Erikson, G. A., &amp; Shokhirev, M. N. (2018). BART: bioinformatics array research tool. BMC bioinformatics, 19(1), 1-6.<br />
 </p>
-<p><span class="highlighted2">use read-size=1000 –kmer-size=3 –plus-offset=3 –minus-offset=3</span><br />
+<p>The full .bed file contains 2723010 regulatory regions. The below command uses a combination of <code>awk</code>, <code>sort</code>, and <code>shuf</code> in Linux to:<br />
+Extracts unique chromosome names from the first column ($1) of input_regions.bed.<br />
+Iterates through each chromosome using a while loop.<br />
+For each chromosome, it uses <code>grep</code> to filter the peaks by chromosome name.<br />
+Then, it uses <code>shuf</code> to randomly select a specified number of peaks (<code>-n &lt;desired_number_of_peaks&gt;</code>) from each chromosome and appends them to randomized_subset.bed.<br />
 </p>
-<pre class="r watch-out"><code>#! /bin/sh
-
-#SBATCH --job-name=getfull3mer_1000.sh     
-#SBATCH -N 1                  
-#SBATCH -n 1                 
-#SBATCH -c 32                  
-#SBATCH -p himem           
-#SBATCH --qos=himem      
-#SBATCH --mem=128G               
-#SBATCH --mail-type=ALL 
-#SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o getfull3mer_1000.sh_%j.out
-#SBATCH -e getfull3mer_1000.sh_%j.err
-
-hostname
-export PATH=$PATH:/home/FCAM/ssun/packages/://home/FCAM/ssun/scripts
-module load genometools/1.5.10
-module load ucsc_genome/2012.05.22
-module load rust
-
-genome=/home/FCAM/ssun/Genome/hg38.fa
-
-seqOutBias seqtable ${genome} --read-size=1000 --kmer-size=3 --plus-offset=3 --minus-offset=3 --out=hg38.3.3.3.tbl
-seqOutBias dump hg38.3.3.3.tbl &gt; hg38.3.3.3.dump.txt
-mkdir seqdump
-mv hg38.3.3.3.dump.txt seqdump
-mv all_64_df.txt seqdump
-cd seqdump
-
-while read line; do
- mer=$(echo $line | awk -F&quot; &quot; &#39;{print $1}&#39;)
- idx=$(echo $line | awk -F&quot; &quot; &#39;{print $2}&#39;)
- rcidx=$(echo $line | awk -F&quot; &quot; &#39;{print $3}&#39;)
- echo $mer
- echo $idx
- echo $rcidx
- python /home/FCAM/ssun/scripts/dump_to_kmer.py -i hg38.3.3.3.dump.txt -p $idx -m $rcidx -s $mer
-done &lt;all_64_df.txt</code></pre>
+<p>Here I am using this command to ramdomly pick single region from each chromosome to make this randomized_subset.bed.<br />
+</p>
+<pre class="bash revision"><code>awk &#39;{print $1}&#39; hg38_unionDHS_fc4_50merge.bed | sort -u | while read chrom; do
+    grep &quot;^$chrom&quot; hg38_unionDHS_fc4_50merge.bed | shuf -n 1 &gt;&gt; hg38_unionDHS_fc4_50merge_randomized_subset.bed
+done</code></pre>
+<p>The file has information of “chr-start-end-index-signal-strand”<br />
+</p>
+<pre class="bash revision"><code>cat hg38_unionDHS_fc4_50merge_randomized_subset.bed </code></pre>
+<pre><code>## chr16    20611876    20611954    2227871 78  +
+## chr10    2974069 2974119 1566208 50  +
+## chr11    131506532   131506753   1824640 221 +
+## chr12    45704922    45704972    1868964 50  +
+## chr13    52950189    52950239    1995384 50  +
+## chr14    104936349   104936422   2128661 73  +
+## chr15    69980664    69980795    2173509 131 +
+## chr16    30445926    30446327    2237035 401 +
+## chr17    59559909    59560008    2339356 99  +
+## chr18    67140189    67140239    2429103 50  +
+## chr19    13527921    13528013    2455782 92  +
+## chr22    39457864    39458434    2619329 570 +
+## chr20    51272113    51272336    2545593 223 +
+## chr21    42129205    42129255    2588628 50  +
+## chr22    41382512    41382808    2621794 296 +
+## chr3 94026977    94027027    564569  50  +
+## chr4 75765732    75766010    731464  278 +
+## chr5 138964063   138964406   954630  343 +
+## chr6 36418764    36418865    1037431 101 +
+## chr7 154979444   154979494   1307867 50  +
+## chr8 129272185   129272235   1432039 50  +
+## chr9 89836248    89836298    1506977 50  +
+## chrX 7410308 7410358 2636047 50  +
+## chrY 7590460 7590511 2719078 51  +</code></pre>
 </div>
 </div>
 </div>
