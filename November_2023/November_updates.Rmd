@@ -79,9 +79,10 @@ brew install bedtools
 ```
 
 ## step1: find the closest 3mer-GAT to each ChIP peak summit
-In this section, we first use `seqOutBias` to generate 3mer coordinates file, then we use Bedtools `closestbed` to find overlap/closest GAT to each provided peak summit. \
+In this section, we first use `seqOutBias` to generate all 3mer coordinates file, then we use Bedtools `closestbed` to find overlap/closest GAT to each provided peak summit. \
 
 ### Generate the 3mer coordinates file on the reference genome.
+
 **3mer_df**: generating a .txt file where the first column are all 64 3mer, second column are the index, and the third column are the corresponding reversed 3mer's index (indexrc). \
 ```{r engine='R', eval=F, echo=TRUE}
 #define function to output the reverse compliment sequence
@@ -124,7 +125,7 @@ cat /home/FCAM/ssun/Genome/hg38/chr10.fa | head -4000000 > /home/FCAM/ssun/seqou
 ```
 
 **seqOutBias**
-`seqOutBias seqtable` will generate a seqtable file (.tbl) which is a compressed form that stores the mappability information as well as corresponding parameters (read length, k-mer size, and cut-site offsets). \
+`seqOutBias seqtable` will generate a seqtable file (.tbl) which is a compressed form that stores the mappability information (if you provide aligned reads info) as well as corresponding parameters (read length, k-mer size, and cut-site offsets). \
 
 `seqOutBias dump` can extract info from the seqtable file and output plain txt file in a form of “chrom:start-end”. It will also list the input parameters (read-size, kmer-size, etc.) that were used to build the sequence table file. \
 
@@ -147,7 +148,7 @@ The output "chr10_4M.3.3.3.dump.txt" file is 2GB large, a subset of the top 500 
 head -15 head500_chr10_4M.3.3.3.dump.txt
 ```
 
-In this dump.txt file, the first column is chromosome region (of each base position), the second and third columns are index and reversed index. We see many 0s in 2nd and 3rd columns in the above headed file, because these are Ns in the beginning of chromosome genome file. These Ns comes from repetitive DNA sequences such as telomeres and centromeres that is hard for sequencer to recognonize the exact base. \
+In this dump.txt file, the first column is chromosome region (of each base position), the second and third columns are index and reversed index. We see many 0s in 2nd and 3rd columns in the above headed file, because these are Ns in the beginning of chromosome genome file. These Ns come from repetitive DNA sequences such as telomeres and centromeres that is hard for sequencer to recognize. \
 
 In the next step, we use a python script `dump_to_kmer.py` to generate 128 (64 3mer +64 reversed 3mer) .bed files that contain the 3mer coordinates info (chr-start-end-index-inderc-strand-3mersequence). \
 ```{r engine='bash', eval=F, echo=TRUE}
@@ -182,7 +183,11 @@ bedtools getfasta -fi ${genome} -bed ${plus_file}  -fo chr10_4M.3.3.3plus.36_GAT
 bedtools getfasta -fi ${genome} -bed ${minus_file}  -fo chr10_4M.3.3.3minus.14_GAT.fasta
 ```
 
-```{r engine='bash', class.source = "revision", eval=T, echo=TRUE}
+Here I am doing two coherence check: \
+First see if `bedtools getfasta` successfully converting .bed to .fa without losing any information. We use `wc -l` to get total number of lines in each files; \
+We also want to know if the .bed coordinates represents the expected 3mer sequence, we can use `grep` and `wc -l` to get number of lines contains the expected sequence (GAT or ATC) in the .fa file. If coordinates in .bed are accurate, we should have same number of lines containing GAT or ATC in .fa file as the .bed file.\
+
+```{r engine='bash', eval=T, echo=TRUE}
 x=$(wc -l chr10_4M.3.3.3plus.36_GAT.bed | awk '{print $1}')
 y=$(wc -l chr10_4M.3.3.3plus.36_GAT.fasta | awk '{print $1/2}')
 z=$(cat chr10_4M.3.3.3plus.36_GAT.fasta | grep "GAT" --ignore-case | wc -l)
@@ -199,11 +204,12 @@ echo "In chr10_4M.3.3.3minus.14_GAT.fasta file, there are " $z "GAT."
 ```
 
 **convert to bigWig** \
-Since these 3mer coordinates files are one of the input in making composite profile with `bigWig` package, we need to convert them from .bed to .bigWig. We first use `bedtools genomecov -bg` to convert .bed format to .bedGraph, then use UCSC `bedGraphToBigWig` to convert from .bedGraph to .bw. \
+Since these 3mer coordinates files are one of the input in making composite profile with , we need to convert them from .bed to .bigWig. We first use `bedtools genomecov -bg` to convert .bed format to .bedGraph, then use UCSC `bedGraphToBigWig` to convert from .bedGraph to .bw. \
 
 1) plus_GAT & minus_GAT: \
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+view the .bed file content. \
+```{r engine='bash', eval=TRUE, echo=TRUE}
 #GAT
 plus_file=chr10_4M.3.3.3plus.36_GAT.bed
 minus_file=chr10_4M.3.3.3minus.14_GAT.bed
@@ -212,17 +218,16 @@ head -5  ${plus_file}
 echo "minus_GAT (.bed)"
 head -5 ${minus_file}
 ```
+sort the .bed file: \
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
-sizes=/home/FCAM/ssun/Genome_pro/hg38.chrom.sizes
-module load bedtools
-module load ucsc_genome/2012.05.22
-
+```{r engine='bash', eval=F, echo=TRUE}
 sort -k1,1 -k2,2n ${plus_file} > testplus.36_GAT_sorted.bed
 sort -k1,1 -k2,2n ${minus_file} > testminus.14_GAT_sorted.bed
 ```
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+word count and visualize the documents to make sure file are sorted without losing any information. \
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
 x=$(wc -l testplus.36_GAT_sorted.bed | awk '{print $1}')
 echo "The sorted plus_GAT .bed file contains" $x "lines."
 head -5 testplus.36_GAT_sorted.bed
@@ -231,15 +236,20 @@ y=$(wc -l testminus.14_GAT_sorted.bed | awk '{print $1}')
 echo "The sorted minus_GAT .bed file contains" $y "lines."
 head -5  testminus.14_GAT_sorted.bed
 ```
+Use `bedtools genomecov -bg` to convert .bed to .bedGraph. \
 
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+module load ucsc_genome/2012.05.22
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+sizes=/home/FCAM/ssun/Genome_pro/hg38.chrom.sizes
 #bedtools genomecov tool
 bedtools genomecov -bg -i testplus.36_GAT_sorted.bed -g ${sizes} > testplus.36_GAT.bedGraph 
 bedtools genomecov -bg -i testminus.14_GAT_sorted.bed -g ${sizes} > testminus.14_GAT.bedGraph 
 ```
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+The below chunks are doing coherence check to see if `bedtools genomecov` converting from .bed to .bedGraph loses any information. \
+```{r engine='bash', eval=TRUE, echo=TRUE}
 x=$(wc -l testplus.36_GAT.bedGraph | awk '{print $1}')
 y=$(cat testplus.36_GAT.bedGraph | awk '{print $4}' | sort -nr | head -1)
 echo "The plus_GAT .bedGraph file contains" $x "lines; and the max coverage of this bedgraph file is" $y "."
@@ -250,28 +260,27 @@ e=$(cat testminus.14_GAT.bedGraph | awk '{print $4}' | sort -nr | head -1)
 echo "The minus_GAT .bedGraph file contains" $z "lines; and the max coverage of this bedgraph file is" $e "."
 head -5 testminus.14_GAT.bedGraph 
 ```
-<span class="highlighted"> The .bedGraph converted from .bed with `bedtools genomecov` has less genome coordinates entry. This is because the original .bed file contains adjacent regions, and `bedtools genomecov` collapse these regions into a single entry in the BEDGraph file by merging or summarizing the coverage data. See one example below: </span> \
+The .bedGraph converted from .bed with `bedtools genomecov` has less genome coordinates entry. This is because the original .bed file contains adjacent regions, and `bedtools genomecov` collapse these regions into a single entry in the BEDGraph file by merging or summarizing the coverage data. See one example below: \
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 echo "the original .bed has two GAT coordinates next to each other."
 head -3207  testminus.14_GAT_sorted.bed | tail -2
 echo ".bedGraph has one row that spans 6bp." 
 head -3154 testminus.14_GAT.bedGraph | tail -1
 ```
 
-<span class="highlighted"> A coherence check here could be: </span> \
-<span class="highlighted"> word count the original .bed file (3mer coordinates), and confirm that every coordinates entry in that file has 3 bp distance between chromosome start and end: </span> \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+A coherence check here could be:  \
+word count the original .bed file (3mer coordinates), and confirm that every coordinates entry in that file has 3 bp distance between chromosome start and end: \
+```{r engine='bash', eval=TRUE, echo=TRUE}
 wc -l testplus.36_GAT_sorted.bed
 awk '{ if (($3 - $2) == 3) print $0 }' testplus.36_GAT_sorted.bed | wc -l
 
 wc -l testminus.14_GAT_sorted.bed
 awk '{ if (($3 - $2) == 3) print $0 }' testminus.14_GAT_sorted.bed | wc -l
 ```
-
-<span class="highlighted">Then we can run `awk` on .bedGraph file to output all coordinate entry that spans larger than 3bp between chr start and end. </span> \
-<span class="highlighted">We can calculate the sum of these spanned distance, then calculate how many 3mer regions are collapsed together by dividing this sum of distance by 3. </span> \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+Then we can run `awk` on .bedGraph file to output all coordinate entry that spans larger than 3bp between chr start and end.  \
+We can calculate the sum of these spanned distance, then calculate how many 3mer regions are collapsed together by dividing this sum of distance by 3.  \
+```{r engine='bash', eval=TRUE, echo=TRUE}
 plus_collapsed_3mer=$(awk '{ if (($3 - $2) > 3) print $0 }' testplus.36_GAT.bedGraph | awk 'BEGIN{OFS="\t"} {$5=$3-$2; print}' | awk '{sum += $5} END {print sum/3}')
 minus_collapsed_3mer=$(awk '{ if (($3 - $2) > 3) print $0 }' testminus.14_GAT.bedGraph | awk 'BEGIN{OFS="\t"} {$5=$3-$2; print}' | awk '{sum += $5} END {print sum/3}')
 
@@ -287,19 +296,20 @@ echo "In testminus.14_GAT.bedGraph file, " ${minus_collapsed_3mer} "3mer region 
 echo " "
 echo "Adding the two numbers together, we have" $(echo "scale=2 ; $minus_collapsed_3mer + $minus_entry3" | bc) "."
 ```
-<span class="highlighted">These collapsed region won't affect our downstream analysis.</span> \
+<span class="highlighted">These collapsed region won't affect our downstream analysis. Because we are calling closest 3mer to peak summit only using the .bed file.</span>  \
 
-<span class="highlighted">The final step is to convert .bedGraph to .bigWig with `UCSC bedGraphToBigWig` tool.</span> \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+The final step is to convert .bedGraph to .bigWig with `UCSC bedGraphToBigWig` tool. \
+```{r engine='bash', eval=F, echo=TRUE}
 #UCSC bedGraphToBigWig tool
 bedGraphToBigWig testplus.36_GAT.bedGraph ${sizes} testplus.36_GAT.bigWig
 bedGraphToBigWig testminus.14_GAT.bedGraph ${sizes} testminus.14_GAT.bigWig
 ```
 
-A UCSC genome browser trackhub (http://guertinlab.cam.uchc.edu/test_hub/hub.txt) is also created to allow visualizing the 3mer position on genome. \
+A UCSC genome browser trackhub (http://guertinlab.cam.uchc.edu/test_hub/hub.txt) is created to allow visualizing the 3mer position on genome. \
 
-2) plus_ATC & minus_ATC: \
-ATC is the reverse compliment of GAT, which means that plus ATC contain same info as minus GAT and minus ATC contain same info as plus GAT. Thus, this 3mer-ATC coordinate files are good resources in doing coherence check later. We will convert this 3mer coordinate bed to bigWig as well. \
+**2) plus_ATC & minus_ATC:** \
+ATC is the reverse compliment of GAT, which means that plus ATC contain same information as minus GAT; and minus ATC contain same info as plus GAT. \
+Thus, this 3mer-ATC coordinate files are good resources in doing coherence check later. Here we are converting this 3mer coordinate bed to bigWig as well. \
 ```{r engine='bash', eval=F, echo=TRUE}
 #ATC
 plus_file=chr10_4M.3.3.3plus.14_ATC.bed
@@ -320,7 +330,7 @@ bedGraphToBigWig testplus.14_ATC.bedGraph ${sizes} testplus.14_ATC.bigWig
 bedGraphToBigWig testminus.36_ATC.bedGraph ${sizes} testminus.36_ATC.bigWig
 ```
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash',  eval=TRUE, echo=TRUE}
 wc -l chr10_4M.3.3.3plus.14_ATC.bed
 wc -l chr10_4M.3.3.3minus.36_ATC.bed
 echo " "
@@ -331,8 +341,8 @@ wc -l testplus.14_ATC.bedGraph
 wc -l testminus.36_ATC.bedGraph
 ```
 
-<span class="highlighted">Most entry in minus_ATC.bed and plus_GAT.bed are overlapped, however, there are some different entries in both file. See example below:</span> \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+<span class="highlighted">Most entry in plus_GAT.bed and minus_ATC.bed are overlapped/same (they should contain same information); **however**, there are some **different entries** in both file. See example below:</span> \
+```{r engine='bash', eval=TRUE, echo=TRUE}
 head -85 testplus.36_GAT_sorted.bed | tail -6
 wc -l testplus.36_GAT_sorted.bed
 echo ""
@@ -340,7 +350,8 @@ head -85 testminus.36_ATC_sorted.bed | tail -6
 wc -l testminus.36_ATC_sorted.bed
 ```
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+Count and extract different entries from plus_GAT and minus_ATC .bed. \
+```{r engine='bash', eval=TRUE, echo=TRUE}
 awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testminus.36_ATC_sorted.bed testplus.36_GAT_sorted.bed > different_plus.36_GAT.bed
 awk 'NR==FNR {arr[$1,$2,$3]; next} ! (($1,$2,$3) in arr)' testplus.36_GAT_sorted.bed testminus.36_ATC_sorted.bed > different_minus.36_ATC.bed
 wc -l different_plus.36_GAT.bed
@@ -354,22 +365,50 @@ tail -5 different_minus.36_ATC.bed
 
 <span class="highlighted">**Why seqoutbias generate different 3mer coordinates for reverse complimented 3mer??**</span> \
 
+<span class="highlighted">This could due to the nature of how seqOutbias performs its search on the given genome read size. Since ~5% of coordinates are unique in plus_GAT and minus_ATC, this fraction of differences in the two files could affect our downstream analysis when we start to employ whole genome 3mer coordinates.</span> \
+
+<span class="highlighted">In the previous `seqOutbias` process while generating the 3mer coordinates relative to small subset of ref genome (chr10.4M), we have defined a read size of 30. We will try generating 3mer coordinates use <span class="highlighted">read size ==1000</span>, and see if increasing read size can decrease the number of unique 3mer regions.</span> \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+export PATH=$PATH:/home/FCAM/ssun/packages/://home/FCAM/ssun/scripts
+module load genometools/1.5.10
+module load ucsc_genome/2012.05.22
+module load rust
+
+#try a small genome subset (4million raads in chr10)
+genome=/home/FCAM/ssun/seqoutbias/chr10_kmer3/refreads4M/chr10_4M.fa 
+
+seqOutBias seqtable ${genome} --kmer-size=3 --plus-offset=3 --minus-offset=3 --read-size=1000 --out=chr10_4M.3.3.3.1000.tbl
+seqOutBias dump chr10_4M.3.3.3.1000.tbl > chr10_4M.3.3.3.1000.dump.txt
+mkdir seqdump_1000test
+mv chr10_4M.3.3.3.1000.dump.txt seqdump_1000test
+mv all_64_df.txt seqdump_1000test
+cd seqdump_1000test
+
+while read line; do
+ mer=$(echo $line | awk -F" " '{print $1}')
+ idx=$(echo $line | awk -F" " '{print $2}')
+ rcidx=$(echo $line | awk -F" " '{print $3}')
+ echo $mer
+ echo $idx
+ echo $rcidx
+ python /home/FCAM/ssun/scripts/dump_to_kmer.py -i chr10_4M.3.3.3.1000.dump.txt -p $idx -m $rcidx -s $mer
+done <all_64_df.txt
+```
+
+
 ### Prepare the peak summit file
 As a positive control, we want to subset peaks with known GATA3-like de novo motif enriched. \
 
-In previous MCF7 GATA3 ChIP-seq analysis, we identify top enriched motif to be GATA-like. In the second round of exhaustive MEME -MAST analysis, the top enriched GATA-like motif has a unique structure -- 4bp spacing between two GAT sites. \
+In previous MCF7 GATA3 ChIP-seq analysis, we identify top enriched motif to be GATA-like. In the second round of exhaustive MEME -MAST analysis, the top enriched GATA-like motif has a unique structure -- <span class="highlighted">**4bp spacing between a GAT site and a ATC site**</span>. \
 
 ```{r  fig.align = "center", out.width="50%", out.height="50%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 2"}
 library(knitr)
 knitr::include_graphics("./GATA3_motif2.png") 
 ```
 
-We also use `MAST` to find this unique motif's occurrence in ChIP peak. The motif coordinates information is stored in "mast_GATA3_PSWM_in_peaks_round2.bed".  \
+**Input 1** A peak summit file. This file was originally generated with `Macs3` during peak calling step, then processed by removing peaks on contigs and within blacklisted regions, finally we use `slopBed -b 50` to make 50bp window at up/downstream of the summit, respectively. \
 
-Now, we can use `intersectBed` to find peak with this unique motif, and make a peak summit file. \
-`intersectBed -wa` (refer to https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html) reports original entry in A for each overlap. \
-<span class="highlighted">**Input 1** A peak summit file. This file was originally generated with `Macs3` during peak calling step, then processed by removing peaks on contigs and within blacklisted regions, finally we use `slopBed -b 50` to make 50bp window at up/downstream of the summit.</span> \
-```{r engine='bash', class.source = "revision", eval=T, echo=TRUE}
+```{r engine='bash', eval=T, echo=TRUE}
 wc -l GATA_ChIP_summits.bed
 head -5 GATA_ChIP_summits.bed
 echo ""
@@ -380,13 +419,18 @@ wc -l GATA_ChIP_summit_100window.bed
 head -5 GATA_ChIP_summit_100window.bed
 ```
 
-<span class="highlighted">**Input 2**  motif occurence in peak region.</span> \
-```{r engine='bash', class.source = "revision", eval=T, echo=TRUE}
+
+**Input 2**  motif occurence in peak region. \
+
+We have used `MAST` to find this unique motif's occurrence in ChIP peak. The motif coordinates information are stored in "mast_GATA3_PSWM_in_peaks_round2.bed".  \
+```{r engine='bash', eval=T, echo=TRUE}
 wc -l mast_GATA3_PSWM_in_peaks_round2.bed
 head -5 mast_GATA3_PSWM_in_peaks_round2.bed
 ```
+Now, we can use `intersectBed` to find peak with this unique motif, and make a peak summit file. \
+`intersectBed -wa` (refer to https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html) reports original entry in A for each overlap. \
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools
 #cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/de_novo_motif/
 dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/
@@ -396,12 +440,107 @@ motif_cor=mast_GATA3_PSWM_in_peaks_round2.bed
 intersectBed -wa -a ${dir}GATA_ChIP_summit_100window.bed -b ${motif_cor} > with_motif_2_100win.bed 
 ```
 
-<span class="highlighted">This bed file stores peak information of chr, start, end, peak-index, intensity. The peak coordinates have a 100bp window, we will center them to 1bp summit later.</span> \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+This bed file stores peak information of chr, start, end, peak-index, intensity. The peak coordinates have a 100bp window, we will center them to 1bp summit later. \
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
 head with_motif_2_100win.bed 
 ```
 
-<span class="highlighted">**In the above analysis, we choose a arbitrary 100bp window to query for peaks with motif, this is risky because we might lose information if motif exceeds this window. A better way to decide the summit window is: first use `closestBed` to find peak summit (1bp) to the closest motif; then plot the distribution of closest motif distance to summit; we also want to plot the peak intensity. Based on these analysis, we can choose an appropriate window. (do this later)**</span> \
+<span class="highlighted">**In the above analysis, we choose an arbitrary 100bp window to query for peaks with GATA-like motif2, this is risky because we might lose information if motif exceeds this window. A better way to decide the summit window is: first use `closestBed` to find peak summit (1bp) to the closest motif; then plot the distribution of closest motif distance to summit; we also want to plot the peak intensity. Based on these analysis, we can choose an appropriate window. (do this later)**</span> \
+
+Two Inputs: 1) peak summit file (all the peaks); 2) motif2 coordinates file (mast.bed). \
+```{r engine='R', eval=TRUE, echo=F}
+# define functions
+
+#closestbed 
+bedTools.closest <- function(functionstring="/usr/local/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+peak_summit=read.table("GATA_ChIP_summits.bed", header=FALSE)
+motif_coor=read.table("mast_GATA3_PSWM_in_peaks_round2.bed", header=FALSE)
+head(peak_summit)
+head(motif_coor)
+```
+
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+motif.distance=bedTools.closest(bed1 = peak_summit[,1:3], bed2 = motif_coor[,c(1,2,3,6)], opt.string = '-d -t first')
+
+write.table(motif.distance,file= 'motif.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+```
+```{r engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+motif.distance=read.table('motif.distance.bed',header=F, comment.char='')
+colnames(motif.distance)[8]="dis"
+head(motif.distance)
+summary(motif.distance$dis) 
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+ecdfplot(~log(abs(dis), base = 10), 
+         #groups = status, 
+         data = motif.distance,
+         #auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = cex),
+         #col = col.lines,
+         aspect = 1,
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'GATA3 motif Distance from peak summit'),
+         #main ="" ,
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,8),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col = "#2290cf", lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 1.7, lty =2)
+             panel.ecdfplot(...)
+         })
+```
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+densityplot(~ log(abs(dis), base = 10), 
+            data = motif.distance,
+            main = "Probability Density Function (PDF)",
+            xlab = expression('log'[10]~'GATA3 motif Distance from peak summit'), 
+            ylab = "Density")
+
+```
+**plot peak intensity**
+
+... \
 
 ### find the closest 3mer-GAT to peak summit with `closestBed`
 In this section, we use `bedtools closestBed` (refer to: https://bedtools.readthedocs.io/en/latest/content/tools/closest.html) to find the closest GAT to each provided peak summit. \
@@ -483,10 +622,10 @@ bedTools.closest <- function(functionstring="/usr/local/bin/closestBed",bed1,bed
 }
 ```
 
-<span class="highlighted">Parameter `-d` will report the distance from the closest GAT to the peak summit.</span> \
-<span class="highlighted">Parameter `-t last` or `-t first` will only report either the last or the first entry in bed2 file if tied distance occurred.</span> \
-<span class="highlighted">Here we choose to use `-t first` to report the first coordinates when tie occurred.</span> \
-```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+Parameter `-d` will report the distance from the closest GAT to the peak summit. \
+Parameter `-t last` or `-t first` will only report either the last or the first entry in bed2 file if tied distance occurred. \
+Here we choose to use `-t first` to report the first coordinates when tie occurred. \
+```{r engine='R', eval=F, echo=TRUE}
 plus.distance=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
 minus.distance=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
 write.table(plus.distance,file= 'plus.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
@@ -511,17 +650,23 @@ all.distance=read.table('all.distance.bed',header=F, comment.char='')
 head(all.distance)
 ```
 
+**coherence check 1**: the number of the closest minus GAT is comparable to the number of the closest plus GAT. \
 
-<span class="highlighted">**coherence check 1**: the number of the closest minus GAT is comparable to the number of the closest plus GAT.</span> \
-
-```{r engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+```{r engine='R',eval=TRUE, echo=TRUE}
 nrow(all.distance)
 nrow(all.distance[all.distance$V9=="+",])
 nrow(all.distance[all.distance$V9=="-",])
 ```
 
-<span class="highlighted">**coherence check 2**: Since we have use `-t first` to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT.</span> \
-```{r engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
+all.distance.100=bedTools.closest(bed1 = chip.peak.summit.chr10.4M[100,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+nrow(all.distance.100)
+nrow(all.distance.100[all.distance.100$V9=="+", ])
+nrow(all.distance.100[all.distance.100$V9=="-", ])
+```
+
+**coherence check 2**: Since we have use `-t first` to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT. \
+```{r engine='R', eval=TRUE, echo=TRUE}
 nrow(chip.peak.summit.chr10.4M) # there are 580 unique peak (contains motif 2)
 
 
@@ -590,9 +735,9 @@ head(different_rows_df)
 -->
 
 ### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
-<span class="highlighted">Previously, we have made a UCSC genome browser trackhub (http://guertinlab.cam.uchc.edu/test_hub/hub.txt) that has the 3mer coordinates region on ref genome.</span> \
-<span class="highlighted">We will also upload custome tracks of 1) peak summit file; and 2) closestBed defined closest GAT coordinates (plus, minus, all).</span> \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+Previously, we have made a UCSC genome browser trackhub (http://guertinlab.cam.uchc.edu/test_hub/hub.txt) that has the 3mer coordinates region on ref genome. \
+We will also upload custome tracks of 1) peak summit file; and 2) closestBed defined closest GAT coordinates (plus, minus, all). \
+```{r engine='R', eval=TRUE, echo=TRUE}
 #1)peak summit
 write.table(chip.peak.summit.chr10.4M[,1:3],file= 'chip.peak.summit.chr10.4M.bed', quote=F,sep="\t",col.names=F,row.names=F)
 
@@ -602,8 +747,8 @@ write.table(minus.distance[, 4:9],file= 'minus.closest.GAT.bed', quote=F,sep="\t
 write.table(all.distance[, 4:9],file= 'all.closest.GAT.bed', quote=F,sep="\t",col.names=F,row.names=F)
 ```
 
-<span class="highlighted">Add trackline:</span> \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+Add trackline: \
+```{r engine='bash',  eval=TRUE, echo=TRUE}
 awk 'BEGIN {print "browser position chr10:16,000-17,000" 
             print "track type=bed name=\"peak.summit.bed\" description=\"peak.summit_bed\" visibility=full autoScale=on useScore=1 color=0,0,0"
             } {print $0}' chip.peak.summit.chr10.4M.bed > chip.peak.summit.chr10.4M_header.bed
@@ -621,20 +766,20 @@ awk 'BEGIN {print "browser position chr10:16,000-17,000"
             } {print $0}' all.closest.GAT.bed > all.closest.GAT_header.bed
 ```
 
-<span class="highlighted">get peak region where the closest plus GAT and closest minus GAT has the same distance to peak summit defined by `bedtools closestBed`.</span> \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+get peak region where the closest plus GAT and closest minus GAT has the same distance to peak summit defined by `bedtools closestBed`. \
+```{r engine='R',  eval=TRUE, echo=TRUE}
 head(plus.distance[plus.distance$V11 == minus.distance$V11, c('V1', 'V2', 'V3', "V11")])
 ```
-<span class="highlighted">Use peak summit at chr10:71850201-71850202 as an example, plus GAT and minus GAT has same distance =3 reported by `bedtools closestBed`. </span> \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+Use peak summit at chr10:71850201-71850202 as an example, plus GAT and minus GAT has same distance =3 reported by `bedtools closestBed`.  \
+```{r engine='R', eval=TRUE, echo=TRUE}
 minus.distance[minus.distance$V2==71850201,]
 plus.distance[plus.distance$V2==71850201,]
 all.distance[all.distance$V2==71850201,]
 ```
 
-<span class="highlighted">Regardless of strand information from the 3mer coordinates, if the 3mer coordinates is upstream of peak summit, `closestBed` will use the peak summit coordinates END to subtract the 3mer coordinates END; if the 3mer coordinates is downstream of peak summit, `closestBed` will use the 3mer coordinates START to subtract the peak summit coordinates START.</span> \
+Regardless of strand information from the 3mer coordinates, if the 3mer coordinates is upstream of peak summit, `closestBed` will use the peak summit coordinates END to subtract the 3mer coordinates END; if the 3mer coordinates is downstream of peak summit, `closestBed` will use the 3mer coordinates START to subtract the peak summit coordinates START. \
 
-<span class="highlighted">See UCSC genome browser shots here:</span> \
+See UCSC genome browser shots here: \
 ```{r  fig.align = "center", out.width="100%", out.height="100%", echo=F, fig.align = "center", fig.cap="closest upstream GAT to peak summit"}
 library(knitr)
 knitr::include_graphics("./upstream_closest.png") 
@@ -647,12 +792,8 @@ knitr::include_graphics("./downstream_closest.png")
 
 
 
-# [below need revise]
-
-GAT anchor-n-GAT (+/-) \
-GAT anchor-n-ATC (+/-) \
-
 ## step2: making composite profile
+
 In this section, we use the `bigWig` package to make a composite profile of GAT distribution relative to the anchored GAT (that is closest to peak summit). \
 **Input**: \
 **1)** two .bigWig files that contain the 3mer coordinates info. \
@@ -675,6 +816,8 @@ query.bigWig(bwMinus_GAT, 'chr10', 1000000, 1000800)
 
 ### set the closest 3mer-GAT as anchor point (bed6) then query bigWig
 
+#### GAT anchor-n-GAT (+/-) 
+
 The bed6 file should define the following columns: "chrom - start - end - name - score - strand". `bigWig` functions don’t use name and score. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 bed6=all.distance[, 4:9] # all.distance -- this is keeping both tied minus/plus GAT
@@ -688,7 +831,7 @@ nrow(bed6_plus)
 nrow(bed6_minus)
 ```
 
-**PLUS** \
+**Anchor at PLUS closest GAT** \ \
 Take the closest **plus** 3mer-GAT as anchor point and define the new window using the anchor point. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 #bigWig input
@@ -727,29 +870,8 @@ plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
                   ylab = 'observed 3mer (GAT)', type = "h")
 ```
 
-coherence check (reverse the input minus and plus bigWig) \
 
-```{r engine='R', eval=TRUE, echo=TRUE}
-Anchor.matrix = bed6.step.bpQuery.bigWig(bwMinus_GAT, bwPlus_GAT, bedAnchorwindow,
-                 step = 1, as.matrix=TRUE, follow.strand=TRUE)
-
-#head(Anchor.matrix)
-colnames(Anchor.matrix) = seq(-25, 25, by = 1)
-rownames(Anchor.matrix) = bedAnchorwindow[,5]
-#filter out rows with no signal
-Anchor.matrix=Anchor.matrix[rowSums(Anchor.matrix) != 0,]
-#head(Anchor.matrix)
-
-plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
-                  xlab = '3mer (GAT) position',
-                  ylab = 'observed 3mer (GAT)', type = "h")
-
-plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
-                  xlab = '3mer (GAT) position',
-                  ylab = 'observed 3mer (GAT)', type = "l")
-```
-
-**MINUS** \
+**Anchor at MINUS closest GAT** \
 Take the closest **minus** 3mer-GAT as anchor point and define the new window using the anchor point. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 #bigWig input
@@ -785,25 +907,9 @@ plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
 ```
 
 
-coherence check (reverse the input minus and plus bigWig) \
 
-```{r engine='R', eval=TRUE, echo=TRUE}
-Anchor.matrix = bed6.step.bpQuery.bigWig(bwMinus_GAT, bwPlus_GAT, bedAnchorwindow,
-                 step = 1, as.matrix=TRUE, follow.strand=TRUE)
 
-#head(Anchor.matrix)
-colnames(Anchor.matrix) = seq(-25, 25, by = 1)
-rownames(Anchor.matrix) = bedAnchorwindow[,5]
-#filter out rows with no signal
-Anchor.matrix=Anchor.matrix[rowSums(Anchor.matrix) != 0,]
-#head(Anchor.matrix)
-
-plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
-                  xlab = '3mer (GAT) position',
-                  ylab = 'observed 3mer (GAT)', type = "h")
-```
-
-**BOTH** \
+**Anchor at BOTH MINUS and PLUS closest GAT** \ \
 Take the closest **both plus/minus** 3mer-GAT as anchor point and define the new window using the anchor point. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 #bigWig input
@@ -841,28 +947,11 @@ plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
 ```
 
 
-coherence check (reverse the input minus and plus bigWig) \
 
-```{r engine='R', eval=TRUE, echo=TRUE}
-Anchor.matrix = bed6.step.bpQuery.bigWig(bwMinus_GAT, bwPlus_GAT, bedAnchorwindow,
-                 step = 1, as.matrix=TRUE, follow.strand=TRUE)
+#### GAT anchor-n-ATC (+/-) \
 
-#head(Anchor.matrix)
-colnames(Anchor.matrix) = seq(-25, 25, by = 1)
-rownames(Anchor.matrix) = bedAnchorwindow[,5]
-#filter out rows with no signal
-Anchor.matrix=Anchor.matrix[rowSums(Anchor.matrix) != 0,]
-#head(Anchor.matrix)
-
-plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
-                  xlab = '3mer (GAT) position',
-                  ylab = 'observed 3mer (GAT)', type = "h")
-```
-
-### coherence check with 3mer-ATC coordinates
-
-**PLUS**
-```{r engine='R', eval=TRUE, echo=TRUE}
+<span class="highlighted">**Anchor at closest PLUS GAT**, and query the plus ATC.</span> \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 #bwPlus_ATC=load.bigWig('testplus.14_ATC.bw')
 #bwMinus_ATC=load.bigWig('testminus.36_ATC.bw')
 bedAnchor=bed6_plus
@@ -872,7 +961,7 @@ bedAnchorwindow=center.bed(bedAnchor, upstreamWindow = 25, downstreamWindow = 25
 #head(bedAnchor)
 #head(bedAnchorwindow)
 
-Anchor.matrix = bed6.step.bpQuery.bigWig(bwMinus_ATC, bwPlus_ATC, bedAnchorwindow,
+Anchor.matrix = bed6.step.bpQuery.bigWig(bwPlus_ATC, bwMinus_ATC, bedAnchorwindow,
                  step = 1, as.matrix=TRUE, follow.strand=TRUE)
 
 #head(Anchor.matrix)
@@ -886,8 +975,9 @@ plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
                   xlab = '3mer (ATC) position',
                   ylab = 'observed 3mer (ATC)', type = "h")
 ```
-**MINUS**
-```{r engine='R', eval=TRUE, echo=TRUE}
+
+<span class="highlighted">**Anchor at closest MINUS GAT**, and query the **minus ATC**.</span> \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 #bwPlus_ATC=load.bigWig('testplus.14_ATC.bw')
 #bwMinus_ATC=load.bigWig('testminus.36_ATC.bw')
 bedAnchor=bed6_minus
@@ -897,7 +987,34 @@ bedAnchorwindow=center.bed(bedAnchor, upstreamWindow = 25, downstreamWindow = 25
 #head(bedAnchor)
 #head(bedAnchorwindow)
 
-Anchor.matrix = bed6.step.bpQuery.bigWig(bwMinus_ATC, bwPlus_ATC, bedAnchorwindow,
+Anchor.matrix = bed6.step.bpQuery.bigWig(bwPlus_ATC, bwMinus_ATC, bedAnchorwindow,
+                 step = 1, as.matrix=TRUE, follow.strand=TRUE)
+
+#head(Anchor.matrix)
+colnames(Anchor.matrix) = seq(-25, 25, by = 1)
+rownames(Anchor.matrix) = bedAnchorwindow[,5]
+#filter out rows with no signal
+Anchor.matrix=Anchor.matrix[rowSums(Anchor.matrix) != 0,]
+#head(Anchor.matrix)
+
+plot(seq(-25, 25, by = 1),colSums(Anchor.matrix),
+                  xlab = '3mer (ATC) position',
+                  ylab = 'observed 3mer (ATC)', type = "h")
+```
+
+<span class="highlighted">**Anchor at closest MINUS GAT**, and query both **plus/minus ATC**.</span> \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+#bwPlus_ATC=load.bigWig('testplus.14_ATC.bw')
+#bwMinus_ATC=load.bigWig('testminus.36_ATC.bw')
+bedAnchor=bed6
+
+## define new window
+bedAnchorwindow=center.bed(bedAnchor, upstreamWindow = 25, downstreamWindow = 25) #from anchor point, add 25bp downstream and upstream
+#head(bedAnchor)
+#head(bedAnchorwindow)
+
+Anchor.matrix = bed6.step.bpQuery.bigWig(bwPlus_ATC, bwMinus_ATC, bedAnchorwindow,
                  step = 1, as.matrix=TRUE, follow.strand=TRUE)
 
 #head(Anchor.matrix)
