@@ -435,24 +435,34 @@ Find the closest GAT to peak summit regardless of GAT strandedness \
 ```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
 all.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
 write.table(all.distance,file= 'all.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+save.image('231204_GATA3_ChIP_clsestbed.Rdata') 
 ```
 
-<!--
+
 In this "all.distance' data frame, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
 all.distance=read.table('all.distance.bed',header=F, comment.char='')
 head(all.distance)
 ```
 
+
+
 **coherence check 1**: the number of the closest minus GAT is comparable to the number of the closest plus GAT. \
 
-```{r engine='R',eval=TRUE, echo=TRUE}
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
 nrow(all.distance)
 nrow(all.distance[all.distance$V9=="+",])
 nrow(all.distance[all.distance$V9=="-",])
 ```
 
--->
+**coherence check 2**: Since we have use `-t first` to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT. \
+```{r engine='R', eval=TRUE, echo=TRUE}
+nrow(chip.peak.summit) # there are 8571 unique peak 
+nrow(all.distance)  
+```
+
+
+### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
 
 ### making composite profile
 
