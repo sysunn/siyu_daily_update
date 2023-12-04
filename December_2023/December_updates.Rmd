@@ -104,7 +104,7 @@ Our question now became, is MEME/STREME limited in finding binding sequences pat
 
 **peaks without 8 GATA3-motif** (that found by MEME/STREME) \
 
-````{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
 wc -l without_motifs_123456_78.bed
 head -5 without_motifs_123456_78.bed
 ```
@@ -483,7 +483,7 @@ For each chromosome, it uses `grep` to filter the peaks by chromosome name. \
 Then, it uses `shuf` to randomly select a specified number of peaks (`-n <desired_number_of_peaks>`) from each chromosome and appends them to randomized_subset.bed. \
 
 Here I am using this command to randomly pick single region from each chromosome to make this randomized_subset.bed. \
-````{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
 awk '{print $1}' hg38_unionDHS_fc4_50merge.bed | sort -u | while read chrom; do
     grep "^$chrom" hg38_unionDHS_fc4_50merge.bed | shuf -n 1 >> hg38_unionDHS_fc4_50merge_randomized_subset.bed
 done
