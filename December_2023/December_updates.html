@@ -711,9 +711,18 @@ function toggle_visibility(id1) {
 <li><a href="#install-required-packages" id="toc-install-required-packages"><span class="toc-section-number">1</span> Install required packages</a></li>
 <li><a href="#dec-1st" id="toc-dec-1st"><span class="toc-section-number">2</span> Dec 1st</a>
 <ul>
-<li><a href="#goal" id="toc-goal"><span class="toc-section-number">2.1</span> Goal:</a>
+<li><a href="#goal" id="toc-goal"><span class="toc-section-number">2.1</span> Goal:</a></li>
+<li><a href="#gata3-chip-peak-without-memestreme-found-gata3-motif" id="toc-gata3-chip-peak-without-memestreme-found-gata3-motif"><span class="toc-section-number">2.2</span> GATA3 ChIP peak without MEME/STREME found GATA3 motif</a>
 <ul>
-<li><a href="#a-unioin-peak-set-as-control" id="toc-a-unioin-peak-set-as-control"><span class="toc-section-number">2.1.1</span> A unioin peak set as control</a></li>
+<li><a href="#find-closest-gat-to-peak" id="toc-find-closest-gat-to-peak"><span class="toc-section-number">2.2.1</span> Find closest GAT to peak</a></li>
+<li><a href="#visualize-3mer-gat-distribution-relative-to-the-defined-closest-gat-on-genome-browser" id="toc-visualize-3mer-gat-distribution-relative-to-the-defined-closest-gat-on-genome-browser"><span class="toc-section-number">2.2.2</span> visualize 3mer-GAT distribution relative to the defined “closest GAT” on Genome Browser</a></li>
+<li><a href="#making-composite-profile" id="toc-making-composite-profile"><span class="toc-section-number">2.2.3</span> making composite profile</a></li>
+</ul></li>
+<li><a href="#a-unioin-peak-set-as-control" id="toc-a-unioin-peak-set-as-control"><span class="toc-section-number">2.3</span> A unioin peak set as control</a>
+<ul>
+<li><a href="#section" id="toc-section"><span class="toc-section-number">2.3.1</span> </a></li>
+<li><a href="#second-closest-gat" id="toc-second-closest-gat"><span class="toc-section-number">2.3.2</span> second closest GAT?</a></li>
+<li><a href="#loop-thourgh-all-bigwigs" id="toc-loop-thourgh-all-bigwigs"><span class="toc-section-number">2.3.3</span> loop thourgh all bigWigs</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -763,14 +772,14 @@ color:blue;
 <pre><code>## also installing the dependencies &#39;Rcpp&#39;, &#39;utf8&#39;, &#39;askpass&#39;, &#39;credentials&#39;, &#39;openssl&#39;, &#39;sys&#39;, &#39;zip&#39;, &#39;gitcreds&#39;, &#39;httr2&#39;, &#39;ini&#39;, &#39;httpuv&#39;, &#39;xtable&#39;, &#39;sourcetools&#39;, &#39;later&#39;, &#39;promises&#39;, &#39;fansi&#39;, &#39;systemfonts&#39;, &#39;textshaping&#39;, &#39;pillar&#39;, &#39;pkgconfig&#39;, &#39;diffobj&#39;, &#39;rematch2&#39;, &#39;clipr&#39;, &#39;crayon&#39;, &#39;curl&#39;, &#39;gert&#39;, &#39;gh&#39;, &#39;purrr&#39;, &#39;rprojroot&#39;, &#39;rstudioapi&#39;, &#39;whisker&#39;, &#39;shiny&#39;, &#39;callr&#39;, &#39;prettyunits&#39;, &#39;processx&#39;, &#39;downlit&#39;, &#39;httr&#39;, &#39;ragg&#39;, &#39;tibble&#39;, &#39;xml2&#39;, &#39;htmlwidgets&#39;, &#39;xopen&#39;, &#39;brew&#39;, &#39;commonmark&#39;, &#39;cpp11&#39;, &#39;brio&#39;, &#39;praise&#39;, &#39;ps&#39;, &#39;waldo&#39;, &#39;usethis&#39;, &#39;desc&#39;, &#39;miniUI&#39;, &#39;pkgbuild&#39;, &#39;pkgdown&#39;, &#39;pkgload&#39;, &#39;profvis&#39;, &#39;rcmdcheck&#39;, &#39;remotes&#39;, &#39;roxygen2&#39;, &#39;rversions&#39;, &#39;sessioninfo&#39;, &#39;testthat&#39;, &#39;urlchecker&#39;, &#39;withr&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpgUo5vc/downloaded_packages</code></pre>
+##  /tmp/RtmpEyUbM1/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>library(devtools)</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre class="r watch-out"><code>devtools::install_github(&#39;andrelmartins/bigWig&#39;,
               subdir=&#39;bigWig&#39;)</code></pre>
 <pre><code>## Downloading GitHub repo andrelmartins/bigWig@HEAD</code></pre>
 <pre><code>## ── R CMD build ─────────────────────────────────────────────────────────────────
-## * checking for file ‘/private/tmp/RtmpgUo5vc/remotes1650533ed613/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
+## * checking for file ‘/private/tmp/RtmpEyUbM1/remotes103e2b0bd5e7/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
 ## * preparing ‘bigWig’:
 ## * checking DESCRIPTION meta-information ... OK
 ## * cleaning src
@@ -783,7 +792,13 @@ install.packages(&quot;latticeExtra&quot;)</code></pre>
 <pre><code>## also installing the dependencies &#39;deldir&#39;, &#39;RcppEigen&#39;, &#39;png&#39;, &#39;jpeg&#39;, &#39;RColorBrewer&#39;, &#39;interp&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpgUo5vc/downloaded_packages</code></pre>
+##  /tmp/RtmpEyUbM1/downloaded_packages</code></pre>
+<pre class="r watch-out"><code>install.packages(&quot;DESeq2&quot;)</code></pre>
+<pre><code>## Warning: package &#39;DESeq2&#39; is not available for this version of R
+## 
+## A version of this package for your version of R might be available elsewhere,
+## see the ideas at
+## https://cran.r-project.org/doc/manuals/r-patched/R-admin.html#Installing-packages</code></pre>
 <p>Install <code>bedtools</code><br />
 </p>
 <pre class="bash watch-out"><code>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
@@ -801,9 +816,424 @@ brew install bedtools</code></pre>
 </p>
 <p><span class="highlighted"><strong>2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?</strong></span><br />
 </p>
-<div id="a-unioin-peak-set-as-control" class="section level3" number="2.1.1">
-<h3><span class="header-section-number">2.1.1</span> A unioin peak set as control</h3>
-<p>To answer the first big question, we need to prepare a control peak set. Here we are using the ENCODE union DNase HS sites:<br />
+</div>
+<div id="gata3-chip-peak-without-memestreme-found-gata3-motif" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> GATA3 ChIP peak without MEME/STREME found GATA3 motif</h2>
+<p><strong>Background</strong>: we have GATA3 peak that have exaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~45% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have 25% peaks that MEME/STREME cannot find a GATA3-like motif.<br />
+</p>
+<p>Generally, we would expect to find binding sequences within the peak region, so that the ChIPed transcription factor (in our case, GATA3) can bind to. This is even more true for peaks with relatively high intensity.<br />
+</p>
+<p>Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs?<br />
+</p>
+<p><strong>peaks without 8 GATA3-motif</strong> (that found by MEME/STREME)<br />
+</p>
+<pre class="bash revision"><code>wc -l without_motifs_123456_78.bed
+head -5 without_motifs_123456_78.bed</code></pre>
+<p><strong>Peak Intensity</strong><br />
+In the above file, the last column is the peak intensity reported by MACS3.<br />
+Notice that a peak with high MACS3-intensity is not necessaryly a high peak. There are two things we need to consider regarding peak intensities. The first is <strong>peak region</strong>; the second is <strong>dynamic range</strong>. Imaging a peak that is very intense but within a narrow range, the other peak is not so intense but can span its signals across a very long distance. We need to consider this region differences while calling any peak to be intense or not.<br />
+</p>
+<p>First use <code>Sam Flag 0x3</code>(reads paired and mapped in proper pair) to calculate the <strong>read depth</strong> for each GATA library.<br />
+</p>
+<pre class="bash revision"><code># calculate the size factors 
+module load samtools/1.12
+
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+for i in GATA
+do
+  echo $i
+  &gt; ${i}_header.txt
+  &gt; ${i}_reads.txt
+  for j in ${dir}MCF7_dTAGGATA522*_${i}_*.sorted.bam
+  do
+    echo $j
+    name=$(echo $j | awk -F $dir &#39;{print $2}&#39; | awk -F&quot;.sorted.bam&quot; &#39;{print $1}&#39;)
+    echo $name | paste ${i}_header.txt - &gt; ${i}_tmp.txt 
+    mv ${i}_tmp.txt ${i}_header.txt
+    reads=`samtools view -c -f 0x3 $j` #count the reads paired and mapped in proper pair
+    echo $reads | paste ${i}_reads.txt - &gt; ${i}_tmp.txt 
+    mv ${i}_tmp.txt ${i}_reads.txt
+  done  
+  cat ${i}_header.txt ${i}_reads.txt &gt; ${i}_tmp.txt
+  mv ${i}_tmp.txt ${i}_reads.txt
+  rm ${i}_header.txt
+done </code></pre>
+<pre class="bash revision"><code>cat GATA_reads.txt</code></pre>
+<pre><code>##  MCF7_dTAGGATA522_GATA_CC_rep1   MCF7_dTAGGATA522_GATA_CC_rep2   MCF7_dTAGGATA522_GATA_CC_rep3   MCF7_dTAGGATA522_GATA_CE_rep1   MCF7_dTAGGATA522_GATA_CE_rep2   MCF7_dTAGGATA522_GATA_CE_rep3   MCF7_dTAGGATA522_GATA_dE_rep1   MCF7_dTAGGATA522_GATA_dE_rep2   MCF7_dTAGGATA522_GATA_dE_rep3
+##  33948616    32585396    34475586    51112588    147834968   136838760   34136142    136271358   85665512</code></pre>
+<p><strong>Get peak intensity within 400bp window with<code>Deseq2</code></strong> for peaks without MEME/STREME found motifs 12345678.<br />
+</p>
+<p>load peaks without motif 12345678.<br />
+</p>
+<pre class="r revision"><code>a =  read.table(&#39;without_motifs_123456_78.bed&#39;, sep = &quot;\t&quot;, header=FALSE) 
+nrow(a)</code></pre>
+<pre><code>## [1] 42853</code></pre>
+<pre class="r revision"><code>head(a)</code></pre>
+<pre><code>##     V1      V2      V3                V4      V5
+## 1 chr1  827330  827431 GATA_ChIP_peak_28 9.30478
+## 2 chr1  916719  916820 GATA_ChIP_peak_31 7.79887
+## 3 chr1  924803  924904 GATA_ChIP_peak_33 3.78065
+## 4 chr1  966603  966704 GATA_ChIP_peak_34 3.78065
+## 5 chr1  999458  999559 GATA_ChIP_peak_36 2.11515
+## 6 chr1 1000486 1000587 GATA_ChIP_peak_37 5.52004</code></pre>
+<p>Increase the width to 400bp window.<br />
+</p>
+<pre class="r revision"><code>library(bigWig)
+peak.region.400win=center.bed(a, upstreamWindow = 200, downstreamWindow = 200)
+nrow(peak.region.400win)</code></pre>
+<pre><code>## [1] 42853</code></pre>
+<pre class="r revision"><code>head(peak.region.400win)</code></pre>
+<pre><code>##     V1      V2      V3                V4      V5
+## 1 chr1  827180  827581 GATA_ChIP_peak_28 9.30478
+## 2 chr1  916569  916970 GATA_ChIP_peak_31 7.79887
+## 3 chr1  924653  925054 GATA_ChIP_peak_33 3.78065
+## 4 chr1  966453  966854 GATA_ChIP_peak_34 3.78065
+## 5 chr1  999308  999709 GATA_ChIP_peak_36 2.11515
+## 6 chr1 1000336 1000737 GATA_ChIP_peak_37 5.52004</code></pre>
+<p>In the below chunk, we define a function to get raw counts from each sample/reps. This function uses <code>bed.region.bpQuery.bigWig</code> from <code>bigWig</code> package. It requires a bed region file that has the peak region that we want to analysis (right now we want to analyse peak without motifs 12345678); it also requires non-normalized, raw bigWig files (generated directly from <code>seqOutbias</code>) to allow <code>bed.region.bpQuery.bigWig</code> to query the counts information from. The output from this function will be: rows will be the same as bed file, columns will be each bigWig library, entries will be the raw counts.<br />
+</p>
+<pre class="r revision"><code>#functions on github
+source(&#39;https://raw.githubusercontent.com/mjg54/znf143_pro_seq_analysis/master/docs/ZNF143_functions.R&#39;)
+
+#function
+get.counts.interval &lt;- function(df, path.to.bigWig, file.prefix = &#39;H&#39;) {
+    vec.names = c()
+    inten.df=data.frame(matrix(ncol = 0, nrow = nrow(df)))
+    
+    for (mod.bigWig in Sys.glob(file.path(path.to.bigWig, paste(file.prefix, &quot;*.bigWig&quot;, sep =&#39;&#39;)))) {
+        factor.name = strsplit(strsplit(mod.bigWig, &quot;/&quot;)[[1]][length(strsplit(mod.bigWig, &quot;/&quot;)[[1]])], &#39;.bigWig&#39;)[[1]][1]
+        print(factor.name)
+        vec.names = c(vec.names, factor.name)
+        loaded.bw = load.bigWig(mod.bigWig)
+        print(mod.bigWig)
+        mod.inten = bed.region.bpQuery.bigWig(loaded.bw, df, abs.value = TRUE)
+        inten.df = cbind(inten.df, mod.inten)
+    }
+    colnames(inten.df) = vec.names
+    r.names = paste(df[,1], &#39;:&#39;, df[,2], &#39;-&#39;, df[,3], sep=&#39;&#39;)
+    row.names(inten.df) = r.names
+    return(inten.df)
+}</code></pre>
+<p>We will first use the defined function to query raw counts from each non-normalized bigWig files of GATA ChIP-seq use peak region info loaded before (data frame “peak.region.400win”).<br />
+</p>
+<pre class="r watch-out"><code>library(bigWig)
+#non-normalized counts
+GATA.counts.df= get.counts.interval(peak.region.400win, &quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/bigWigs/Seqoutbias_bw&quot;,&quot;MCF&quot;) #25 libraries
+#nrow(peak.region.400win)
+#[1] 42853
+#nrow(GATA.counts.df)
+#[1] 42853
+#head(GATA.counts.df)
+#colnames(GATA.counts.df)
+
+
+GATA.analysis.regions=GATA.counts.df[,grepl(&quot;_GATA_&quot;,colnames(GATA.counts.df))] # get non-normalized counts from &quot;GATA&quot; libraries
+#colnames(GATA.analysis.regions)
+#[1] &quot;MCF7_dTAGGATA522_GATA_CC_rep1&quot; &quot;MCF7_dTAGGATA522_GATA_CC_rep2&quot;
+#[3] &quot;MCF7_dTAGGATA522_GATA_CC_rep3&quot; &quot;MCF7_dTAGGATA522_GATA_CE_rep1&quot;
+#[5] &quot;MCF7_dTAGGATA522_GATA_CE_rep2&quot; &quot;MCF7_dTAGGATA522_GATA_CE_rep3&quot;
+#[7] &quot;MCF7_dTAGGATA522_GATA_dE_rep1&quot; &quot;MCF7_dTAGGATA522_GATA_dE_rep2&quot;
+#[9] &quot;MCF7_dTAGGATA522_GATA_dE_rep3&quot;
+identical(rownames(GATA.analysis.regions),rownames(GATA.counts.df)) # [1] TRUE</code></pre>
+<p>Then we use the <code>DESeq2</code> package to make a counts matrix (<code>DESeqDataSetFromMatrix</code>) and calculate size factors for each library (<code>estimateSizeFactorsForMatrix</code>) use the previously calculated read depth for each library (“GATA_reads.txt”); We use this size factor to normalize the counts (<code>sizeFactors</code>).<br />
+Then we use <code>rowMeans</code> to average the normalized counts for the three GATA_CC reps, and save it as “peak.intensities”; this normalized counts now can be use to determine if a peak is intense or not.<br />
+</p>
+<pre class="r watch-out"><code>library(DESeq2)
+sample.conditions = factor(sapply(strsplit(colnames(GATA.analysis.regions), &#39;_rep&#39;), &#39;[&#39;, 1))
+#[1] MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC
+#[4] MCF7_dTAGGATA522_GATA_CE MCF7_dTAGGATA522_GATA_CE MCF7_dTAGGATA522_GATA_CE
+#[7] MCF7_dTAGGATA522_GATA_dE MCF7_dTAGGATA522_GATA_dE MCF7_dTAGGATA522_GATA_dE
+#3 Levels: MCF7_dTAGGATA522_GATA_CC ... MCF7_dTAGGATA522_GATA_dE
+deseq.counts.table = DESeqDataSetFromMatrix(countData = GATA.analysis.regions, # DESeqDataSet needs countData to be non-negative integers; non-normalized counts are integer, normalized signals has decimals.
+                colData = as.data.frame(sample.conditions),
+                design = ~ sample.conditions)
+
+
+GATA.SF &lt;- read.table(&quot;GATA_reads.txt&quot;, sep = &#39;\t&#39;, header = TRUE)[,-1] # GATA size factors from read depth
+#MCF7_dTAGGATA522_GATA_CC_rep1 MCF7_dTAGGATA522_GATA_CC_rep2
+#                      33948616                      32585396
+#  MCF7_dTAGGATA522_GATA_CC_rep3 MCF7_dTAGGATA522_GATA_CE_rep1
+#                      34475586                      51112588
+#  MCF7_dTAGGATA522_GATA_CE_rep2 MCF7_dTAGGATA522_GATA_CE_rep3
+#                     147834968                     136838760
+#  MCF7_dTAGGATA522_GATA_dE_rep1 MCF7_dTAGGATA522_GATA_dE_rep2
+#                      34136142                     136271358
+#  MCF7_dTAGGATA522_GATA_dE_rep3
+#                      85665512
+GATA.size.factors = estimateSizeFactorsForMatrix(GATA.SF) # read depth transformed to size factor 
+#MCF7_dTAGGATA522_GATA_CC_rep1 MCF7_dTAGGATA522_GATA_CC_rep2 
+#                    0.5385594                     0.5169334 
+#MCF7_dTAGGATA522_GATA_CC_rep3 MCF7_dTAGGATA522_GATA_CE_rep1 
+#                    0.5469193                     0.8108480 
+#MCF7_dTAGGATA522_GATA_CE_rep2 MCF7_dTAGGATA522_GATA_CE_rep3 
+#                    2.3452478                     2.1708044 
+#MCF7_dTAGGATA522_GATA_dE_rep1 MCF7_dTAGGATA522_GATA_dE_rep2 
+#                    0.5415343                     2.1618032 
+#MCF7_dTAGGATA522_GATA_dE_rep3 
+#                    1.3589941
+
+                                       
+sizeFactors(deseq.counts.table) &lt;- GATA.size.factors # assign to each column of the count matrix (deseq.counts.table) the size factor to bring each column to a common scale
+dds &lt;- DESeq(deseq.counts.table)
+normalized.counts.GATA3 = counts(dds, normalized=TRUE)
+head(normalized.counts.GATA3)
+peak.intensities = rowMeans(normalized.counts.GATA3[,1:3]) # we want to get the average read counts for CC groups
+names(peak.intensities) = rownames(normalized.counts.GATA3)
+save.image(&#39;231204_GATA3_ChIP_deseq.Rdata&#39;) </code></pre>
+<p><strong>Subset peaks without the 8 GATA3-motifs, in top20% intensity quantile</strong><br />
+</p>
+<p>We can load the saved Rdata and look at each dataframe.<br />
+</p>
+<pre class="r revision"><code>load(&#39;231204_GATA3_ChIP_deseq.Rdata&#39;)</code></pre>
+<pre><code>## Warning: namespace &#39;DESeq2&#39; is not available and has been replaced
+## by .GlobalEnv when processing object &#39;dds&#39;</code></pre>
+<p>Read this .bed file into R, and use <code>DeSeq2</code> to count read size and parse into different quantile</p>
+<pre class="r revision"><code>head(peak.intensities)</code></pre>
+<pre><code>##   chr1:827180-827581   chr1:916569-916970   chr1:924653-925054 
+##             45.32469             36.69993             30.44684 
+##   chr1:966453-966854   chr1:999308-999709 chr1:1000336-1000737 
+##             26.87016             21.22455             24.34263</code></pre>
+<pre class="r revision"><code>quantile(peak.intensities, probs = seq(.25, 1.00, by = .25))</code></pre>
+<pre><code>##        25%        50%        75%       100% 
+##   34.17937   46.28023   73.13197 6270.21535</code></pre>
+<pre class="r revision"><code>quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))</code></pre>
+<pre><code>##        20%        40%        60%        80%       100% 
+##   31.95111   40.73172   53.53158   85.95961 6270.21535</code></pre>
+<p>Parse peaks into 5 intensity quantile by 20%.<br />
+</p>
+<pre class="r revision"><code>chr = sapply(strsplit(names(peak.intensities), &quot;:&quot;), &quot;[&quot;, 1)
+rnge = sapply(strsplit(names(peak.intensities), &quot;:&quot;), &quot;[&quot;, 2)
+start = as.numeric(sapply(strsplit(rnge, &quot;-&quot;), &quot;[&quot;, 1)) + 200
+end = as.numeric(sapply(strsplit(rnge, &quot;-&quot;), &quot;[&quot;, 2)) - 200
+
+quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))</code></pre>
+<pre><code>##        20%        40%        60%        80%       100% 
+##   31.95111   40.73172   53.53158   85.95961 6270.21535</code></pre>
+<pre class="r revision"><code># 1bp summit quantile file
+j =0 
+q=seq(.20, 1.00, by = .20)
+count=0
+for (i in quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))){
+count = count +1
+
+write.table(file = paste0(&#39;quantile&#39;, as.character(q[count]), &#39;_summits.bed&#39;), data.frame(chr[peak.intensities &gt; j &amp; peak.intensities &lt;= i], start[peak.intensities &gt; j &amp; peak.intensities &lt;= i], end[peak.intensities &gt; j &amp; peak.intensities &lt;= i], peak.intensities[peak.intensities &gt; j &amp; peak.intensities &lt;= i]), sep = &#39;\t&#39;, quote=FALSE, col.names=FALSE, row.names=FALSE )
+j = i
+}</code></pre>
+<pre class="bash revision"><code>for i in *quantile*.bed
+do
+wc -l $i
+done</code></pre>
+<pre><code>##     8334 quantile0.2_summits.bed
+##     8570 quantile0.4_summits.bed
+##     8570 quantile0.6_summits.bed
+##     8570 quantile0.8_summits.bed
+##     8571 quantile1_summits.bed</code></pre>
+<p>Now working on the top 20% quantile peaks:<br />
+</p>
+<pre class="bash revision"><code>wc -l quantile1_summits.bed
+head quantile1_summits.bed</code></pre>
+<div id="find-closest-gat-to-peak" class="section level3" number="2.2.1">
+<h3><span class="header-section-number">2.2.1</span> Find closest GAT to peak</h3>
+<p>In this section, we use <code>bedtools closestBed</code> (refer to: <a href="https://bedtools.readthedocs.io/en/latest/content/tools/closest.html" class="uri">https://bedtools.readthedocs.io/en/latest/content/tools/closest.html</a>) to find the closest GAT to each provided peak summit.<br />
+Input:<br />
+<code>-a</code> is the sorted peak summit file (centered 1bp);<br />
+<code>-b</code> is the sorted, and concatenated GAT coordinates file (both plus and minus);<br />
+</p>
+<p><strong>Input1 -a</strong>: peak: quantile1_summits.bed : peaks without motif 12345678, top20% intensity<br />
+</p>
+<pre class="bash revision"><code>dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/overrep_3mer/peak_without_12345678/
+head ${dir}quantile1_summits.bed</code></pre>
+<p><strong>Input2 -b</strong>: GAT coordinates on full hg38 use read size==30<br />
+</p>
+<pre class="bash revision"><code>dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/
+head ${dir}hg38.3.3.3minus.14_GAT.bed  
+head ${dir}hg38.3.3.3plus.36_GAT.bed
+
+head ${dir}hg38.3.3.3minus.36_ATC.bed  
+head ${dir}hg38.3.3.3plus.14_ATC.bed</code></pre>
+<p>These files are very large, here are the headed version:<br />
+</p>
+<pre class="bash revision"><code>head head2000_hg38.3.3.3plus.36_GAT.bed
+echo &quot;&quot;
+head head2000_hg38.3.3.3minus.14_GAT.bed
+echo &quot;&quot;
+head head2000_hg38.3.3.3plus.14_ATC.bed
+echo &quot;&quot;
+head head2000_hg38.3.3.3minus.36_ATC.bed
+</code></pre>
+<pre><code>## chr1 11521   11524   36  36  +   GAT
+## chr1 12188   12191   36  36  +   GAT
+## chr1 13274   13277   36  36  +   GAT
+## chr1 13314   13317   36  36  +   GAT
+## chr1 15171   15174   36  36  +   GAT
+## chr1 15196   15199   36  36  +   GAT
+## chr1 15883   15886   36  36  +   GAT
+## chr1 16274   16277   36  36  +   GAT
+## chr1 33401   33404   36  36  +   GAT
+## chr1 39192   39195   36  36  +   GAT
+## 
+## chr1 11145   11148   14  14  -   GAT
+## chr1 11160   11163   14  14  -   GAT
+## chr1 11576   11579   14  14  -   GAT
+## chr1 13315   13318   14  14  -   GAT
+## chr1 19797   19800   14  14  -   GAT
+## chr1 27023   27026   14  14  -   GAT
+## chr1 28605   28608   14  14  -   GAT
+## chr1 30925   30928   14  14  -   GAT
+## chr1 47300   47303   14  14  -   GAT
+## chr1 47306   47309   14  14  -   GAT
+## 
+## chr1 13315   13318   14  14  +   ATC
+## chr1 15172   15175   14  14  +   ATC
+## chr1 19751   19754   14  14  +   ATC
+## chr1 30902   30905   14  14  +   ATC
+## chr1 38888   38891   14  14  +   ATC
+## chr1 39150   39153   14  14  +   ATC
+## chr1 39215   39218   14  14  +   ATC
+## chr1 41955   41958   14  14  +   ATC
+## chr1 47094   47097   14  14  +   ATC
+## chr1 47641   47644   14  14  +   ATC
+## 
+## chr1 11159   11162   36  36  -   ATC
+## chr1 11462   11465   36  36  -   ATC
+## chr1 11569   11572   36  36  -   ATC
+## chr1 13314   13317   36  36  -   ATC
+## chr1 27022   27025   36  36  -   ATC
+## chr1 40266   40269   36  36  -   ATC
+## chr1 41985   41988   36  36  -   ATC
+## chr1 47682   47685   36  36  -   ATC
+## chr1 47780   47783   36  36  -   ATC
+## chr1 49295   49298   36  36  -   ATC</code></pre>
+<p>we will concatanate the plus and minus 3mer file together.<br />
+</p>
+<pre class="bash revision"><code>cat ${dir}hg38.3.3.3minus.14_GAT.bed ${dir}hg38.3.3.3plus.36_GAT.bed &gt; hg38.3.3.3.30_plus_minus_GAT.bed
+cat ${dir}hg38.3.3.3minus.36_ATC.bed ${dir}hg38.3.3.3plus.14_ATC.bed &gt; hg38.3.3.3.30_plus_minus_ATC.bed
+
+wc -l ${dir}hg38.3.3.3minus.14_GAT.bed #32096009
+wc -l ${dir}hg38.3.3.3plus.36_GAT.bed #32147038
+wc -l hg38.3.3.3.30_plus_minus_GAT.bed #64243047
+echo &quot;&quot;
+wc -l ${dir}hg38.3.3.3minus.36_ATC.bed #32081985
+wc -l ${dir}hg38.3.3.3plus.14_ATC.bed #32035017
+wc -l hg38.3.3.3.30_plus_minus_ATC.bed #64117002</code></pre>
+<p><strong>load files</strong><br />
+</p>
+<p>load files contains selected ChIP peak summit info<br />
+</p>
+<pre class="r revision"><code>chip.peak.summit=read.table(&quot;quantile1_summits.bed&quot;, header=FALSE)
+nrow(chip.peak.summit)</code></pre>
+<pre><code>## [1] 8571</code></pre>
+<pre class="r revision"><code>head(chip.peak.summit)</code></pre>
+<pre><code>##     V1      V2      V3       V4
+## 1 chr1 1859436 1859437 130.4515
+## 2 chr1 5598187 5598188 271.9312
+## 3 chr1 6820084 6820085 155.2577
+## 4 chr1 7326547 7326548 156.4164
+## 5 chr1 8017660 8017661 676.3136
+## 6 chr1 8020178 8020179 324.9555</code></pre>
+<p>load files contains 3mer coordinates info<br />
+</p>
+<pre class="r revision"><code>#concatenate the plus and minus file together
+all.GAT.file=read.table(file = &quot;hg38.3.3.3.30_plus_minus_GAT.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+head(all.GAT.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11145 11148 14 14  - GAT
+#2 chr1 11160 11163 14 14  - GAT
+#3 chr1 11576 11579 14 14  - GAT
+#4 chr1 13315 13318 14 14  - GAT
+#5 chr1 19797 19800 14 14  - GAT
+#6 chr1 27023 27026 14 14  - GAT
+tail(all.GAT.file)
+#                             V1    V2    V3 V4 V5 V6  V7
+#64243042 chrY_KI270740v1_random 33028 33031 36 36  + GAT
+#64243043 chrY_KI270740v1_random 35533 35536 36 36  + GAT
+#64243044 chrY_KI270740v1_random 35543 35546 36 36  + GAT
+#64243045 chrY_KI270740v1_random 35912 35915 36 36  + GAT
+#64243046 chrY_KI270740v1_random 36540 36543 36 36  + GAT
+#64243047 chrY_KI270740v1_random 36913 36916 36 36  + GAT</code></pre>
+<p><strong>bedtools closestBed</strong><br />
+The below function will sort input bed1 and bed2 first, then run <code>bedtools closestBed</code> between bed1 and bed2.<br />
+</p>
+<pre class="r revision"><code># define function 
+bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/bedtools2/bin/closestBed&quot;,bed1,bed2,opt.string=&quot;&quot;) {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= &#39;a.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  write.table(bed2,file= &#39;b.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;a.file.bed&#39;, &#39;&gt; a.file.sorted.bed&#39;)
+  cat(command1,&quot;\n&quot;) #sort -k1,1 -k2,2n a.file.bed &gt; a.file.sorted.bed
+  try(system(command1))
+  command2=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;b.file.bed&#39;, &#39;&gt; b.file.sorted.bed&#39;)
+  cat(command2,&quot;\n&quot;)
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,&quot;-a&quot;,&#39;a.file.sorted.bed&#39;,&quot;-b&quot;,&#39;b.file.sorted.bed&#39;,&quot;&gt;&quot;,&#39;out.file.bed&#39;,sep=&quot; &quot;)
+  cat(command,&quot;\n&quot;)
+  try(system(command))
+  
+  res=read.table(&#39;out.file.bed&#39;,header=F, comment.char=&#39;&#39;)
+  
+  # remove intermediate files
+  command3=paste(&#39;rm&#39;, &#39;a.file.bed&#39;, &#39;b.file.bed&#39;, &#39;a.file.sorted.bed&#39;, &#39;b.file.sorted.bed&#39;, &#39;out.file.bed&#39;)
+  cat(command3,&quot;\n&quot;)
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), &#39;dis&#39; )
+  return(res)
+}</code></pre>
+<p>Parameter <code>-d</code> will report the distance from the closest GAT to the peak summit.<br />
+Parameter <code>-t last</code> or <code>-t first</code> will only report either the last or the first entry in bed2 file if tied distance occurred.<br />
+Here we choose to use <code>-t first</code> to report the first coordinates when tie occurred.<br />
+</p>
+<p>Find the closest GAT to peak summit regardless of GAT strandedness<br />
+</p>
+<pre class="r revision"><code>all.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = &#39;-d -t first&#39;)
+write.table(all.distance,file= &#39;all.distance.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+save.image(&#39;231204_GATA3_ChIP_clsestbed.Rdata&#39;) </code></pre>
+<p>In this “all.distance’ data frame, V1 to V3 are peak summit coordinates, V4 to V9 are <code>closestBed</code> reported <strong>closest motif</strong> to each peak summit. The last column (V11) is the distance from closest motif to peak summit.<br />
+</p>
+<pre class="r revision"><code>all.distance=read.table(&#39;all.distance.bed&#39;,header=F, comment.char=&#39;&#39;)
+head(all.distance)</code></pre>
+<pre><code>##     V1      V2      V3   V4      V5      V6 V7 V8 V9 V10 V11
+## 1 chr1 1859436 1859437 chr1 1859432 1859435 14 14  - GAT   2
+## 2 chr1 5598187 5598188 chr1 5598164 5598167 36 36  + GAT  21
+## 3 chr1 6820084 6820085 chr1 6820085 6820088 36 36  + GAT   1
+## 4 chr1 7326547 7326548 chr1 7326559 7326562 36 36  + GAT  12
+## 5 chr1 8017660 8017661 chr1 8017663 8017666 36 36  + GAT   3
+## 6 chr1 8020178 8020179 chr1 8020170 8020173 14 14  - GAT   6</code></pre>
+<p><strong>coherence check 1</strong>: the number of the closest minus GAT is comparable to the number of the closest plus GAT.<br />
+</p>
+<pre class="r revision"><code>nrow(all.distance)</code></pre>
+<pre><code>## [1] 8571</code></pre>
+<pre class="r revision"><code>nrow(all.distance[all.distance$V9==&quot;+&quot;,])</code></pre>
+<pre><code>## [1] 4277</code></pre>
+<pre class="r revision"><code>nrow(all.distance[all.distance$V9==&quot;-&quot;,])</code></pre>
+<pre><code>## [1] 4294</code></pre>
+<p><strong>coherence check 2</strong>: Since we have use <code>-t first</code> to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT.<br />
+</p>
+<pre class="r watch-out"><code>nrow(chip.peak.summit) # there are 8571 unique peak </code></pre>
+<pre><code>## [1] 8571</code></pre>
+<pre class="r watch-out"><code>nrow(all.distance)  </code></pre>
+<pre><code>## [1] 8571</code></pre>
+</div>
+<div id="visualize-3mer-gat-distribution-relative-to-the-defined-closest-gat-on-genome-browser" class="section level3" number="2.2.2">
+<h3><span class="header-section-number">2.2.2</span> visualize 3mer-GAT distribution relative to the defined “closest GAT” on Genome Browser</h3>
+</div>
+<div id="making-composite-profile" class="section level3" number="2.2.3">
+<h3><span class="header-section-number">2.2.3</span> making composite profile</h3>
+</div>
+</div>
+<div id="a-unioin-peak-set-as-control" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> A unioin peak set as control</h2>
+<p>To answer the first big question, we also need to prepare a control peak set. We want to know the 3mer distribution of GAT/ATC in this random peak set, and compare it with our GATA3 ChIP peaks.<br />
+</p>
+<p>Here we are using the ENCODE union DNase HS sites:<br />
 Reference: Amaral, M. L., Erikson, G. A., &amp; Shokhirev, M. N. (2018). BART: bioinformatics array research tool. BMC bioinformatics, 19(1), 1-6.<br />
 </p>
 <p>The full .bed file contains 2723010 regulatory regions. The below command uses a combination of <code>awk</code>, <code>sort</code>, and <code>shuf</code> in Linux to:<br />
@@ -812,7 +1242,7 @@ Iterates through each chromosome using a while loop.<br />
 For each chromosome, it uses <code>grep</code> to filter the peaks by chromosome name.<br />
 Then, it uses <code>shuf</code> to randomly select a specified number of peaks (<code>-n &lt;desired_number_of_peaks&gt;</code>) from each chromosome and appends them to randomized_subset.bed.<br />
 </p>
-<p>Here I am using this command to ramdomly pick single region from each chromosome to make this randomized_subset.bed.<br />
+<p>Here I am using this command to randomly pick single region from each chromosome to make this randomized_subset.bed.<br />
 </p>
 <pre class="bash revision"><code>awk &#39;{print $1}&#39; hg38_unionDHS_fc4_50merge.bed | sort -u | while read chrom; do
     grep &quot;^$chrom&quot; hg38_unionDHS_fc4_50merge.bed | shuf -n 1 &gt;&gt; hg38_unionDHS_fc4_50merge_randomized_subset.bed
@@ -844,6 +1274,16 @@ done</code></pre>
 ## chr9 89836248    89836298    1506977 50  +
 ## chrX 7410308 7410358 2636047 50  +
 ## chrY 7590460 7590511 2719078 51  +</code></pre>
+<div id="section" class="section level3" number="2.3.1">
+<h3><span class="header-section-number">2.3.1</span> </h3>
+</div>
+<div id="second-closest-gat" class="section level3" number="2.3.2">
+<h3><span class="header-section-number">2.3.2</span> second closest GAT?</h3>
+</div>
+<div id="loop-thourgh-all-bigwigs" class="section level3" number="2.3.3">
+<h3><span class="header-section-number">2.3.3</span> loop thourgh all bigWigs</h3>
+<p>sys.glob()<br />
+</p>
 </div>
 </div>
 </div>
