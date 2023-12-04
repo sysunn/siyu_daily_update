@@ -868,7 +868,7 @@ library(knitr)
 knitr::include_graphics("./downstream_closest.png") 
 ```
 
-It turns out, in our usage of `closestBed`, it do not consider strandedness, only consider upstream or downstream information during its distance calculation: \
+It turns out, in our usage of `closestBed`, it does not consider strandedness, only consider upstream or downstream information during its distance calculation: \
 
 If the 3mer coordinates is <span class="highlighted2">**upstream**</span> of peak summit, `closestBed` will use the peak summit coordinates <span class="highlighted2">END</span> to subtract the 3mer coordinates <span class="highlighted2">END</span>; \
 If the 3mer coordinates is <span class="highlighted2">**downstream**</span> of peak summit, `closestBed` will use the 3mer coordinates <span class="highlighted2">START</span> to subtract the peak summit coordinates <span class="highlighted2">START</span>; \
