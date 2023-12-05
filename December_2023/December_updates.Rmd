@@ -83,35 +83,34 @@ brew install bedtools
 
 ## Goal: 
 
-<span class="highlighted">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT----ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. --This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span> \
+<span class="highlighted2">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT----ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. --This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span> \
 
-<span class="highlighted">With this analysis pipeline in hand, the real question we want to ask is:</span> \
+<span class="highlighted2">With this analysis pipeline in hand, the real question we want to ask is:</span> \
 
-<span class="highlighted">**1) Is our GATA3 ChIP-seq library has predominant enrichment of such 3mer-3mer (GAT-GAT or GAT-ATC) structure compared to any other library that are not ChIPed by GATA3?**</span> \
+<span class="highlighted2">**1) Is our GATA3 ChIP-seq library has predominant enrichment of such 3mer-3mer (GAT-GAT or GAT-ATC) structure compared to any other library that are not ChIPed by GATA3?**</span> \
 
-<span class="highlighted">**2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?**</span> \
+<span class="highlighted2">**2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?**</span> \
 
 
 
 ## GATA3 ChIP peak without MEME/STREME found GATA3 motif
 
-**Background**: we have GATA3 peak that have exaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~45% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have 25% peaks that MEME/STREME cannot find a GATA3-like motif. \
+**Background**: we have GATA3 peak that have exhaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~40% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have ~20% peaks that MEME/STREME cannot find a GATA3-like motif. \
 
 Generally, we would expect to find binding sequences within the peak region, so that the ChIPed transcription factor (in our case, GATA3) can bind to. This is even more true for peaks with relatively high intensity. \
 
 Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs? \
 
 
-**peaks without 8 GATA3-motif** (that found by MEME/STREME) \
+**peaks without 9 GATA3-motif** (that found by MEME/STREME) \
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
-wc -l without_motifs_123456_78.bed
-head -5 without_motifs_123456_78.bed
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l without_motifs_123456_789.bed
+head -5 without_motifs_123456_789.bed
 ```
-
 **Peak Intensity** \
 In the above file, the last column is the peak intensity reported by MACS3. \
-Notice that a peak with high MACS3-intensity is not necessaryly a high peak. There are two things we need to consider regarding peak intensities. The first is **peak region**; the second is **dynamic range**. Imaging a peak that is very intense but within a narrow range, the other peak is not so intense but can span its signals across a very long distance. We need to consider this region differences while calling any peak to be intense or not. \
+Notice that a peak with high MACS3-intensity is not necessarily a intense peak. There are two things we need to consider regarding peak intensities. The first is **peak region**; the second is **dynamic range**. Imaging a peak that is very intense but within a narrow range, the other peak is not so intense but can span its signals across a very long distance. We need to consider this region differences while calling any peak to be intense or not. \
 
 First use `Sam Flag 0x3`(reads paired and mapped in proper pair) to calculate the **read depth** for each GATA library. \
 ```{r, engine='bash', class.source = "revision",eval=F, echo=TRUE}
@@ -143,11 +142,29 @@ done
 ```{r, engine='bash', class.source = "revision",eval=TRUE, echo=TRUE}
 cat GATA_reads.txt
 ```
+**bargraph** \
+```{r, engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+library(lattice)
+df=as.data.frame(t(read.table("GATA_reads.txt", header=F)))
+colnames(df)=c("library", "aligned_reads")
+df$libraey=as.factor(df$library)
+df$aligned_reads=as.numeric((df$aligned_reads))
+
+barchart(aligned_reads ~ library, 
+         data = df,
+         col = "skyblue",
+         scales = list(x = list(rot = 45)),
+         xlab = "GATA3 ChIP library", 
+         ylab = "concordantly aligned reads")
+```
+
+This bar graph represents the read depth in each GATA3 ChIP-seq library. In the downstream analysis, we will need to use `DESeq2` to normalize the counts in each library with **size factor** to account for this **read depth difference**. \ 
+
 **Get peak intensity within 400bp window with`Deseq2`** for peaks without MEME/STREME found motifs 12345678. \
 
 load peaks without motif 12345678. \
 ```{r, engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
-a =  read.table('without_motifs_123456_78.bed', sep = "\t", header=FALSE) 
+a =  read.table('without_motifs_123456_789.bed', sep = "\t", header=FALSE) 
 nrow(a)
 head(a)
 ```
@@ -160,7 +177,7 @@ head(peak.region.400win)
 ```
 
 
-In the below chunk, we define a function to get raw counts from each sample/reps. This function uses `bed.region.bpQuery.bigWig` from `bigWig` package. It requires a bed region file that has the peak region that we want to analysis (right now we want to analyse peak without motifs 12345678); it also requires non-normalized, raw bigWig files (generated directly from `seqOutbias`) to allow `bed.region.bpQuery.bigWig` to query the counts information from. The output from this function will be: rows will be the same as bed file, columns will be each bigWig library, entries will be the raw counts. \
+In the below chunk, we define a function to get raw counts from each sample/reps. This function uses `bed.region.bpQuery.bigWig` from `bigWig` package. It requires a bed region file that has the peak region that we want to analysis (right now we want to analyse peak without motifs 123456789); it also requires non-normalized, raw bigWig files (generated directly from `seqOutbias`) to allow `bed.region.bpQuery.bigWig` to query the counts information from. The output from this function will be: rows will be the same as bed file, columns will be each bigWig library, entries will be the raw counts. \
 
 ```{r, engine='R', class.source = "revision",eval=F, echo=TRUE}
 #functions on github
@@ -188,14 +205,14 @@ get.counts.interval <- function(df, path.to.bigWig, file.prefix = 'H') {
 ```
 
 We will first use the defined function to query raw counts from each non-normalized bigWig files of GATA ChIP-seq use peak region info loaded before (data frame "peak.region.400win"). \
-```{r, engine='R', eval=F, echo=TRUE}
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
 library(bigWig)
 #non-normalized counts
 GATA.counts.df= get.counts.interval(peak.region.400win, "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/bigWigs/Seqoutbias_bw","MCF") #25 libraries
 #nrow(peak.region.400win)
-#[1] 42853
+#[1] 38980
 #nrow(GATA.counts.df)
-#[1] 42853
+#[1] 38980
 #head(GATA.counts.df)
 #colnames(GATA.counts.df)
 
@@ -213,7 +230,7 @@ identical(rownames(GATA.analysis.regions),rownames(GATA.counts.df)) # [1] TRUE
 Then we use the `DESeq2` package to make a counts matrix (`DESeqDataSetFromMatrix`) and calculate size factors for each library (`estimateSizeFactorsForMatrix`) use the previously calculated read depth for each library ("GATA_reads.txt"); We use this size factor to normalize the counts (`sizeFactors`). \
 Then we use `rowMeans` to average the normalized counts for the three GATA_CC reps, and save it as "peak.intensities"; this normalized counts now can be use to determine if a peak is intense or not. \
 
-```{r, engine='R', eval=F, echo=TRUE}
+```{r, engine='R', class.source = "revision",eval=F, echo=TRUE}
 library(DESeq2)
 sample.conditions = factor(sapply(strsplit(colnames(GATA.analysis.regions), '_rep'), '[', 1))
 #[1] MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC
@@ -256,14 +273,14 @@ normalized.counts.GATA3 = counts(dds, normalized=TRUE)
 head(normalized.counts.GATA3)
 peak.intensities = rowMeans(normalized.counts.GATA3[,1:3]) # we want to get the average read counts for CC groups
 names(peak.intensities) = rownames(normalized.counts.GATA3)
-save.image('231204_GATA3_ChIP_deseq.Rdata') 
+save.image('231205_GATA3_ChIP_deseq.Rdata') 
 ```
 
 **Subset peaks without the 8 GATA3-motifs, in top20% intensity quantile** \
 
 We can load the saved Rdata and look at each dataframe. \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
-load('231204_GATA3_ChIP_deseq.Rdata')
+```{r engine='R', class.source = "revision", class.source = "revision", eval=TRUE, echo=TRUE}
+load('231205_GATA3_ChIP_deseq.Rdata')
 ```
 
 Read this .bed file into R, and use `DeSeq2` to count read size and parse into different quantile
@@ -272,6 +289,25 @@ head(peak.intensities)
 quantile(peak.intensities, probs = seq(.25, 1.00, by = .25))
 quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))
 ```
+**violin plot** \
+
+This violin plot is showing the distribution of peak intensity (log10). \
+
+```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+log10quantiles <- quantile(log(abs(peak.intensities), base = 10), probs = seq(.20, 1.00, by = .20))
+bwplot(log(abs(peak.intensities), base = 10) ~ factor("1"), 
+       main = "Violin-Like Plot",
+       panel = function(x, ...) {
+         panel.violin(x, ...)
+         panel.abline(h = log10quantiles, col = "red", lty = 2)
+       },
+       xlab = "", ylab = "log10 normalized Intensity"
+)
+```
+This violin plot represents the distribution and probability density of **(log10) normalized peak intensity** (for peak without motif 1~9). Each red dotted line indicates the quantile cutoff of 20%, which can help us to visualize the peak intensity distribution **across different quantile**. \ 
+
+
 Parse peaks into 5 intensity quantile by 20%. \
 ```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 chr = sapply(strsplit(names(peak.intensities), ":"), "[", 1)
@@ -318,7 +354,7 @@ Input: \
 **Input1 -a**: peak: quantile1_summits.bed : peaks without motif 12345678, top20% intensity \
 
 ```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
-dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/overrep_3mer/peak_without_12345678/
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/overrep_3mer/peak_without_123456789/
 head ${dir}quantile1_summits.bed
 ```
 
@@ -387,6 +423,9 @@ tail(all.GAT.file)
 #64243045 chrY_KI270740v1_random 35912 35915 36 36  + GAT
 #64243046 chrY_KI270740v1_random 36540 36543 36 36  + GAT
 #64243047 chrY_KI270740v1_random 36913 36916 36 36  + GAT
+
+nrow(all.GAT.file)
+#[1] 64243047
 ```
 
 **bedtools closestBed** \
@@ -435,7 +474,7 @@ Find the closest GAT to peak summit regardless of GAT strandedness \
 ```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
 all.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
 write.table(all.distance,file= 'all.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
-save.image('231204_GATA3_ChIP_clsestbed.Rdata') 
+save.image('231205_GATA3_ChIP_clsestbed.Rdata') 
 ```
 
 
@@ -456,7 +495,7 @@ nrow(all.distance[all.distance$V9=="-",])
 ```
 
 **coherence check 2**: Since we have use `-t first` to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT. \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 nrow(chip.peak.summit) # there are 8571 unique peak 
 nrow(all.distance)  
 ```
@@ -466,9 +505,6 @@ nrow(all.distance)
 
 ### making composite profile
 
-
-
-
 ## A unioin peak set as control
 
 To answer the first big question, we also need to prepare a control peak set. We want to know the 3mer distribution of GAT/ATC in this random peak set, and compare it with our GATA3 ChIP peaks. \
@@ -476,11 +512,13 @@ To answer the first big question, we also need to prepare a control peak set. We
 Here we are using the ENCODE union DNase HS sites: \
 Reference: Amaral, M. L., Erikson, G. A., & Shokhirev, M. N. (2018). BART: bioinformatics array research tool. BMC bioinformatics, 19(1), 1-6. \
 
+<!--
 The full .bed file contains 2723010 regulatory regions. The below command uses a combination of `awk`, `sort`, and `shuf` in Linux to:  \
 Extracts unique chromosome names from the first column ($1) of input_regions.bed. \
 Iterates through each chromosome using a while loop. \
 For each chromosome, it uses `grep` to filter the peaks by chromosome name. \
 Then, it uses `shuf` to randomly select a specified number of peaks (`-n <desired_number_of_peaks>`) from each chromosome and appends them to randomized_subset.bed. \
+
 
 Here I am using this command to randomly pick single region from each chromosome to make this randomized_subset.bed. \
 ```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
@@ -490,15 +528,239 @@ done
 ```
 
 The file has information of "chr-start-end-index-signal-strand" \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
 cat hg38_unionDHS_fc4_50merge_randomized_subset.bed 
+```
+-->
+
+**remove GATA3 motifs with `MAST`** \
+
+The full .bed file contains 2723010 regulatory regions. To make this file a proper control for our peak set, we use `MAST` to remove GATA3-like motif 123456789 from these regulatory regions (use same p-value stringency). \
+
+We have 9 motifs that found by MEME/STREME software. \
+
+```{r engine='bash', class.source = "revision", eval=T, echo=TRUE}
+ls GATA3_MEME_STREME_motifs/
+#cat GATA3_MEME_STREME_motifs/meme_1.txt
+```
+First convert regulatory region file from .bed to .fasta. \
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+fastaFromBed -fi $genome -bed hg38_unionDHS_fc4_50merge.bed -fo hg38_unionDHS_fc4_50merge.fasta
+```
+
+MEME (`mast` uses default p-value: 0.0001) \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+#round1
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_1.txt hg38_unionDHS_fc4_50merge.fasta > mast_GATA3_PSWM_in_unionDHS_round1.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round1.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round1.bed #34324
+intersectBed -v -a hg38_unionDHS_fc4_50merge.bed -b mast_GATA3_PSWM_in_unionDHS_round1.bed > unionDHS_without_motifs_1.bed
+wc -l unionDHS_without_motifs_1.bed #2688686
+
+#round2
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_1.bed -fo unionDHS_without_motifs_1.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_2.txt unionDHS_without_motifs_1.fasta > mast_GATA3_PSWM_in_unionDHS_round2.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round2.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round2.bed #38803
+intersectBed -v -a unionDHS_without_motifs_1.bed -b mast_GATA3_PSWM_in_unionDHS_round2.bed > unionDHS_without_motifs_12.bed
+wc -l unionDHS_without_motifs_12.bed #2649883
+
+#round3
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_12.bed -fo unionDHS_without_motifs_12.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_3.txt unionDHS_without_motifs_12.fasta > mast_GATA3_PSWM_in_unionDHS_round3.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round3.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round3.bed #35361
+intersectBed -v -a unionDHS_without_motifs_12.bed -b mast_GATA3_PSWM_in_unionDHS_round3.bed > unionDHS_without_motifs_123.bed
+wc -l unionDHS_without_motifs_123.bed #2614522
+
+#round4
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_123.bed -fo unionDHS_without_motifs_123.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/AGATNDWNAGATARN_meme.txt_meme_4.txt unionDHS_without_motifs_123.fasta > mast_GATA3_PSWM_in_unionDHS_round4.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round4.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round4.bed #40994
+intersectBed -v -a unionDHS_without_motifs_123.bed -b mast_GATA3_PSWM_in_unionDHS_round4.bed > unionDHS_without_motifs_1234.bed
+wc -l unionDHS_without_motifs_1234.bed #2573528
+
+#round5
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_1234.bed -fo unionDHS_without_motifs_1234.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/BTTATCWGATB_meme_5.txt_meme.txt unionDHS_without_motifs_1234.fasta > mast_GATA3_PSWM_in_unionDHS_round5.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round5.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round5.bed #29331
+intersectBed -v -a unionDHS_without_motifs_1234.bed -b mast_GATA3_PSWM_in_unionDHS_round5.bed > unionDHS_without_motifs_12345.bed
+wc -l unionDHS_without_motifs_12345.bed #2544197
+
+
+#round6
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_12345.bed -fo unionDHS_without_motifs_12345.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/WGATBDHRVAGATAA_meme.txt_meme_6.txt unionDHS_without_motifs_12345.fasta > mast_GATA3_PSWM_in_unionDHS_round6.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round6.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round6.bed #42590 
+intersectBed -v -a unionDHS_without_motifs_12345.bed -b mast_GATA3_PSWM_in_unionDHS_round6.bed > unionDHS_without_motifs_123456.bed 
+wc -l unionDHS_without_motifs_123456.bed #2501607
+```
+
+STREME (`mast` uses p-value of 0.0005) \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#round7
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_123456.bed -fo unionDHS_without_motifs_123456.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATAAM_streme.txt unionDHS_without_motifs_123456.fasta > mast_GATA3_PSWM_in_unionDHS_round7.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round7.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round7.bed #163724
+intersectBed -v -a unionDHS_without_motifs_123456.bed -b mast_GATA3_PSWM_in_unionDHS_round7.bed > unionDHS_without_motifs_123456_7.bed
+wc -l unionDHS_without_motifs_123456_7.bed #2337883
+
+
+#round8
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_123456_7.bed -fo unionDHS_without_motifs_123456_7.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/TGATAA_streme.txt unionDHS_without_motifs_123456_7.fasta > mast_GATA3_PSWM_in_unionDHS_round8.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round8.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round8.bed #101810
+intersectBed -v -a unionDHS_without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_unionDHS_round8.bed > unionDHS_without_motifs_123456_78.bed 
+wc -l unionDHS_without_motifs_123456_78.bed  #2236073
+
+#round9
+fastaFromBed -fi $genome -bed unionDHS_without_motifs_123456_78.bed -fo unionDHS_without_motifs_123456_78.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATDNHATCT_streme.txt unionDHS_without_motifs_123456_78.fasta > mast_GATA3_PSWM_in_unionDHS_round9.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_unionDHS_round9.txt
+wc -l mast_GATA3_PSWM_in_unionDHS_round9.bed #61162
+intersectBed -v -a unionDHS_without_motifs_123456_78.bed -b mast_GATA3_PSWM_in_unionDHS_round9.bed > unionDHS_without_motifs_123456_789.bed
+wc -l unionDHS_without_motifs_123456_789.bed #2174911
+```
+
+**Randomly subset the union regulatory region** \
+After the removal of the 9 GATA3 motifs with `mast`, the unionDHS peak set now remains 2174911 regions (originally 2723010, removed ~20% regions). \
+
+Here I am using `shuf` to randomly select 7800 regulatory region to match with the GATA peak subset (quantile1: 7796 peaks) I am going to compare with. \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+shuf -n 7800 unionDHS_without_motifs_123456_789.bed > random_7800_unionDHS_without_motifs_123456_789.bed 
+```
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l random_7800_unionDHS_without_motifs_123456_789.bed  
+head random_7800_unionDHS_without_motifs_123456_789.bed  
+```
+
+Read the file in and use the center as regulatory region summit: \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(bigWig)
+chip.peak=read.table("random_7800_unionDHS_without_motifs_123456_789.bed", header=FALSE)
+nrow(chip.peak)
+head(chip.peak)
+
+chip.peak.summit=center.bed(chip.peak, upstreamWindow=0, downstreamWindow=0)
+nrow(chip.peak.summit)
+head(chip.peak.summit)
+```
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+ctrl.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+write.table(ctrl.distance,file= 'ctrl.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+save.image('231205_GATA3_ChIP_clsestbed2.Rdata') 
+```
+
+In this "all.distance' data frame, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
+head(ctrl.distance)
+nrow(ctrl.distance)
+nrow(ctrl.distance[ctrl.distance$V9=="+",])
+nrow(ctrl.distance[ctrl.distance$V9=="-",])
+```
+
+### making cdf plot
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+head(all.distance)
+head(ctrl.distance)
+
+nrow(all.distance)
+nrow(ctrl.distance)
+```
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+df.chip = cbind(all.distance[,c(1:3, 11)], "GATA3_peak")
+df.ctrl = cbind(ctrl.distance[,c(1:3, 11)], "ctrl")
+colnames(df.chip) = c(colnames(all.distance)[1:3], "dis", "status")
+colnames(df.ctrl) = c(colnames(ctrl.distance)[1:3], "dis", "status")
+head(df.chip)
+head(df.ctrl)
+```
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+df.all = rbind(df.chip, df.ctrl)
+df.all$status = factor(df.all$status, levels = c("GATA3_peak", "ctrl"))
+head(df.all)
+nrow(df.all)
+```
+**plot CDF** \
+
+The CDF plot is plotting "how far away a given peak summit (either from GATA ChIP peak set, or from the control regulatory regions) can find a 3mer GAT". \
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col =  c("#ce228e", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,3.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 1.8, lty =2)
+             panel.ecdfplot(...)
+         })
+    
 ```
 
 
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+ecdfplot(~dis, groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col =  c("#ce228e", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = '3mer-GAT Distance (bp) from peak summit',
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,100),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 65, lty =2)
+             panel.ecdfplot(...)
+         })
+```
 
-### 
+<!--
+### Plot PDF
+-->
 
-### second closest GAT?
+### second closest GAT
+substractBed
+
 
 ### loop thourgh all bigWigs
 
