@@ -152,10 +152,12 @@ df$aligned_reads=as.numeric((df$aligned_reads))
 
 barchart(aligned_reads ~ library, 
          data = df,
+         ylim=c(0, max(df$aligned_reads)*1.04),
          col = "skyblue",
          scales = list(x = list(rot = 45)),
          xlab = "GATA3 ChIP library", 
-         ylab = "concordantly aligned reads")
+         ylab = "concordantly aligned reads"
+         )
 ```
 
 This bar graph represents the read depth in each GATA3 ChIP-seq library. In the downstream analysis, we will need to use `DESeq2` to normalize the counts in each library with **size factor** to account for this **read depth difference**. \ 
@@ -296,15 +298,23 @@ This violin plot is showing the distribution of peak intensity (log10). \
 ```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 library(lattice)
 log10quantiles <- quantile(log(abs(peak.intensities), base = 10), probs = seq(.20, 1.00, by = .20))
-bwplot(log(abs(peak.intensities), base = 10) ~ factor("1"), 
+
+png('violinplot_GATA3_ChIP_peak_normalized_intensity.png')
+print(bwplot(log(abs(peak.intensities), base = 10) ~ factor("1"), 
        main = "Violin-Like Plot",
        panel = function(x, ...) {
          panel.violin(x, ...)
          panel.abline(h = log10quantiles, col = "red", lty = 2)
        },
-       xlab = "", ylab = "log10 normalized Intensity"
+       xlab = "", ylab = "log10 normalized Intensity")
 )
 ```
+
+```{r  fig.align = "center", out.width="50%", out.height="50%", echo=F, fig.align = "center", fig.cap="normalized GATA3 ChIP peak intensity"}
+library(knitr)
+knitr::include_graphics("./violinplot_GATA3_ChIP_peak_normalized_intensity.png") 
+```
+
 This violin plot represents the distribution and probability density of **(log10) normalized peak intensity** (for peak without motif 1~9). Each red dotted line indicates the quantile cutoff of 20%, which can help us to visualize the peak intensity distribution **across different quantile**. \ 
 
 
@@ -725,11 +735,16 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
          lty=c(1),
          par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 1.8, lty =2)
+             panel.abline(v= 2.255, lty =2)
              panel.ecdfplot(...)
          })
     
 ```
+
+Cumulative distribution plot showing distance between 3mer-GAT to the summit of GATA3 ChIP peak (red), or summit of the ctrl peak set (gray, random subset from the union DHS regions). \
+
+The left-shift of the red curve suggests that the 3mer-GAT are closer to the GATA3 ChIP peak set then the ctrl peak set. \
+
 
 
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
@@ -744,22 +759,36 @@ ecdfplot(~dis, groups = status, data = df.all,
                                         #index.cond = list(c(2,1)),
          between=list(y=1.0),
          type = 'a',
-         xlim = c(0,100),
+         xlim = c(0,500),
          lwd=2,
          lty=c(1),
          par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 65, lty =2)
+             panel.abline(v= 180, lty =2)
              panel.ecdfplot(...)
          })
 ```
+
+The CDF plot above shows how the cumulative distribution changes as the distance of 3mer GAT from the GATA3 peak summit (red) or the union peak (gray, negative control) increases. When looking at the plot, we see that the lines start to reach the plateau ~180 bp from the peak summit. This suggests that the 3mer-GAT often binds within 200 bp of the peak summit. \
 
 <!--
 ### Plot PDF
 -->
 
 ### second closest GAT
-substractBed
+
+**Plan**: \
+
+-input1: all GAT coordinates .bed file \
+-input2: closest GAT (to peak summit) coordinates .bed file \
+
+First, use `bedtools subtract` to subtract input 1 and 2, the output will be GAT coordinates without the 1st closest GAT. \
+Then, \
+a) use `bedtools closestBed` to find the **second closest GAT to peak summit** use the output from `bedtools subtract`. \
+   Plot composite profile. \
+b) use `bedtools closestBed` to find the **second closest GAT to the 1st closest GAT** use the output from `bedtools subtract`. \
+   Plot composite profile. \
+
 
 
 ### loop thourgh all bigWigs
