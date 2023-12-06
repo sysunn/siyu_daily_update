@@ -686,9 +686,11 @@ nrow(ctrl.distance[ctrl.distance$V9=="+",])
 nrow(ctrl.distance[ctrl.distance$V9=="-",])
 ```
 
-### making cdf plot
+### Cumulative distribution function (CDF) plot
 
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+all.distance=read.table('all.distance.bed',header=F, comment.char='')
+ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
 head(all.distance)
 head(ctrl.distance)
 
@@ -713,7 +715,64 @@ nrow(df.all)
 ```
 **plot CDF** \
 
-The CDF plot is plotting "how far away a given peak summit (either from GATA ChIP peak set, or from the control regulatory regions) can find a 3mer GAT". \
+<!--
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+second_min <- function(vec) {
+  # Find the first minimum
+  first_min_index <- which.min(vec)
+  
+  # Remove the first minimum value
+  vec_without_first_min <- vec[-first_min_index]
+  
+  # Find the index of the minimum in the updated vector
+  second_min_index <- which.min(vec_without_first_min)
+  
+  # Return the second minimum value
+  return(vec_without_first_min[second_min_index])
+}
+```
+-->
+We are plotting the cumulative distribution function to evaluate whether a 3mer GAT are closer to the summit of GATA3 ChIP peaks (that might use 3mer GAT as a binding sequence) than they are to the summit of a random subset of union DHS regions (ctrl). \
+
+
+We can also determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'ctrl'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'GATA3_peak'])
+match.y = seq(0, 6000, by=1) # creating indices
+rep.y = seq(0, 6000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 20; remember this number
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+
+```
+
+The above plot plots CDFs' difference between GATA3 peak set and ctrl peak set. At 14bp, two CDFs start to be parallel/converged. \
+
 
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
 library(lattice)
@@ -735,15 +794,17 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
          lty=c(1),
          par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 2.255, lty =2)
+             panel.abline(v= 1.146, lty =2)
              panel.ecdfplot(...)
          })
     
 ```
 
-Cumulative distribution plot showing distance between 3mer-GAT to the summit of GATA3 ChIP peak (red), or summit of the ctrl peak set (gray, random subset from the union DHS regions). \
+The above cumulative distribution function (PDF) plot is showing the distance between 3mer-GAT to the summit of GATA3 ChIP peak (red), or summit of the ctrl peak set (gray, random subset from the union DHS regions). \
 
 The left-shift of the red curve suggests that the 3mer-GAT are closer to the GATA3 ChIP peak set then the ctrl peak set. \
+
+The vertical dashed line indicates at which distance (log10 of 14bp) the two CDF traces became parallel. This suggests that the 3mer-GAT often binds within 15 bp of the GATA3 peak summit. \
 
 
 
@@ -759,39 +820,38 @@ ecdfplot(~dis, groups = status, data = df.all,
                                         #index.cond = list(c(2,1)),
          between=list(y=1.0),
          type = 'a',
-         xlim = c(0,500),
+         xlim = c(0,100),
          lwd=2,
          lty=c(1),
          par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 180, lty =2)
+             panel.abline(v= 14, lty =2)
              panel.ecdfplot(...)
          })
 ```
 
-The CDF plot above shows how the cumulative distribution changes as the distance of 3mer GAT from the GATA3 peak summit (red) or the union peak (gray, negative control) increases. When looking at the plot, we see that the lines start to reach the plateau ~180 bp from the peak summit. This suggests that the 3mer-GAT often binds within 200 bp of the peak summit. \
+The difference between this CDF with the previous one is: The above one is plotting actual distance in bp, the previous one is plotting log10 of the distance. The two CDF plots are essentially communicating the same thing. \
 
-<!--
-### Plot PDF
--->
 
-### second closest GAT
+## Second closest GAT
 
 **Expectation**: see spike of the second GAT at fixed position. \
 
 **Plan**: \
 
 -Input1: all GAT coordinates .bed file \
--Input2: closest GAT (to peak summit) coordinates .bed file \
+-Input2: closest GAT (to GATA3 peak summit -without GATA3-like motifs 123456789) coordinates .bed file \
+-Input3: closest GAT (to unionDHS summit) coordinates .bed file \
 
-First, use `bedtools subtract` to subtract input 1 and 2, the output will be GAT coordinates without the 1st closest GAT. \
+
+First, use `bedtools subtract` to subtract input 1 and 2 (or in ctrl set: subtract input 1 and 3), the output will be GAT coordinates without the 1st closest GAT. \
 Then, \
-Use `bedtools closestBed` to find the **second closest GAT to the 1st closest GAT** use the output from `bedtools subtract`. \
-Plot pdf plot. \
+Use `bedtools closestBed` to find the **second closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
+Plot PDF plot of distances between 1st and 2nd GAT. \
 
-
-#### GATA3 peak subset (without the 9 GATA3-like motifs)   
+#### all GAT coordinates .bed file
 **Input1** \
+This is the 3mer GAT coordinates on hg38 genome (both plus and minus strand) generated with `SeqOutbias` use read size==30. \
 
 ```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
 wc -l hg38.3.3.3.30_plus_minus_GAT.bed #64243047
@@ -803,9 +863,12 @@ head -5 hg38.3.3.3.30_plus_minus_GAT.bed
 #chr1	19797	19800	14	14	-	GAT
 ```
 
+#### GATA3 peak subset (without the 9 GATA3-like motifs)   
+
 **Input2** \
 This `all.distance.bed` file is searching for closest 3mer GAT to the peak summit (top 20% intense peak without motif 123456789). \
 Use `awk` to select 3mer-GAT's coordinates from the file. \
+
 ```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
 wc -l all.distance.bed #7796
 head -5 all.distance.bed
@@ -818,18 +881,21 @@ head -5 all.distance.bed
 awk '{print $4, $5, $6, $7, $8, $9, $10}' all.distance.bed | awk '{$1=$1}1' OFS="\t"> closest_1st_GAT_to_GATA_peak.bed
 wc -l closest_1st_GAT_to_GATA_peak.bed #7796
 
+# remove duplicated lines with `uniq`
 awk '{print $4, $5, $6, $7, $8, $9, $10}' all.distance.bed | awk '{$1=$1}1' OFS="\t" | sort | uniq> closest_1st_GAT_to_GATA_uniq_peak.bed
 wc -l closest_1st_GAT_to_GATA_uniq_peak.bed #7791
 ```
+
+
 ```{r engine='bash',class.source = "revision", eval=TRUE, echo=TRUE}
 head -5 closest_1st_GAT_to_GATA_uniq_peak.bed
 awk '$6 == "+" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_GATA_uniq_peak.bed
 awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_GATA_uniq_peak.bed
 ```
 
-**`bedtools subtract`** \
+**`Bedtools subtract`** \
 
-`-A` option completely remove a feature from `-a file` if it has even 1bp of overlap with a feature in `-b file`. \
+`-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
 `-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
 ```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
 module load bedtools 
@@ -849,7 +915,7 @@ head -5 closest_1st_GAT_to_GATA_uniq_peak.sorted.bed
 #chr1	8055202	8055205	36	36	+	GAT
 #chr1	8061441	8061444	36	36	+	GAT
 
-bedtools subtract -a hg38.3.3.3.30_plus_minus_GAT.sorted.bed -b closest_1st_GAT_to_GATA_uniq_peak.sorted.bed -A -s > hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed
+bedtools subtract -a hg38.3.3.3.30_plus_minus_GAT.sorted.bed -b closest_1st_GAT_to_GATA_uniq_peak.sorted.bed -f 1.00 -s > hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed
 
 wc -l hg38.3.3.3.30_plus_minus_GAT.sorted.bed #64243047
 wc -l closest_1st_GAT_to_GATA_uniq_peak.sorted.bed #7791
@@ -859,50 +925,81 @@ wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed #64235256
 #[1] 64235256
 ```
 
-<!--
-5 entry difference
-```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
-dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/
-sort -k1,1 -k2,2n ${dir}hg38.3.3.3plus.36_GAT.bed > hg38.3.3.3plus.36_GAT.sorted.bed #32147038
-sort -k1,1 -k2,2n ${dir}hg38.3.3.3minus.14_GAT.bed  > hg38.3.3.3minus.14_GAT.sorted.bed #32096009
 
+#### unionDHS set (without the 9 GATA3-like motifs)
 
+**Input3** \
+This `ctrl.distance.bed` file is searching for closest 3mer GAT to the unionDHS peak summit (ramdom 7800 regions without motif 123456789). \
+Use `awk` to select 3mer-GAT's coordinates from the file. \
+```{r engine='bash',class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l ctrl.distance.bed 
+head -5 all.distance.bed
 
-awk '$6 == "+" {print > "closest_1st_plus_GAT_to_GATA_peak.sorted.bed"}' closest_1st_GAT_to_GATA_peak.sorted.bed  #3873
-awk '$6 == "-" {print > "closest_1st_minus_GAT_to_GATA_peak.sorted.bed"}' closest_1st_GAT_to_GATA_peak.sorted.bed  #3923
+awk '{print $4, $5, $6, $7, $8, $9, $10}' ctrl.distance.bed | awk '{$1=$1}1' OFS="\t"> closest_1st_GAT_to_unionDHS_peak.bed
+wc -l closest_1st_GAT_to_unionDHS_peak.bed 
 
-bedtools subtract -a hg38.3.3.3plus.36_GAT.sorted.bed -b closest_1st_plus_GAT_to_GATA_peak.sorted.bed -A -s > hg38.3.3.3.30_plus_GAT_without_1st_closest_GAT.bed #32143168
-bedtools subtract -a hg38.3.3.3minus.14_GAT.sorted.bed -b closest_1st_minus_GAT_to_GATA_peak.sorted.bed -A -s > hg38.3.3.3.30_minus_GAT_without_1st_closest_GAT.bed #32092088
-
+awk '{print $4, $5, $6, $7, $8, $9, $10}' ctrl.distance.bed | awk '{$1=$1}1' OFS="\t" | sort | uniq> closest_1st_GAT_to_unionDHS_uniq_peak.bed
+wc -l closest_1st_GAT_to_unionDHS_uniq_peak.bed 
 ```
-minus has 2 not subtract, plus has 3 \
 
-```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
-bedtools subtract -a hg38.3.3.3plus.36_GAT.sorted.bed -b hg38.3.3.3.30_plus_GAT_without_1st_closest_GAT.bed -s > test_plus.bed #3870
-bedtools subtract -a closest_1st_plus_GAT_to_GATA_peak.sorted.bed -b test_plus.bed -s > test_diff_plus.bed
-
-sort closest_1st_plus_GAT_to_GATA_peak.sorted.bed | uniq -d
-chr12	52949087	52949090	36	36	+	GAT
-chr3	146161582	146161585	36	36	+	GAT
-chr8	101493974	101493977	36	36	+	GAT 
+```{r engine='bash',class.source = "revision", eval=TRUE, echo=TRUE}
+head -5 closest_1st_GAT_to_unionDHS_uniq_peak.bed
+awk '$6 == "+" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_unionDHS_uniq_peak.bed
+awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_unionDHS_uniq_peak.bed
 ```
-due to duplicated regions 
--->
 
-**`bedtools closestBed`** \
-Read the file in and use the center as regulatory region summit: \
+**`bedtools subtract`** \
+
+`-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
+`-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
+
+```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
+module load bedtools 
+sort -k1,1 -k2,2n hg38.3.3.3.30_plus_minus_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+head -5 hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11521	11524	36	36	+	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	12188	12191	36	36	+	GAT
+
+sort -k1,1 -k2,2n closest_1st_GAT_to_unionDHS_uniq_peak.bed > closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed 
+head -5 closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed
+#chr1	191000	191003	14	14	-	GAT
+#chr1	1183537	1183540	14	14	-	GAT
+#chr1	1207290	1207293	14	14	-	GAT
+#chr1	1548964	1548967	36	36	+	GAT
+#chr1	1666192	1666195	36	36	+	GAT
+
+bedtools subtract -a hg38.3.3.3.30_plus_minus_GAT.sorted.bed -b closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed -f 1.00 -s > hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_unionDHS.bed
+
+wc -l hg38.3.3.3.30_plus_minus_GAT.sorted.bed #64243047
+wc -l closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed #7800
+wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_unionDHS.bed #64235247
+
+#64243047-7800
+#[1] 64235247
+```
+
+
+#### Find the 2nd closest GAT to the 1st closest GAT with `bedtools closestBed`
+
+**GATA3 peak subset** \
+
+Read the file (1st closest GAT to GATA3 peak subset summit) in.  \
+
 ```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
-library(bigWig)
-chip.peak=read.table("closest_1st_GAT_to_GATA_uniq_peak.sorted.bed", header=FALSE)
-nrow(chip.peak)
-head(chip.peak)
-
-chip.peak.summit=center.bed(chip.peak, upstreamWindow=0, downstreamWindow=0)
-nrow(chip.peak.summit)
-head(chip.peak.summit)
+closest_1st_GAT_to_GATA=read.table("closest_1st_GAT_to_GATA_uniq_peak.sorted.bed", header=FALSE)
+nrow(closest_1st_GAT_to_GATA)
+head(closest_1st_GAT_to_GATA)
 ```
+
+Read the GAT coorrdinates file without the 1st closest GAT to GATA3 peak summit (subset of top20% peaks without GATA3-like motifs 123456789). \
+
 ```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
 all.GAT.without.1st.closest.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed", sep="\t", header=FALSE)
+nrow(all.GAT.without.1st.closest.file)
+#[1] 64235256
 head(all.GAT.without.1st.closest.file)
 #    V1    V2    V3 V4 V5 V6  V7
 #1 chr1 11145 11148 14 14  - GAT
@@ -922,42 +1019,116 @@ tail(all.GAT.without.1st.closest.file)
 
 ```
 
-use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
+Use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
   
 ```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
-closest.2nd.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.without.1st.closest.file, opt.string = '-d -t first')
+closest.2nd.distance=bedTools.closest(bed1 = closest_1st_GAT_to_GATA[,1:3], bed2 = all.GAT.without.1st.closest.file, opt.string = '-d -t first')
 write.table(closest.2nd.distance,file= 'closest.2nd.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
 save.image('231206_GATA3_ChIP_2nd_clsestbed.Rdata') 
 ```
 
 
+**UnionDHS regions** \
+
+Read the file (1st closest GAT to unionHDS summit) in: \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+closest_1st_GAT_to_unionDHS=read.table("closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed", header=FALSE)
+nrow(closest_1st_GAT_to_unionDHS)
+head(closest_1st_GAT_to_unionDHS)
+```
+
+Read the GAT coorrdinates file without the 1st closest GAT. \
+
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+all.GAT.without.1st.closest.ctrl.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_unionDHS.bed", sep="\t", header=FALSE)
+nrow(all.GAT.without.1st.closest.ctrl.file) 
+#[1] 64235247
+head(all.GAT.without.1st.closest.ctrl.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11145 11148 14 14  - GAT
+#2 chr1 11160 11163 14 14  - GAT
+#3 chr1 11521 11524 36 36  + GAT
+#4 chr1 11576 11579 14 14  - GAT
+#5 chr1 12188 12191 36 36  + GAT
+#6 chr1 13274 13277 36 36  + GAT
+```
+
+
+Use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
+  
+```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
+closest.2nd.distance.unionDHS=bedTools.closest(bed1 = closest_1st_GAT_to_unionDHS[,1:3], bed2 = all.GAT.without.1st.closest.ctrl.file, opt.string = '-d -t first')
+write.table(closest.2nd.distance.unionDHS, file= 'closest.2nd.distance.unionDHS.bed', quote=F,sep="\t",col.names=F,row.names=F)
+save.image('231206_GATA3_ChIP_2nd_clsestbed2.Rdata') 
+```
+
+
+#### Probability Density Function Plot
+
+In the previous section, we have found the 2nd closest GAT to the 1st closest GAT to either GATA3peak subset summits or unionDHS summits. \
+
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+#GATA3 peak subset
 closest.2nd.distance=read.table('closest.2nd.distance.bed',header=F, comment.char='')
+nrow(closest.2nd.distance) #7791
+nrow(closest.2nd.distance[closest.2nd.distance$V9=="+",]) #3839
+nrow(closest.2nd.distance[closest.2nd.distance$V9=="-",]) #3952
 head(closest.2nd.distance)
-nrow(closest.2nd.distance)
-nrow(closest.2nd.distance[closest.2nd.distance$V9=="+",])
-nrow(closest.2nd.distance[closest.2nd.distance$V9=="-",])
+#unionDHS
+closest.2nd.distance.unionDHS=read.table('closest.2nd.distance.unionDHS.bed',header=F, comment.char='')
+nrow(closest.2nd.distance.unionDHS) # 7800
+nrow(closest.2nd.distance.unionDHS[closest.2nd.distance.unionDHS$V9=="+",]) #3858
+nrow(closest.2nd.distance.unionDHS[closest.2nd.distance.unionDHS$V9=="-",]) #3942
+head(closest.2nd.distance.unionDHS)
 ```
+Subset two data.frames to contain information of the 2nd closest 3mer-GAT info (chr-start-end-strand-dis); \
+Then add the 'status' info and rbind the two dataframe. \
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
-df.GATA.2nd.distance = cbind(closest.2nd.distance[,c(1:3, 11)], "GATA3_peak")
-colnames(df.GATA.2nd.distance) = c(colnames(df.GATA.2nd.distance)[1:3], "dis", "status")
-head(df.GATA.2nd.distance)
+df.chip = cbind(closest.2nd.distance[,c(1:3, 9, 11)], "GATA3_peak")
+df.ctrl = cbind(closest.2nd.distance.unionDHS[,c(1:3, 9, 11)], "ctrl")
+colnames(df.chip) = c(colnames(closest.2nd.distance)[1:3], "strand", "dis", "status")
+colnames(df.ctrl) = c(colnames(closest.2nd.distance.unionDHS)[1:3], "strand", "dis", "status")
+df.all = rbind(df.chip, df.ctrl)
+head(df.all)
+nrow(df.all)
+df.all$dis=as.numeric(df.all$dis)
+df.all$strand=as.factor(df.all$strand)
+df.all$status=as.factor(df.all$status)
+head(df.all)
+tail(df.all)
 ```
 
+Plot PDF: \
+
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+# interaction variable
+df.all$interaction_var <- interaction(df.all$strand, df.all$status)
 library(lattice)
-densityplot(~ abs(df.GATA.2nd.distance$dis), 
-            xlim=c(0,50),
-            main = "Probability Density Function Plot", 
-            xlab = "distance from 2nd GAT to 1st GAT")
+library(latticeExtra)
+
+myColors <- ifelse(df.all$strand == "+", "red", "blue")
+densityplot( ~ abs(dis) | status,
+            groups = strand,
+            key = list(text = list(as.character(unique(df.all$strand))), 
+                       space="top",
+                       lines=list(col=c("red","blue")),
+                       columns=nlevels(df.all$strand)),
+            data = df.all,
+            xlim=c(0,40),
+            xlab = "distance (bp) from 2nd GAT to 1st GAT",
+            type = "g",
+            col = myColors,
+            lty = 1,
+            main = "ctrl vs. GATA3 peaks",
+            par.settings=list(par.xlab.text=list(cex=1.1,font=2), 
+                                 par.ylab.text=list(cex=1.1,font=2))
+)
 ```
 
-The Probability Density Function Plot shows that most 2nd closest GAT are found at ~10bp to the 1st closest GAT. This suggest that in GATA ChIP peaks, 3mer GAT-GAT are often found to have a fixed spacings between them. \
 
 
-#### unionHDS set (without the 9 GATA3-like motifs)
-
-
+The Probability Density Function Plot shows that most 2nd closest GAT are found at ~10bp to the 1st closest GAT. This suggest that in GATA ChIP peaks, 3mer GAT-GAT are often found to have fixed spacings between them. \
 
 
 ### loop thourgh all bigWigs
