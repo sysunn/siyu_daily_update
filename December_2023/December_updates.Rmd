@@ -786,11 +786,11 @@ The CDF plot above shows how the cumulative distribution changes as the distance
 
 First, use `bedtools subtract` to subtract input 1 and 2, the output will be GAT coordinates without the 1st closest GAT. \
 Then, \
-a) use `bedtools closestBed` to find the **second closest GAT to the 1st closest GAT** use the output from `bedtools subtract`. \
-   Plot composite profile. \
-b) use `bedtools closestBed` to find the **second closest GAT to peak summit** use the output from `bedtools subtract`. \
-   Plot composite profile. \
-   
+Use `bedtools closestBed` to find the **second closest GAT to the 1st closest GAT** use the output from `bedtools subtract`. \
+Plot pdf plot. \
+
+
+#### GATA3 peak subset (without the 9 GATA3-like motifs)   
 **Input1** \
 
 ```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
@@ -904,18 +904,60 @@ head(chip.peak.summit)
 ```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
 all.GAT.without.1st.closest.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed", sep="\t", header=FALSE)
 head(all.GAT.without.1st.closest.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11145 11148 14 14  - GAT
+#2 chr1 11160 11163 14 14  - GAT
+#3 chr1 11521 11524 36 36  + GAT
+#4 chr1 11576 11579 14 14  - GAT
+#5 chr1 12188 12191 36 36  + GAT
+#6 chr1 13274 13277 36 36  + GAT
 tail(all.GAT.without.1st.closest.file)
+#                             V1    V2    V3 V4 V5 V6  V7
+#64235251 chrY_KI270740v1_random 33149 33152 14 14  - GAT
+#64235252 chrY_KI270740v1_random 35533 35536 36 36  + GAT
+#64235253 chrY_KI270740v1_random 35543 35546 36 36  + GAT
+#64235254 chrY_KI270740v1_random 35912 35915 36 36  + GAT
+#64235255 chrY_KI270740v1_random 36540 36543 36 36  + GAT
+#64235256 chrY_KI270740v1_random 36913 36916 36 36  + GAT
+
 ```
 
 use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
-<!--  
+  
 ```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
-closest.2nd.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
-write.table(all.distance,file= 'all.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
-save.image('231205_GATA3_ChIP_clsestbed.Rdata') 
+closest.2nd.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.without.1st.closest.file, opt.string = '-d -t first')
+write.table(closest.2nd.distance,file= 'closest.2nd.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+save.image('231206_GATA3_ChIP_2nd_clsestbed.Rdata') 
 ```
--->
-Plot composite profile. \
+
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+closest.2nd.distance=read.table('closest.2nd.distance.bed',header=F, comment.char='')
+head(closest.2nd.distance)
+nrow(closest.2nd.distance)
+nrow(closest.2nd.distance[closest.2nd.distance$V9=="+",])
+nrow(closest.2nd.distance[closest.2nd.distance$V9=="-",])
+```
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+df.GATA.2nd.distance = cbind(closest.2nd.distance[,c(1:3, 11)], "GATA3_peak")
+colnames(df.GATA.2nd.distance) = c(colnames(df.GATA.2nd.distance)[1:3], "dis", "status")
+head(df.GATA.2nd.distance)
+```
+
+```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+densityplot(~ abs(df.GATA.2nd.distance$dis), 
+            xlim=c(0,50),
+            main = "Probability Density Function Plot", 
+            xlab = "distance from 2nd GAT to 1st GAT")
+```
+
+The Probability Density Function Plot shows that most 2nd closest GAT are found at ~10bp to the 1st closest GAT. This suggest that in GATA ChIP peaks, 3mer GAT-GAT are often found to have a fixed spacings between them. \
+
+
+#### unionHDS set (without the 9 GATA3-like motifs)
+
+
 
 
 ### loop thourgh all bigWigs
