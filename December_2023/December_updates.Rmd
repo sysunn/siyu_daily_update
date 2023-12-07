@@ -104,7 +104,7 @@ Our question now became, is MEME/STREME limited in finding binding sequences pat
 
 **peaks without 9 GATA3-motif** (that found by MEME/STREME) \
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 wc -l without_motifs_123456_789.bed
 head -5 without_motifs_123456_789.bed
 ```
@@ -113,7 +113,7 @@ In the above file, the last column is the peak intensity reported by MACS3. \
 Notice that a peak with high MACS3-intensity is not necessarily a intense peak. There are two things we need to consider regarding peak intensities. The first is **peak region**; the second is **dynamic range**. Imaging a peak that is very intense but within a narrow range, the other peak is not so intense but can span its signals across a very long distance. We need to consider this region differences while calling any peak to be intense or not. \
 
 First use `Sam Flag 0x3`(reads paired and mapped in proper pair) to calculate the **read depth** for each GATA library. \
-```{r, engine='bash', class.source = "revision",eval=F, echo=TRUE}
+```{r, engine='bash', eval=F, echo=TRUE}
 # calculate the size factors 
 module load samtools/1.12
 
@@ -139,11 +139,11 @@ do
 done 
 ```
 
-```{r, engine='bash', class.source = "revision",eval=TRUE, echo=TRUE}
+```{r, engine='bash',eval=TRUE, echo=TRUE}
 cat GATA_reads.txt
 ```
 **bargraph** \
-```{r, engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+```{r, engine='R',eval=TRUE, echo=TRUE}
 library(lattice)
 df=as.data.frame(t(read.table("GATA_reads.txt", header=F)))
 colnames(df)=c("library", "aligned_reads")
@@ -165,13 +165,13 @@ This bar graph represents the read depth in each GATA3 ChIP-seq library. In the 
 **Get peak intensity within 400bp window with`Deseq2`** for peaks without MEME/STREME found motifs 12345678. \
 
 load peaks without motif 12345678. \
-```{r, engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+```{r, engine='R',eval=TRUE, echo=TRUE}
 a =  read.table('without_motifs_123456_789.bed', sep = "\t", header=FALSE) 
 nrow(a)
 head(a)
 ```
 Increase the width to 400bp window. \
-```{r, engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+```{r, engine='R',eval=TRUE, echo=TRUE}
 library(bigWig)
 peak.region.400win=center.bed(a, upstreamWindow = 200, downstreamWindow = 200)
 nrow(peak.region.400win)
@@ -181,7 +181,7 @@ head(peak.region.400win)
 
 In the below chunk, we define a function to get raw counts from each sample/reps. This function uses `bed.region.bpQuery.bigWig` from `bigWig` package. It requires a bed region file that has the peak region that we want to analysis (right now we want to analyse peak without motifs 123456789); it also requires non-normalized, raw bigWig files (generated directly from `seqOutbias`) to allow `bed.region.bpQuery.bigWig` to query the counts information from. The output from this function will be: rows will be the same as bed file, columns will be each bigWig library, entries will be the raw counts. \
 
-```{r, engine='R', class.source = "revision",eval=F, echo=TRUE}
+```{r, engine='R',eval=F, echo=TRUE}
 #functions on github
 source('https://raw.githubusercontent.com/mjg54/znf143_pro_seq_analysis/master/docs/ZNF143_functions.R')
 
@@ -207,7 +207,7 @@ get.counts.interval <- function(df, path.to.bigWig, file.prefix = 'H') {
 ```
 
 We will first use the defined function to query raw counts from each non-normalized bigWig files of GATA ChIP-seq use peak region info loaded before (data frame "peak.region.400win"). \
-```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+```{r, engine='R', eval=F, echo=TRUE}
 library(bigWig)
 #non-normalized counts
 GATA.counts.df= get.counts.interval(peak.region.400win, "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/bigWigs/Seqoutbias_bw","MCF") #25 libraries
@@ -232,7 +232,7 @@ identical(rownames(GATA.analysis.regions),rownames(GATA.counts.df)) # [1] TRUE
 Then we use the `DESeq2` package to make a counts matrix (`DESeqDataSetFromMatrix`) and calculate size factors for each library (`estimateSizeFactorsForMatrix`) use the previously calculated read depth for each library ("GATA_reads.txt"); We use this size factor to normalize the counts (`sizeFactors`). \
 Then we use `rowMeans` to average the normalized counts for the three GATA_CC reps, and save it as "peak.intensities"; this normalized counts now can be use to determine if a peak is intense or not. \
 
-```{r, engine='R', class.source = "revision",eval=F, echo=TRUE}
+```{r, engine='R',eval=F, echo=TRUE}
 library(DESeq2)
 sample.conditions = factor(sapply(strsplit(colnames(GATA.analysis.regions), '_rep'), '[', 1))
 #[1] MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC
@@ -281,12 +281,12 @@ save.image('231205_GATA3_ChIP_deseq.Rdata')
 **Subset peaks without the 8 GATA3-motifs, in top20% intensity quantile** \
 
 We can load the saved Rdata and look at each dataframe. \
-```{r engine='R', class.source = "revision", class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 load('231205_GATA3_ChIP_deseq.Rdata')
 ```
 
 Read this .bed file into R, and use `DeSeq2` to count read size and parse into different quantile
-```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r, engine='R', eval=TRUE, echo=TRUE}
 head(peak.intensities)
 quantile(peak.intensities, probs = seq(.25, 1.00, by = .25))
 quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))
@@ -295,7 +295,7 @@ quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))
 
 This violin plot is showing the distribution of peak intensity (log10). \
 
-```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r, engine='R', eval=TRUE, echo=TRUE}
 library(lattice)
 log10quantiles <- quantile(log(abs(peak.intensities), base = 10), probs = seq(.20, 1.00, by = .20))
 
@@ -319,7 +319,7 @@ This violin plot represents the distribution and probability density of **(log10
 
 
 Parse peaks into 5 intensity quantile by 20%. \
-```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r, engine='R', eval=TRUE, echo=TRUE}
 chr = sapply(strsplit(names(peak.intensities), ":"), "[", 1)
 rnge = sapply(strsplit(names(peak.intensities), ":"), "[", 2)
 start = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 200
@@ -341,7 +341,7 @@ j = i
 }
 ```
 
-```{r, engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r, engine='bash', eval=TRUE, echo=TRUE}
 for i in *quantile*.bed
 do
 wc -l $i
@@ -350,7 +350,7 @@ done
 
 
 Now working on the top 20% quantile peaks: \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 wc -l quantile1_summits.bed
 head quantile1_summits.bed
 ```
@@ -363,13 +363,13 @@ Input: \
 
 **Input1 -a**: peak: quantile1_summits.bed : peaks without motif 12345678, top20% intensity \
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/overrep_3mer/peak_without_123456789/
 head ${dir}quantile1_summits.bed
 ```
 
 **Input2 -b**: GAT coordinates on full hg38 use read size==30 \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/
 head ${dir}hg38.3.3.3minus.14_GAT.bed  
 head ${dir}hg38.3.3.3plus.36_GAT.bed
@@ -379,7 +379,7 @@ head ${dir}hg38.3.3.3plus.14_ATC.bed
 ```
 
 These files are very large, here are the headed version: \
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 head head2000_hg38.3.3.3plus.36_GAT.bed
 echo ""
 head head2000_hg38.3.3.3minus.14_GAT.bed
@@ -391,7 +391,7 @@ head head2000_hg38.3.3.3minus.36_ATC.bed
 ```
 
 we will concatanate the plus and minus 3mer file together. \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 cat ${dir}hg38.3.3.3minus.14_GAT.bed ${dir}hg38.3.3.3plus.36_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.bed
 cat ${dir}hg38.3.3.3minus.36_ATC.bed ${dir}hg38.3.3.3plus.14_ATC.bed > hg38.3.3.3.30_plus_minus_ATC.bed
 
@@ -408,13 +408,13 @@ wc -l hg38.3.3.3.30_plus_minus_ATC.bed #64117002
 **load files** \
 
 load files contains selected ChIP peak summit info \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 chip.peak.summit=read.table("quantile1_summits.bed", header=FALSE)
 nrow(chip.peak.summit)
 head(chip.peak.summit)
 ```
 load files contains 3mer coordinates info \
-```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 #concatenate the plus and minus file together
 all.GAT.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT.bed", sep="\t", header=FALSE)
 head(all.GAT.file)
@@ -440,7 +440,7 @@ nrow(all.GAT.file)
 
 **bedtools closestBed** \
 The below function will sort input bed1 and bed2 first, then run `bedtools closestBed` between bed1 and bed2. \
-```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 # define function 
 bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
   
@@ -481,7 +481,7 @@ Parameter `-t last` or `-t first` will only report either the last or the first 
 Here we choose to use `-t first` to report the first coordinates when tie occurred. \
 
 Find the closest GAT to peak summit regardless of GAT strandedness \
-```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 all.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
 write.table(all.distance,file= 'all.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
 save.image('231205_GATA3_ChIP_clsestbed.Rdata') 
@@ -489,7 +489,7 @@ save.image('231205_GATA3_ChIP_clsestbed.Rdata')
 
 
 In this "all.distance' data frame, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 all.distance=read.table('all.distance.bed',header=F, comment.char='')
 head(all.distance)
 ```
@@ -498,14 +498,14 @@ head(all.distance)
 
 **coherence check 1**: the number of the closest minus GAT is comparable to the number of the closest plus GAT. \
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 nrow(all.distance)
 nrow(all.distance[all.distance$V9=="+",])
 nrow(all.distance[all.distance$V9=="-",])
 ```
 
 **coherence check 2**: Since we have use `-t first` to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT. \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 nrow(chip.peak.summit) # there are 8571 unique peak 
 nrow(all.distance)  
 ```
@@ -521,7 +521,7 @@ To answer the first big question, we also need to prepare a control peak set. We
 
 Here we are using the ENCODE union DNase HS sites: \
 Reference: Amaral, M. L., Erikson, G. A., & Shokhirev, M. N. (2018). BART: bioinformatics array research tool. BMC bioinformatics, 19(1), 1-6. \
-
+These union DHS regions represent the whole repertoire of regulatory elements in the human genome. These are regions of chromatin that are sensitive to cleavage by the DNase. \
 <!--
 The full .bed file contains 2723010 regulatory regions. The below command uses a combination of `awk`, `sort`, and `shuf` in Linux to:  \
 Extracts unique chromosome names from the first column ($1) of input_regions.bed. \
@@ -531,14 +531,14 @@ Then, it uses `shuf` to randomly select a specified number of peaks (`-n <desire
 
 
 Here I am using this command to randomly pick single region from each chromosome to make this randomized_subset.bed. \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 awk '{print $1}' hg38_unionDHS_fc4_50merge.bed | sort -u | while read chrom; do
     grep "^$chrom" hg38_unionDHS_fc4_50merge.bed | shuf -n 1 >> hg38_unionDHS_fc4_50merge_randomized_subset.bed
 done
 ```
 
 The file has information of "chr-start-end-index-signal-strand" \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 cat hg38_unionDHS_fc4_50merge_randomized_subset.bed 
 ```
 -->
@@ -549,13 +549,13 @@ The full .bed file contains 2723010 regulatory regions. To make this file a prop
 
 We have 9 motifs that found by MEME/STREME software. \
 
-```{r engine='bash', class.source = "revision", eval=T, echo=TRUE}
+```{r engine='bash', eval=T, echo=TRUE}
 ls GATA3_MEME_STREME_motifs/
 #cat GATA3_MEME_STREME_motifs/meme_1.txt
 ```
 First convert regulatory region file from .bed to .fasta. \
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools
 genome=/home/FCAM/ssun/Genome/hg38.fa
 
@@ -563,7 +563,7 @@ fastaFromBed -fi $genome -bed hg38_unionDHS_fc4_50merge.bed -fo hg38_unionDHS_fc
 ```
 
 MEME (`mast` uses default p-value: 0.0001) \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 module load meme/5.4.1
 module load R/4.1.2
 module load bedtools
@@ -619,7 +619,7 @@ wc -l unionDHS_without_motifs_123456.bed #2501607
 ```
 
 STREME (`mast` uses p-value of 0.0005) \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 #round7
 fastaFromBed -fi $genome -bed unionDHS_without_motifs_123456.bed -fo unionDHS_without_motifs_123456.fasta
 mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATAAM_streme.txt unionDHS_without_motifs_123456.fasta > mast_GATA3_PSWM_in_unionDHS_round7.txt
@@ -650,17 +650,17 @@ wc -l unionDHS_without_motifs_123456_789.bed #2174911
 After the removal of the 9 GATA3 motifs with `mast`, the unionDHS peak set now remains 2174911 regions (originally 2723010, removed ~20% regions). \
 
 Here I am using `shuf` to randomly select 7800 regulatory region to match with the GATA peak subset (quantile1: 7796 peaks) I am going to compare with. \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 shuf -n 7800 unionDHS_without_motifs_123456_789.bed > random_7800_unionDHS_without_motifs_123456_789.bed 
 ```
 
-```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 wc -l random_7800_unionDHS_without_motifs_123456_789.bed  
 head random_7800_unionDHS_without_motifs_123456_789.bed  
 ```
 
 Read the file in and use the center as regulatory region summit: \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 library(bigWig)
 chip.peak=read.table("random_7800_unionDHS_without_motifs_123456_789.bed", header=FALSE)
 nrow(chip.peak)
@@ -671,14 +671,14 @@ nrow(chip.peak.summit)
 head(chip.peak.summit)
 ```
 find the closest GAT to summit of unionDHS with `closestBed`. \
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 ctrl.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
 write.table(ctrl.distance,file= 'ctrl.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
 save.image('231205_GATA3_ChIP_clsestbed2.Rdata') 
 ```
 
 In this "all.distance' data frame, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
 head(ctrl.distance)
 nrow(ctrl.distance)
@@ -688,7 +688,7 @@ nrow(ctrl.distance[ctrl.distance$V9=="-",])
 
 ### Cumulative distribution function (CDF) plot
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 all.distance=read.table('all.distance.bed',header=F, comment.char='')
 ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
 head(all.distance)
@@ -698,7 +698,7 @@ nrow(all.distance)
 nrow(ctrl.distance)
 ```
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.chip = cbind(all.distance[,c(1:3, 11)], "GATA3_peak")
 df.ctrl = cbind(ctrl.distance[,c(1:3, 11)], "ctrl")
 colnames(df.chip) = c(colnames(all.distance)[1:3], "dis", "status")
@@ -707,7 +707,7 @@ head(df.chip)
 head(df.ctrl)
 ```
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.all = rbind(df.chip, df.ctrl)
 df.all$status = factor(df.all$status, levels = c("GATA3_peak", "ctrl"))
 head(df.all)
@@ -716,7 +716,7 @@ nrow(df.all)
 **plot CDF** \
 
 <!--
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 second_min <- function(vec) {
   # Find the first minimum
   first_min_index <- which.min(vec)
@@ -737,7 +737,7 @@ We are plotting the cumulative distribution function to evaluate whether a 3mer 
 
 We can also determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'ctrl'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'GATA3_peak'])
@@ -770,11 +770,23 @@ plot(rep.y, rep(rep.y) - match(match.y),
       lines(pred[[1]], pred[[2]], col = 'blue')
 
 ```
+```{r engine='R', eval=F, echo=F}
+pdf('empirical_distance_determination_20_GATA_wo_motifs.pdf', width=5,height=5)
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+dev.off()
+```
+
 
 The above plot plots CDFs' difference between GATA3 peak set and ctrl peak set. At 15bp, two CDFs start to be parallel/converged. \
 
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -808,7 +820,7 @@ The vertical dashed line indicates at which distance (log10 of 15bp) the two CDF
 
 
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 ecdfplot(~dis, groups = status, data = df.all,
          auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
          col =  c("#ce228e", "grey60"),
@@ -853,7 +865,7 @@ Plot PDF plot of distances between 1st and 2nd GAT. \
 **Input1** \
 This is the 3mer GAT coordinates on hg38 genome (both plus and minus strand) generated with `SeqOutbias` use read size==30. \
 
-```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 wc -l hg38.3.3.3.30_plus_minus_GAT.bed #64243047
 head -5 hg38.3.3.3.30_plus_minus_GAT.bed
 #chr1	11145	11148	14	14	-	GAT
@@ -869,7 +881,7 @@ head -5 hg38.3.3.3.30_plus_minus_GAT.bed
 This `all.distance.bed` file is searching for closest 3mer GAT to the peak summit (top 20% intense peak without motif 123456789). \
 Use `awk` to select 3mer-GAT's coordinates from the file. \
 
-```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 wc -l all.distance.bed #7796
 head -5 all.distance.bed
 #chr1	5598187	5598188	chr1	5598164	5598167	36	36	+	GAT	21
@@ -887,7 +899,7 @@ wc -l closest_1st_GAT_to_GATA_uniq_peak.bed #7791
 ```
 
 
-```{r engine='bash',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 head -5 closest_1st_GAT_to_GATA_uniq_peak.bed
 awk '$6 == "+" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_GATA_uniq_peak.bed
 awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_GATA_uniq_peak.bed
@@ -897,7 +909,7 @@ awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1s
 
 `-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
 `-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
-```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools 
 sort -k1,1 -k2,2n hg38.3.3.3.30_plus_minus_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.sorted.bed
 head -5 hg38.3.3.3.30_plus_minus_GAT.sorted.bed
@@ -931,7 +943,7 @@ wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed #64235256
 **Input3** \
 This `ctrl.distance.bed` file is searching for closest 3mer GAT to the unionDHS peak summit (ramdom 7800 regions without motif 123456789). \
 Use `awk` to select 3mer-GAT's coordinates from the file. \
-```{r engine='bash',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 wc -l ctrl.distance.bed 
 head -5 all.distance.bed
 
@@ -942,7 +954,7 @@ awk '{print $4, $5, $6, $7, $8, $9, $10}' ctrl.distance.bed | awk '{$1=$1}1' OFS
 wc -l closest_1st_GAT_to_unionDHS_uniq_peak.bed 
 ```
 
-```{r engine='bash',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='bash', eval=TRUE, echo=TRUE}
 head -5 closest_1st_GAT_to_unionDHS_uniq_peak.bed
 awk '$6 == "+" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_unionDHS_uniq_peak.bed
 awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_unionDHS_uniq_peak.bed
@@ -953,7 +965,7 @@ awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1s
 `-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
 `-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
 
-```{r engine='bash',class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools 
 sort -k1,1 -k2,2n hg38.3.3.3.30_plus_minus_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.sorted.bed
 head -5 hg38.3.3.3.30_plus_minus_GAT.sorted.bed
@@ -988,7 +1000,7 @@ wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_unionDHS.bed #6423524
 
 Read the file (1st closest GAT to GATA3 peak subset summit) in.  \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 closest_1st_GAT_to_GATA=read.table("closest_1st_GAT_to_GATA_uniq_peak.sorted.bed", header=FALSE)
 nrow(closest_1st_GAT_to_GATA)
 head(closest_1st_GAT_to_GATA)
@@ -996,7 +1008,7 @@ head(closest_1st_GAT_to_GATA)
 
 Read the GAT coorrdinates file without the 1st closest GAT to GATA3 peak summit (subset of top20% peaks without GATA3-like motifs 123456789). \
 
-```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 all.GAT.without.1st.closest.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT.bed", sep="\t", header=FALSE)
 nrow(all.GAT.without.1st.closest.file)
 #[1] 64235256
@@ -1021,7 +1033,7 @@ tail(all.GAT.without.1st.closest.file)
 
 Use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
   
-```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 closest.2nd.distance=bedTools.closest(bed1 = closest_1st_GAT_to_GATA[,1:3], bed2 = all.GAT.without.1st.closest.file, opt.string = '-d -t first')
 write.table(closest.2nd.distance,file= 'closest.2nd.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
 save.image('231206_GATA3_ChIP_2nd_clsestbed.Rdata') 
@@ -1032,7 +1044,7 @@ save.image('231206_GATA3_ChIP_2nd_clsestbed.Rdata')
 
 Read the file (1st closest GAT to unionHDS summit) in: \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 closest_1st_GAT_to_unionDHS=read.table("closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed", header=FALSE)
 nrow(closest_1st_GAT_to_unionDHS)
 head(closest_1st_GAT_to_unionDHS)
@@ -1040,7 +1052,7 @@ head(closest_1st_GAT_to_unionDHS)
 
 Read the GAT coorrdinates file without the 1st closest GAT. \
 
-```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 all.GAT.without.1st.closest.ctrl.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_unionDHS.bed", sep="\t", header=FALSE)
 nrow(all.GAT.without.1st.closest.ctrl.file) 
 #[1] 64235247
@@ -1057,7 +1069,7 @@ head(all.GAT.without.1st.closest.ctrl.file)
 
 Use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
   
-```{r engine='R',class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 closest.2nd.distance.unionDHS=bedTools.closest(bed1 = closest_1st_GAT_to_unionDHS[,1:3], bed2 = all.GAT.without.1st.closest.ctrl.file, opt.string = '-d -t first')
 write.table(closest.2nd.distance.unionDHS, file= 'closest.2nd.distance.unionDHS.bed', quote=F,sep="\t",col.names=F,row.names=F)
 save.image('231206_GATA3_ChIP_2nd_clsestbed2.Rdata') 
@@ -1068,7 +1080,7 @@ save.image('231206_GATA3_ChIP_2nd_clsestbed2.Rdata')
 
 In the previous section, we have found the 2nd closest GAT to the 1st closest GAT to either GATA3peak subset summits or unionDHS summits. \
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 #GATA3 peak subset
 closest.2nd.distance=read.table('closest.2nd.distance.bed',header=F, comment.char='')
 nrow(closest.2nd.distance) #7791
@@ -1084,7 +1096,7 @@ head(closest.2nd.distance.unionDHS)
 ```
 Subset two data.frames to contain information of the 2nd closest 3mer-GAT info (chr-start-end-strand-dis); \
 Then add the 'status' info and rbind the two dataframe. \
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.chip = cbind(closest.2nd.distance[,c(1:3, 9, 11)], "GATA3_peak")
 df.ctrl = cbind(closest.2nd.distance.unionDHS[,c(1:3, 9, 11)], "ctrl")
 colnames(df.chip) = c(colnames(closest.2nd.distance)[1:3], "strand", "dis", "status")
@@ -1101,7 +1113,7 @@ tail(df.all)
 
 Plot PDF: \
 
-```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # interaction variable
 df.all$interaction_var <- interaction(df.all$strand, df.all$status)
 library(lattice)
