@@ -741,15 +741,15 @@ We can also determine the distance at which the CDFs' difference between GATA3 p
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'ctrl'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'GATA3_peak'])
-match.y = seq(0, 6000, by=1) # creating indices
-rep.y = seq(0, 6000, by=1)
+match.y = seq(0, 7800, by=1) # creating indices
+rep.y = seq(0, 7800, by=1)
 
 spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
 pred = predict(spl)
 pred1 = predict(spl, deriv=1)
 
 print('The distance that CDFs are parallel or converge:')
-print(rep.y[min(which(pred1$y<=0)) - 1]) # 20; remember this number
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 15; 
 
 # Plot graph depicting the distance determination
 plot(rep.y, rep(rep.y) - match(match.y),
@@ -771,7 +771,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 
 ```
 
-The above plot plots CDFs' difference between GATA3 peak set and ctrl peak set. At 14bp, two CDFs start to be parallel/converged. \
+The above plot plots CDFs' difference between GATA3 peak set and ctrl peak set. At 15bp, two CDFs start to be parallel/converged. \
 
 
 ```{r engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
@@ -794,7 +794,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
          lty=c(1),
          par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 1.146, lty =2)
+             panel.abline(v= 1.176, lty =2)
              panel.ecdfplot(...)
          })
     
@@ -804,7 +804,7 @@ The above cumulative distribution function (PDF) plot is showing the distance be
 
 The left-shift of the red curve suggests that the 3mer-GAT are closer to the GATA3 ChIP peak set then the ctrl peak set. \
 
-The vertical dashed line indicates at which distance (log10 of 14bp) the two CDF traces became parallel. This suggests that the 3mer-GAT often binds within 15 bp of the GATA3 peak summit. \
+The vertical dashed line indicates at which distance (log10 of 15bp) the two CDF traces became parallel. This suggests that the 3mer-GAT often binds within 15 bp of the GATA3 peak summit. \
 
 
 
@@ -825,7 +825,7 @@ ecdfplot(~dis, groups = status, data = df.all,
          lty=c(1),
          par.settings = list(superpose.line = list(col =  c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 14, lty =2)
+             panel.abline(v= 15, lty =2)
              panel.ecdfplot(...)
          })
 ```
@@ -1127,8 +1127,14 @@ densityplot( ~ abs(dis) | status,
 ```
 
 
+In this plot, we use probability density function to plot the relative likelihood at different distances of observing a second closest 3mer GAT to the 1st closest GAT. \
 
-The Probability Density Function Plot shows that most 2nd closest GAT are found at ~10bp to the 1st closest GAT. This suggest that in GATA ChIP peaks, 3mer GAT-GAT are often found to have fixed spacings between them. \
+The left panel is plotting within the control sets and the right panel is plotting the GATA3 peak subset. In each panel, it shows the distances of 2nd GAT on minus strand (blue) or the distances of the 2nd GAT on plus strand (red) to the 1st closest GAT. \
+
+In GATA3 peak subset, most 2nd closest GAT are found at ~9bp distance to the 1st closest GAT. On the other hand, in the control set, we did not see such spike at any fixed position.  \
+
+This suggest that in GATA ChIP peaks, 3mer GAT-GAT are often found to have fixed spacings between them. \
+
 
 
 ### loop thourgh all bigWigs
