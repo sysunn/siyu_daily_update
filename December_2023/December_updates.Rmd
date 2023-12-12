@@ -39,7 +39,7 @@ pre[class] {
 }
 
 .revision {
-  background-color: lightpink;
+  background-color: #FFF4F2;
   border: 3px solid lightgrey;
   font-weight: bold;
 }
@@ -677,7 +677,7 @@ write.table(ctrl.distance,file= 'ctrl.distance.bed', quote=F,sep="\t",col.names=
 save.image('231205_GATA3_ChIP_clsestbed2.Rdata') 
 ```
 
-In this "all.distance' data frame, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
+In this "ctrl.distance' data frame, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
 head(ctrl.distance)
@@ -1148,8 +1148,523 @@ In GATA3 peak subset, most 2nd closest GAT are found at ~9bp distance to the 1st
 This suggest that in GATA ChIP peaks, 3mer GAT-GAT are often found to have fixed spacings between them. \
 
 
+## peaks in other quantiles
 
-### loop thourgh all bigWigs
+In the above analysis we analyzed peak set that are 1) without MEME/STREME found motifs; and 2) in top 20% peak intensity quantile. \
+
+In this analysis, we want to include the other 4 lower quantile peaks that without MEME/STREME found motifs. \
+
+**load files** \
+
+load files contains selected ChIP peak summit info \
+```{r engine='R', eval=TRUE, echo=TRUE}
+chip.peak.summit.quantile1=read.table("quantile1_summits.bed", header=FALSE)
+nrow(chip.peak.summit.quantile1)
+head(chip.peak.summit.quantile1)
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+chip.peak.summit.quantile0.8=read.table("quantile0.8_summits.bed", header=FALSE)
+chip.peak.summit.quantile0.6=read.table("quantile0.6_summits.bed", header=FALSE)
+chip.peak.summit.quantile0.4=read.table("quantile0.4_summits.bed", header=FALSE)
+chip.peak.summit.quantile0.2=read.table("quantile0.2_summits.bed", header=FALSE)
+nrow(chip.peak.summit.quantile0.8)
+head(chip.peak.summit.quantile0.8)
+summary(chip.peak.summit.quantile0.8$V4)
+nrow(chip.peak.summit.quantile0.6)
+head(chip.peak.summit.quantile0.6)
+summary(chip.peak.summit.quantile0.6$V4)
+nrow(chip.peak.summit.quantile0.4)
+head(chip.peak.summit.quantile0.4)
+summary(chip.peak.summit.quantile0.4$V4)
+nrow(chip.peak.summit.quantile0.2)
+head(chip.peak.summit.quantile0.2)
+summary(chip.peak.summit.quantile0.2$V4)
+```
+
+
+load files contains 3mer coordinates info \
+```{r engine='R', eval=F, echo=TRUE}
+#concatenate the plus and minus file together
+all.GAT.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT.bed", sep="\t", header=FALSE)
+head(all.GAT.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11145 11148 14 14  - GAT
+#2 chr1 11160 11163 14 14  - GAT
+#3 chr1 11576 11579 14 14  - GAT
+#4 chr1 13315 13318 14 14  - GAT
+#5 chr1 19797 19800 14 14  - GAT
+#6 chr1 27023 27026 14 14  - GAT
+tail(all.GAT.file)
+#                             V1    V2    V3 V4 V5 V6  V7
+#64243042 chrY_KI270740v1_random 33028 33031 36 36  + GAT
+#64243043 chrY_KI270740v1_random 35533 35536 36 36  + GAT
+#64243044 chrY_KI270740v1_random 35543 35546 36 36  + GAT
+#64243045 chrY_KI270740v1_random 35912 35915 36 36  + GAT
+#64243046 chrY_KI270740v1_random 36540 36543 36 36  + GAT
+#64243047 chrY_KI270740v1_random 36913 36916 36 36  + GAT
+
+nrow(all.GAT.file)
+#[1] 64243047
+```
+
+**bedtools closestBed** \
+The below function will sort input bed1 and bed2 first, then run `bedtools closestBed` between bed1 and bed2. \
+```{r engine='R', eval=F, echo=TRUE}
+# define function 
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+```
+
+Parameter `-d` will report the distance from the closest GAT to the peak summit. \
+Parameter `-t last` or `-t first` will only report either the last or the first entry in bed2 file if tied distance occurred. \
+Here we choose to use `-t first` to report the first coordinates when tie occurred. \
+
+Find the closest GAT to peak summit regardless of GAT strandedness \
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+all.distance.quantile1=bedTools.closest(bed1 = chip.peak.summit.quantile1[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+all.distance.quantile0.8=bedTools.closest(bed1 = chip.peak.summit.quantile0.8[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+all.distance.quantile0.6=bedTools.closest(bed1 = chip.peak.summit.quantile0.6[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+all.distance.quantile0.4=bedTools.closest(bed1 = chip.peak.summit.quantile0.4[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+all.distance.quantile0.2=bedTools.closest(bed1 = chip.peak.summit.quantile0.2[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+
+
+write.table(all.distance.quantile1,file= 'all.distance.quantile1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(all.distance.quantile0.8,file= 'all.distance.quantile0.8.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(all.distance.quantile0.6,file= 'all.distance.quantile0.6.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(all.distance.quantile0.4,file= 'all.distance.quantile0.4.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(all.distance.quantile0.2,file= 'all.distance.quantile0.2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('231211_GATA3_ChIP_clsestbed.Rdata') 
+```
+
+
+In these "all.distance.quantileX' data frames, V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
+```{r engine='R', eval=TRUE, echo=TRUE}
+all.distance.quantile1=read.table('all.distance.quantile1.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+```
+
+```{r engine='R', class.source = "revision",eval=TRUE, echo=TRUE}
+all.distance.quantile0.8=read.table('all.distance.quantile0.8.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+all.distance.quantile0.6=read.table('all.distance.quantile0.6.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+all.distance.quantile0.4=read.table('all.distance.quantile0.4.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+all.distance.quantile0.2=read.table('all.distance.quantile0.2.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+```
+
+**coherence check 1**: the number of the closest minus GAT is comparable to the number of the closest plus GAT. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(all.distance.quantile0.8)
+nrow(all.distance.quantile0.8[all.distance.quantile0.8$V9=="+",])
+nrow(all.distance.quantile0.8[all.distance.quantile0.8$V9=="-",])
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(all.distance.quantile0.6)
+nrow(all.distance.quantile0.6[all.distance.quantile0.6$V9=="+",])
+nrow(all.distance.quantile0.6[all.distance.quantile0.6$V9=="-",])
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(all.distance.quantile0.4)
+nrow(all.distance.quantile0.4[all.distance.quantile0.4$V9=="+",])
+nrow(all.distance.quantile0.4[all.distance.quantile0.4$V9=="-",])
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(all.distance.quantile0.2)
+nrow(all.distance.quantile0.2[all.distance.quantile0.2$V9=="+",])
+nrow(all.distance.quantile0.2[all.distance.quantile0.2$V9=="-",])
+```
+
+**coherence check 2**: Since we have use `-t first` to take care of the tie, now we have equal number of unique peak with their closest plus or minus or both GAT. \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(chip.peak.summit.quantile0.8) # there are 7796 unique peak 
+nrow(all.distance.quantile0.8)  
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(chip.peak.summit.quantile0.6) # there are 7796 unique peak 
+nrow(all.distance.quantile0.6)  
+```
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(chip.peak.summit.quantile0.4) # there are 7796 unique peak 
+nrow(all.distance.quantile0.4)  
+```
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+nrow(chip.peak.summit.quantile0.2) # there are 7594 unique peak 
+nrow(all.distance.quantile0.2)  
+```
+
+
+### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
+
+
+### Cumulative distribution function (CDF) plot
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.chip = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.chip) = c("V1","V2","v3", "dis", "status")
+for (chip.peak in Sys.glob(file.path("./all.distance.quantile*.bed"))) {
+    print(chip.peak)
+    quantile.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'all.distance.')[[1]][2]), ".bed")[[1]][1]
+    print(quantile.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 11)], quantile.name)
+    df.chip = rbind(df.chip, all.distance)
+}
+str(df.chip)
+unique(df.chip$quantile.name)
+```
+
+
+combine all single quantile plot into one plot \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+colnames(df.chip) = c("V1","V2","V3", "dis", "status")
+ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
+df.ctrl = cbind(ctrl.distance[,c(1:3, 11)], "ctrl")
+colnames(df.ctrl) = c(colnames(ctrl.distance)[1:3], "dis", "status")
+head(df.chip)
+head(df.ctrl)
+
+df.all=rbind(df.chip, df.ctrl)
+df.all$status = factor(df.all$status, levels = c("quantile0.2", "quantile0.4", "quantile0.6", "quantile0.8", "quantile1", "ctrl"))
+head(df.all)
+nrow(df.all)
+```
+
+
+**plot CDF** \
+
+<!--
+```{r engine='R', eval=TRUE, echo=TRUE}
+second_min <- function(vec) {
+  # Find the first minimum
+  first_min_index <- which.min(vec)
+  
+  # Remove the first minimum value
+  vec_without_first_min <- vec[-first_min_index]
+  
+  # Find the index of the minimum in the updated vector
+  second_min_index <- which.min(vec_without_first_min)
+  
+  # Return the second minimum value
+  return(vec_without_first_min[second_min_index])
+}
+```
+-->
+
+We are plotting the cumulative distribution function to evaluate whether a 3mer GAT are closer to the summit of GATA3 ChIP peaks (that might use 3mer GAT as a binding sequence) than they are to the summit of a random subset of union DHS regions (ctrl). \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,3.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e","grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 1.176, lty =2)
+             panel.ecdfplot(...)
+         })
+    
+```
+
+The above cumulative distribution function (PDF) plot is showing the distance between 3mer-GAT to the summit of GATA3 ChIP peak (red), or summit of the ctrl peak set (gray, random subset from the union DHS regions). \
+
+The left-shift of the red curve suggests that the 3mer-GAT are closer to the GATA3 ChIP peak set then the ctrl peak set. \
+
+The vertical dashed line indicates at which distance (log10 of 15bp) the two CDF traces became parallel. This suggests that the 3mer-GAT often binds within 15 bp of the GATA3 peak summit. \
+
+
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+ecdfplot(~dis, groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("pink","red"))(4), "#ce228e","grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = '3mer-GAT Distance (bp) from peak summit',
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,100),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e","grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 15, lty =2)
+             panel.ecdfplot(...)
+         })
+```
+
+The difference between this CDF with the previous one is: The above one is plotting actual distance in bp, the previous one is plotting log10 of the distance. The two CDF plots are essentially communicating the same thing. \
+
+
+### Probability Density Function Plot
+
+#### all GAT coordinates .bed file
+**Input1** \
+This is the 3mer GAT coordinates on hg38 genome (both plus and minus strand) generated with `SeqOutbias` use read size==30. \
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+wc -l hg38.3.3.3.30_plus_minus_GAT.bed #64243047
+head -5 hg38.3.3.3.30_plus_minus_GAT.bed
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	13315	13318	14	14	-	GAT
+#chr1	19797	19800	14	14	-	GAT
+```
+
+#### GATA3 peak subset (without the 9 GATA3-like motifs)   
+
+**Input2** \
+This `all.distance.quantileX.bed` file is searching for closest 3mer GAT to the peak summit (quantile1: top 20% intense peak without motif 123456789; quantile 0.8: second 20%......). \
+Use `awk` to select 3mer-GAT's coordinates from the file. \
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+for i in all.distance.quantile*.bed
+do
+ nm=$(echo $i | awk -F"all.distance." '{print $2}' | awk -F".bed" '{print $1}')
+ echo $nm
+ wc -l $i
+ head -5 $i
+ awk '{print $4, $5, $6, $7, $8, $9, $10}' $i | awk '{$1=$1}1' OFS="\t" > closest_1st_GAT_to_GATA_peak_${nm}.bed
+ wc -l closest_1st_GAT_to_GATA_peak_${nm}.bed
+ awk '{print $4, $5, $6, $7, $8, $9, $10}' $i | awk '{$1=$1}1' OFS="\t" | sort | uniq > closest_1st_GAT_to_GATA_uniq_peak_${nm}.bed
+ wc -l closest_1st_GAT_to_GATA_uniq_peak_${nm}.bed
+ head -5 closest_1st_GAT_to_GATA_uniq_peak_${nm}.bed
+ awk '$6 == "+" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_GATA_uniq_peak_${nm}.bed
+ awk '$6 == "-" {count++} END {print "Negative strand count:", count}' closest_1st_GAT_to_GATA_uniq_peak_${nm}.bed
+done 2>&1 | tee -a closest_1st_GAT_to_GATA_sort_uniq_log.txt
+```
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+cat closest_1st_GAT_to_GATA_sort_uniq_log.txt
+```
+
+
+
+**`Bedtools subtract`** \
+
+`-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
+`-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+module load bedtools 
+#sort -k1,1 -k2,2n hg38.3.3.3.30_plus_minus_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+#head -5 hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11521	11524	36	36	+	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	12188	12191	36	36	+	GAT
+
+
+for i in closest_1st_GAT_to_GATA_uniq_peak_quantile*.bed
+do
+  nm=$(echo $i | awk -F"closest_1st_GAT_to_GATA_uniq_peak_" '{print $2}' | awk -F".bed" '{print $1}')
+  echo $nm
+  sort -k1,1 -k2,2n $i > closest_1st_GAT_to_GATA_uniq_peak_${nm}.sorted.bed 
+  head -5 closest_1st_GAT_to_GATA_uniq_peak_${nm}.sorted.bed 
+  bedtools subtract -a hg38.3.3.3.30_plus_minus_GAT.sorted.bed -b closest_1st_GAT_to_GATA_uniq_peak_${nm}.sorted.bed -f 1.00 -s > hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_${nm}.bed
+  wc -l hg38.3.3.3.30_plus_minus_GAT.sorted.bed #64243047
+  wc -l closest_1st_GAT_to_GATA_uniq_peak_${nm}.sorted.bed 
+  wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_${nm}.bed 
+done 2>&1 | tee -a closest_1st_GAT_to_GATA_Bedsubtract_log.txt
+```
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+cat closest_1st_GAT_to_GATA_Bedsubtract_log.txt
+```
+
+#### unionDHS set (without the 9 GATA3-like motifs)
+
+**Input3** \
+
+**`bedtools subtract`** \
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+wc -l hg38.3.3.3.30_plus_minus_GAT.sorted.bed #64243047
+wc -l closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed #7800
+wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_unionDHS.bed #64235247
+
+#64243047-7800
+#[1] 64235247
+```
+
+
+#### Find the 2nd closest GAT to the 1st closest GAT with `bedtools closestBed`
+
+**GATA3 peak subset** \
+
+Read the file (1st closest GAT to GATA3 peak subset summit) in.  \
+Read the GAT coorrdinates file without the 1st closest GAT to GATA3 peak summit (5 quantile subsets that ranked by intensity of peaks without GATA3-like motifs 123456789). \
+Use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+#load the bedTools.closest function first
+for (closest_1st_GAT in Sys.glob(file.path("./closest_1st_GAT_to_GATA_uniq_peak_quantile*sorted.bed"))) {
+    print(closest_1st_GAT)
+    quantile.name =strsplit((strsplit(strsplit(closest_1st_GAT, "/")[[1]][length(strsplit(closest_1st_GAT, "/")[[1]])], 'closest_1st_GAT_to_GATA_uniq_peak_')[[1]][2]), ".sorted.bed")[[1]][1]
+    print(quantile.name)
+    
+    closest_1st_GAT_to_GATA=read.table(closest_1st_GAT, header=FALSE)
+    all.GAT.without.1st.closest.file=read.table(file = paste0("hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_", quantile.name, '.bed'), sep="\t", header=FALSE)
+    
+    closest.2nd.distance=bedTools.closest(bed1 = closest_1st_GAT_to_GATA[,1:3], bed2 = all.GAT.without.1st.closest.file, opt.string = '-d -t first')
+    write.table(closest.2nd.distance,file=paste0("closest.2nd.distance.", quantile.name, '.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+}
+save.image('231211_GATA3_ChIP_2nd_clsestbed.Rdata') 
+```
+
+
+**UnionDHS regions** \
+
+This part has already completed in previous analysis, file is saved in 'closest.2nd.distance.unionDHS.bed'. \
+
+
+#### Probability Density Function Plot
+
+In the previous section, we have found the 2nd closest GAT to the 1st closest GAT to either GATA3peak subset summits or unionDHS summits. \
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+for i in closest.2nd.distance.quantile*.bed
+do
+ echo $i
+ wc -l $i
+ head -5 $i
+ awk '$9 == "+" {count++} END {print "Positive strand count:", count}' $i
+ awk '$9 == "-" {count++} END {print "Negative strand count:", count}' $i
+done 2>&1 | tee -a closest_2nd_distance_log.txt
+```
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+cat closest_2nd_distance_log.txt
+```
+
+
+Subset two data.frames to contain information of the 2nd closest 3mer-GAT info (chr-start-end-strand-dis); \
+Then add the 'status' info and rbind the two dataframe. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.chip = data.frame(matrix(nrow = 0, ncol = 6))     
+for (chip.peak in Sys.glob(file.path("./closest.2nd.distance.quantile*.bed"))) {
+    print(chip.peak)
+    quantile.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'closest.2nd.distance.')[[1]][2]), ".bed")[[1]][1]
+    print(quantile.name)
+    
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 9, 11)], quantile.name)
+    df.chip = rbind(df.chip, all.distance)
+}
+str(df.chip)
+unique(df.chip$quantile.name)
+```
+
+
+combine all single quantile plot into one plot \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+colnames(df.chip) = c("V1","V2","v3", "strand", "dis", "status")
+closest.2nd.distance.unionDHS=read.table('closest.2nd.distance.unionDHS.bed',header=F, comment.char='')
+df.ctrl = cbind(closest.2nd.distance.unionDHS[,c(1:3, 9, 11)], "ctrl")
+colnames(df.ctrl) = c("V1","V2","v3", "strand", "dis", "status")
+head(df.chip)
+head(df.ctrl)
+
+df.all=rbind(df.chip, df.ctrl)
+df.all$status = factor(df.all$status, levels = c("ctrl", "quantile0.2", "quantile0.4", "quantile0.6", "quantile0.8", "quantile1"))
+df.all$dis=as.numeric(df.all$dis)
+df.all$strand=as.factor(df.all$strand)
+head(df.all)
+nrow(df.all)
+```
+
+
+Plot PDF: \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+#myColors <- ifelse(df.all$strand == "+", "red", "blue")
+densityplot( ~ abs(dis) | status,
+            groups = strand,
+            auto.key = T,
+            data = df.all,
+            xlim=c(0,60),
+            layout=c(1,6),
+            xlab = "distance (bp) from 2nd GAT to 1st GAT",
+            type = "count",
+            #col = myColors,
+            lty = 1,
+            main = "ctrl vs. GATA3 peaks",
+            par.settings=list(par.xlab.text=list(cex=1.1,font=2), 
+                                 par.ylab.text=list(cex=1.1,font=2))
+)
+```
+
+
+In this plot, we use probability density function to plot the relative likelihood at different distances of observing a second closest 3mer GAT to the 1st closest GAT. \
+
+It is showing a dosage effect when we decreased peak intensity (from quantile 1 to quantile 0.2). The best set is quantile 1. \
+
+
+
+**Conclusion**: I think, quantile1 (top 20% intensity) is where we could make the cutoff in the entire GATA3 ChIP peaks. These peaks are: 1) higher intensity; 2) more than 70% peaks has GATA-like motifs found by MEME/STREME; 3) for peaks lack MEME/STREME found motif, we have good enrichment of GAT near peak summit, and a good 3mer-3mer structure. \
+
+## positive control
+
+## loop thourgh all bigWigs
 
 sys.glob() \
 
