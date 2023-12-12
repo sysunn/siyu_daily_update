@@ -511,7 +511,6 @@ nrow(all.distance)
 ```
 
 
-### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
 
 ### making composite profile
 
@@ -1333,8 +1332,6 @@ nrow(all.distance.quantile0.2)
 ```
 
 
-### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
-
 
 ### Cumulative distribution function (CDF) plot
 
@@ -1622,7 +1619,7 @@ head(df.chip)
 head(df.ctrl)
 
 df.all=rbind(df.chip, df.ctrl)
-df.all$status = factor(df.all$status, levels = c("ctrl", "quantile0.2", "quantile0.4", "quantile0.6", "quantile0.8", "quantile1"))
+df.all$status = factor(df.all$status, levels = c("quantile1", "quantile0.8", "quantile0.6",  "quantile0.4", "quantile0.2", "ctrl"))
 df.all$dis=as.numeric(df.all$dis)
 df.all$strand=as.factor(df.all$strand)
 head(df.all)
@@ -1636,21 +1633,28 @@ Plot PDF: \
 library(lattice)
 library(latticeExtra)
 
-#myColors <- ifelse(df.all$strand == "+", "red", "blue")
 densityplot( ~ abs(dis) | status,
             groups = strand,
-            auto.key = T,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
             data = df.all,
-            xlim=c(0,60),
-            layout=c(1,6),
+            col=c("blue", "red"),
+            aspect = 2.5,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            layout=c(6,1),
             xlab = "distance (bp) from 2nd GAT to 1st GAT",
-            type = "count",
-            #col = myColors,
-            lty = 1,
             main = "ctrl vs. GATA3 peaks",
-            par.settings=list(par.xlab.text=list(cex=1.1,font=2), 
-                                 par.ylab.text=list(cex=1.1,font=2))
-)
+            #between=list(y=1.0),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("blue", "red"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 9, lty =2)
+             panel.abline(v= 2, lty =2)
+             panel.densityplot(...)
+         })
 ```
 
 
@@ -1658,9 +1662,49 @@ In this plot, we use probability density function to plot the relative likelihoo
 
 It is showing a dosage effect when we decreased peak intensity (from quantile 1 to quantile 0.2). The best set is quantile 1. \
 
+**make a single plot** \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+#myColors <- ifelse(df.all$strand == "+", "red", "blue")
+densityplot( ~ abs(dis),
+            groups = status,
+            data = df.all,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("grey60", colorRampPalette(c("pink","red"))(4), "#ce228e"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd GAT to 1st GAT",
+            main = "ctrl vs. GATA3 peaks",
+            between=list(y=1.0),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("grey60", colorRampPalette(c("pink","red"))(4), "#ce228e"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 9, lty =2)
+             panel.abline(v= 2, lty =2)
+             panel.densityplot(...)
+         })
+            
+            
+
+```
+
+In the above plot, it is important to set `from` and `to` arguments inside `density()`. Because by default, density will extend the range so that the density curve approaches 0 at the extreme. \
+
 
 
 **Conclusion**: I think, quantile1 (top 20% intensity) is where we could make the cutoff in the entire GATA3 ChIP peaks. These peaks are: 1) higher intensity; 2) more than 70% peaks has GATA-like motifs found by MEME/STREME; 3) for peaks lack MEME/STREME found motif, we have good enrichment of GAT near peak summit, and a good 3mer-3mer structure. \
+
+
+## Genome browser
+### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
 
 ## other negative control
 
