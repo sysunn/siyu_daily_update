@@ -1662,7 +1662,12 @@ It is showing a dosage effect when we decreased peak intensity (from quantile 1 
 
 **Conclusion**: I think, quantile1 (top 20% intensity) is where we could make the cutoff in the entire GATA3 ChIP peaks. These peaks are: 1) higher intensity; 2) more than 70% peaks has GATA-like motifs found by MEME/STREME; 3) for peaks lack MEME/STREME found motif, we have good enrichment of GAT near peak summit, and a good 3mer-3mer structure. \
 
+## other negative control
+
+CTCF peak sets (remove motifs 123456789) \
+
 ## positive control
+There are 9 GATA3 peak sets each with 1 known enriched GATA3-like motif found by MEME/STREME. \
 
 ## loop thourgh all bigWigs
 
