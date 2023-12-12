@@ -1668,7 +1668,6 @@ It is showing a dosage effect when we decreased peak intensity (from quantile 1 
 library(lattice)
 library(latticeExtra)
 
-#myColors <- ifelse(df.all$strand == "+", "red", "blue")
 densityplot( ~ abs(dis),
             groups = status,
             data = df.all,
@@ -1691,9 +1690,6 @@ densityplot( ~ abs(dis),
              panel.abline(v= 2, lty =2)
              panel.densityplot(...)
          })
-            
-            
-
 ```
 
 In the above plot, it is important to set `from` and `to` arguments inside `density()`. Because by default, density will extend the range so that the density curve approaches 0 at the extreme. \
@@ -1707,14 +1703,106 @@ In the above plot, it is important to set `from` and `to` arguments inside `dens
 ### visualize 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
 
 files to upload: \
--3mer-GAT coordinates file (+/-) (in .bigWig format with trackline); \
+-3mer-GAT coordinates file (+/-) (in .bigWig format); \
 -several annotation bed files including: 1) peak summit files; 2) closest GAT to peak summit; 3) 2nd closest GAT to peak summit. \
 
-trackhub link: \
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+library(bigWig)
+peak.region.summit=center.bed(read.table('/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/de_novo_motif/without_motifs_123456_789.bed', sep = "\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+write.table(peak.region.summit,file= 'without_motifs_123456_789_summits.bed', quote=F,sep="\t",col.names=F,row.names=F)
+```
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+# 1)
+cat without_motifs_123456_789_summits.bed | sort -k1,1 -k2,2n > without_motifs_123456_789_summits.sorted.bed
+
+# 2)
+cat closest_1st_GAT_to_GATA_uniq_peak_quantile0.2.bed closest_1st_GAT_to_GATA_uniq_peak_quantile0.4.bed closest_1st_GAT_to_GATA_uniq_peak_quantile0.6.bed closest_1st_GAT_to_GATA_uniq_peak_quantile0.8.bed closest_1st_GAT_to_GATA_uniq_peak_quantile1.bed | sort -k1,1 -k2,2n > closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted.bed
+
+awk '{print $1, $2, $3, $4, $5, $6}' closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted.bed | awk '{$1=$1}1' OFS="\t" > closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted2.bed
+
+# 3)
+cat closest.2nd.distance.quantile1.bed closest.2nd.distance.quantile0.8.bed closest.2nd.distance.quantile0.2.bed closest.2nd.distance.quantile0.4.bed closest.2nd.distance.quantile0.6.bed | sort -k1,1 -k2,2n > closest.2nd.distance.quantile.all.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.distance.quantile.all.sorted.bed | awk '{$1=$1}1' OFS="\t" > closest.2nd.distance.quantile.all.sorted2.bed
+```
+
+Add trackline:
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"peak.withoutmotifs.summit.bed\" description=\"peak.withoutmotifs.summit_bed\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' without_motifs_123456_789_summits.sorted.bed > without_motifs_123456_789_summits.sorted.header.bed
+           
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.1st.GAT_bed\" description=\"closest.1st.GAT_bed\" visibility=full autoScale=on useScore=1 color=255,0,0"
+            } {print $0}' closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted2.bed > closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted.header.bed
+           
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.GAT_bed\" description=\"closest.2nd.GAT_bed\" visibility=full autoScale=on useScore=1 color=0,0,255"
+            } {print $0}' closest.2nd.distance.quantile.all.sorted2.bed > closest.2nd.distance.quantile.all.sorted.header.bed
+```
+
+**convert to bigWig** \
+sort the .bed file: \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#GAT
+dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/
+plus_file=${dir}hg38.3.3.3plus.36_GAT.bed
+minus_file=${dir}hg38.3.3.3minus.14_GAT.bed  
+echo "plus_GAT (.bed)"
+wc -l ${plus_file}
+head -5  ${plus_file}
+echo "minus_GAT (.bed)"
+wc -l ${minus_file}
+head -5 ${minus_file}
+
+
+sort -k1,1 -k2,2n ${plus_file} > hg38.3.3.3plus.36_GAT_sorted.bed
+sort -k1,1 -k2,2n ${minus_file} > hg38.3.3.3minus.14_GAT_sorted.bed
+wc -l hg38.3.3.3plus.36_GAT_sorted.bed
+wc -l hg38.3.3.3minus.14_GAT_sorted.bed
+```
+Use `bedtools genomecov -bg` to convert .bed to .bedGraph. \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+module load bedtools
+module load ucsc_genome/2012.05.22
+
+sizes=/home/FCAM/ssun/Genome_pro/hg38.chrom.sizes
+#bedtools genomecov tool
+bedtools genomecov -bg -i hg38.3.3.3plus.36_GAT_sorted.bed -g ${sizes} > hg38.3.3.3plus.36_GAT.bedGraph 
+bedtools genomecov -bg -i hg38.3.3.3minus.14_GAT_sorted.bed -g ${sizes} > hg38.3.3.3minus.14_GAT.bedGraph 
+wc -l hg38.3.3.3plus.36_GAT.bedGraph 
+wc -l hg38.3.3.3minus.14_GAT.bedGraph 
+```
+
+The final step is to convert .bedGraph to .bigWig with UCSC `bedGraphToBigWig` tool.
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#UCSC bedGraphToBigWig tool
+bedGraphToBigWig hg38.3.3.3plus.36_GAT.bedGraph ${sizes} hg38.3.3.3plus.36_GAT.bigWig
+bedGraphToBigWig hg38.3.3.3minus.14_GAT.bedGraph ${sizes} hg38.3.3.3minus.14_GAT.bigWig
+```
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+cat UCSCGB.sh_7536738.out
+```
+
+**Note that the .bedGraph converted from .bed with `bedtools genomecov` has less genome coordinates entry. This is because the original .bed file contains adjacent regions, and `bedtools genomecov` collapse these regions into a single entry in the BEDGraph file by merging or summarizing the coverage data. \
+
+
+**Trackhub link**: http://guertinlab.cam.uchc.edu/over3mer_hub/hub.txt \
+The annotation BED files need to be upload via Custom Track. \
+
+**Section link**: \
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image"}
+#library(knitr)
+knitr::include_graphics("./over3mer.png") 
+```
 
 ## other negative control
 
 CTCF peak sets (remove motifs 123456789) \
+
 
 ## positive control
 There are 9 GATA3 peak sets each with 1 known enriched GATA3-like motif found by MEME/STREME. \
