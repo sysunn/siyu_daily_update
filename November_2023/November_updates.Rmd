@@ -868,10 +868,10 @@ library(knitr)
 knitr::include_graphics("./downstream_closest.png") 
 ```
 
-It turns out, in our usage of `closestBed`, it does not consider strandedness, only consider upstream or downstream information during its distance calculation: \
+In our usage of `closestBed`, we did not consider strandedness, only consider upstream or downstream information during its distance calculation: \
 
-If the 3mer coordinates is <span class="highlighted2">**upstream**</span> of peak summit, `closestBed` will use the peak summit coordinates <span class="highlighted2">END</span> to subtract the 3mer coordinates <span class="highlighted2">START</span>, then add 1bp as the distance; \
-If the 3mer coordinates is <span class="highlighted2">**downstream**</span> of peak summit, `closestBed` will use 3mer coordinates <span class="highlighted2">START</span> to subtract peak summit coordinates class="highlighted2">END</span>, then add 1bp as the distance;  \
+If the 3mer coordinates is <span class="highlighted2">**upstream**</span> of peak summit, `closestBed` will use the peak summit coordinates <span class="highlighted2">END</span> to subtract the 3mer coordinates <span class="highlighted2">START</span>, then <span class="highlighted2">add 1bp</span> as the distance; \
+If the 3mer coordinates is <span class="highlighted2">**downstream**</span> of peak summit, `closestBed` will use 3mer coordinates <span class="highlighted2">START</span> to subtract peak summit coordinates class="highlighted2">END</span>, then <span class="highlighted2">add 1bp</span> as the distance;  \
 If they have <span class="highlighted2">**overlapped**</span> base, it will report a distance of <span class="highlighted2">0</span>. \
 
 ## step2: making composite profile
