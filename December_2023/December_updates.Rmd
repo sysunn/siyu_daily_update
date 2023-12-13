@@ -1902,7 +1902,7 @@ cat UCSCGB.sh_7536738.out
 **Trackhub link**: http://guertinlab.cam.uchc.edu/over3mer_hub/hub.txt \
 The annotation BED files need to be upload via Custom Track. \
 
-**Section link**: \
+**Sved Section**: \
 
 ```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image"}
 #library(knitr)
@@ -1938,11 +1938,11 @@ knitr::include_graphics("./over3mer_9bp.png")
 knitr::include_graphics("./over3mer_10bp.png") 
 ```
 
-**Notice that if `closestBed` found overlap features, ethan the distance will be reported as 0; if no overlaps are found, `closestBed` looks for the feature in B that is closest (that is, least genomic distance to the start or end of A) to A.** \
+**Notice that if `closestBed` found overlap features, the distance will be reported as 0; if no overlaps are found, `closestBed` will look for the feature in B that is closest (that is, least genomic distance to the start or end of A) to A.** \
 If B is upstream of A, then it will use the start of A to subtract the end of B, then add 1; \
 If B is downstream of A, then it will use the start of B to subtract the end of A, then add 1. \
 
-Since `closestBed` add 1 in its calculation of distance, we need to know that if we want to know the actual fixed spacings between two 3mer, we use the distance -1. \
+Since `closestBed` is adding 1bp in its calculation of distance, the actual fixed spacings between two 3mer will be **distance -1**. \
 
 ## other negative control
 
