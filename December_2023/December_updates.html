@@ -782,14 +782,14 @@ color:blue;
 <pre><code>## also installing the dependencies &#39;Rcpp&#39;, &#39;utf8&#39;, &#39;askpass&#39;, &#39;credentials&#39;, &#39;openssl&#39;, &#39;sys&#39;, &#39;zip&#39;, &#39;gitcreds&#39;, &#39;httr2&#39;, &#39;ini&#39;, &#39;httpuv&#39;, &#39;xtable&#39;, &#39;sourcetools&#39;, &#39;later&#39;, &#39;promises&#39;, &#39;fansi&#39;, &#39;systemfonts&#39;, &#39;textshaping&#39;, &#39;pillar&#39;, &#39;pkgconfig&#39;, &#39;diffobj&#39;, &#39;rematch2&#39;, &#39;clipr&#39;, &#39;crayon&#39;, &#39;curl&#39;, &#39;gert&#39;, &#39;gh&#39;, &#39;purrr&#39;, &#39;rprojroot&#39;, &#39;rstudioapi&#39;, &#39;whisker&#39;, &#39;shiny&#39;, &#39;callr&#39;, &#39;processx&#39;, &#39;downlit&#39;, &#39;httr&#39;, &#39;ragg&#39;, &#39;tibble&#39;, &#39;xml2&#39;, &#39;htmlwidgets&#39;, &#39;prettyunits&#39;, &#39;xopen&#39;, &#39;brew&#39;, &#39;commonmark&#39;, &#39;cpp11&#39;, &#39;brio&#39;, &#39;praise&#39;, &#39;ps&#39;, &#39;waldo&#39;, &#39;usethis&#39;, &#39;desc&#39;, &#39;miniUI&#39;, &#39;pkgbuild&#39;, &#39;pkgdown&#39;, &#39;pkgload&#39;, &#39;profvis&#39;, &#39;rcmdcheck&#39;, &#39;remotes&#39;, &#39;roxygen2&#39;, &#39;rversions&#39;, &#39;sessioninfo&#39;, &#39;testthat&#39;, &#39;urlchecker&#39;, &#39;withr&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpvjCVRd/downloaded_packages</code></pre>
+##  /tmp/Rtmp6mXzpe/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>library(devtools)</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre class="r watch-out"><code>devtools::install_github(&#39;andrelmartins/bigWig&#39;,
               subdir=&#39;bigWig&#39;)</code></pre>
 <pre><code>## Downloading GitHub repo andrelmartins/bigWig@HEAD</code></pre>
 <pre><code>## ── R CMD build ─────────────────────────────────────────────────────────────────
-## * checking for file ‘/private/tmp/RtmpvjCVRd/remotes104e5494fb1e/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
+## * checking for file ‘/private/tmp/Rtmp6mXzpe/remotesc23396e657e/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
 ## * preparing ‘bigWig’:
 ## * checking DESCRIPTION meta-information ... OK
 ## * cleaning src
@@ -802,7 +802,7 @@ install.packages(&quot;latticeExtra&quot;)</code></pre>
 <pre><code>## also installing the dependencies &#39;deldir&#39;, &#39;RcppEigen&#39;, &#39;png&#39;, &#39;jpeg&#39;, &#39;RColorBrewer&#39;, &#39;interp&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpvjCVRd/downloaded_packages</code></pre>
+##  /tmp/Rtmp6mXzpe/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>install.packages(&quot;DESeq2&quot;)</code></pre>
 <pre><code>## Warning: package &#39;DESeq2&#39; is not available for this version of R
 ## 
@@ -2785,7 +2785,6 @@ densityplot( ~ abs(dis) | status,
 <pre class="r revision"><code>library(lattice)
 library(latticeExtra)
 
-#myColors &lt;- ifelse(df.all$strand == &quot;+&quot;, &quot;red&quot;, &quot;blue&quot;)
 densityplot( ~ abs(dis),
             groups = status,
             data = df.all,
@@ -2821,11 +2820,102 @@ densityplot( ~ abs(dis),
 <div id="visualize-3mer-gat-distribution-relative-to-the-defined-closest-gat-on-genome-browser" class="section level3" number="2.6.1">
 <h3><span class="header-section-number">2.6.1</span> visualize 3mer-GAT distribution relative to the defined “closest GAT” on Genome Browser</h3>
 <p>files to upload:<br />
--3mer-GAT coordinates file (+/-) (in .bigWig format with trackline);<br />
+-3mer-GAT coordinates file (+/-) (in .bigWig format);<br />
 -several annotation bed files including: 1) peak summit files; 2) closest GAT to peak summit; 3) 2nd closest GAT to peak summit.<br />
 </p>
-<p>trackhub link:<br />
+<pre class="r revision"><code>library(bigWig)
+peak.region.summit=center.bed(read.table(&#39;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/de_novo_motif/without_motifs_123456_789.bed&#39;, sep = &quot;\t&quot;, header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+write.table(peak.region.summit,file= &#39;without_motifs_123456_789_summits.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)</code></pre>
+<pre class="bash revision"><code># 1)
+cat without_motifs_123456_789_summits.bed | sort -k1,1 -k2,2n &gt; without_motifs_123456_789_summits.sorted.bed
+
+# 2)
+cat closest_1st_GAT_to_GATA_uniq_peak_quantile0.2.bed closest_1st_GAT_to_GATA_uniq_peak_quantile0.4.bed closest_1st_GAT_to_GATA_uniq_peak_quantile0.6.bed closest_1st_GAT_to_GATA_uniq_peak_quantile0.8.bed closest_1st_GAT_to_GATA_uniq_peak_quantile1.bed | sort -k1,1 -k2,2n &gt; closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted.bed
+
+awk &#39;{print $1, $2, $3, $4, $5, $6}&#39; closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; &gt; closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted2.bed
+
+# 3)
+cat closest.2nd.distance.quantile1.bed closest.2nd.distance.quantile0.8.bed closest.2nd.distance.quantile0.2.bed closest.2nd.distance.quantile0.4.bed closest.2nd.distance.quantile0.6.bed | sort -k1,1 -k2,2n &gt; closest.2nd.distance.quantile.all.sorted.bed
+
+awk &#39;{print $4, $5, $6, $7, $8, $9}&#39; closest.2nd.distance.quantile.all.sorted.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; &gt; closest.2nd.distance.quantile.all.sorted2.bed</code></pre>
+<p>Add trackline:</p>
+<pre class="bash revision"><code>awk &#39;BEGIN {print &quot;browser position chr10:16,000-17,000&quot; 
+            print &quot;track type=bed name=\&quot;peak.withoutmotifs.summit.bed\&quot; description=\&quot;peak.withoutmotifs.summit_bed\&quot; visibility=full autoScale=on useScore=1 color=0,0,0&quot;
+            } {print $0}&#39; without_motifs_123456_789_summits.sorted.bed &gt; without_motifs_123456_789_summits.sorted.header.bed
+           
+awk &#39;BEGIN {print &quot;browser position chr10:16,000-17,000&quot; 
+            print &quot;track type=bed name=\&quot;closest.1st.GAT_bed\&quot; description=\&quot;closest.1st.GAT_bed\&quot; visibility=full autoScale=on useScore=1 color=255,0,0&quot;
+            } {print $0}&#39; closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted2.bed &gt; closest_1st_GAT_to_GATA_uniq_peak_quantile_all.sorted.header.bed
+           
+awk &#39;BEGIN {print &quot;browser position chr10:16,000-17,000&quot; 
+            print &quot;track type=bed name=\&quot;closest.2nd.GAT_bed\&quot; description=\&quot;closest.2nd.GAT_bed\&quot; visibility=full autoScale=on useScore=1 color=0,0,255&quot;
+            } {print $0}&#39; closest.2nd.distance.quantile.all.sorted2.bed &gt; closest.2nd.distance.quantile.all.sorted.header.bed</code></pre>
+<p><strong>convert to bigWig</strong><br />
+sort the .bed file:<br />
 </p>
+<pre class="bash revision"><code>#GAT
+dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/
+plus_file=${dir}hg38.3.3.3plus.36_GAT.bed
+minus_file=${dir}hg38.3.3.3minus.14_GAT.bed  
+echo &quot;plus_GAT (.bed)&quot;
+wc -l ${plus_file}
+head -5  ${plus_file}
+echo &quot;minus_GAT (.bed)&quot;
+wc -l ${minus_file}
+head -5 ${minus_file}
+
+
+sort -k1,1 -k2,2n ${plus_file} &gt; hg38.3.3.3plus.36_GAT_sorted.bed
+sort -k1,1 -k2,2n ${minus_file} &gt; hg38.3.3.3minus.14_GAT_sorted.bed
+wc -l hg38.3.3.3plus.36_GAT_sorted.bed
+wc -l hg38.3.3.3minus.14_GAT_sorted.bed</code></pre>
+<p>Use <code>bedtools genomecov -bg</code> to convert .bed to .bedGraph.<br />
+</p>
+<pre class="bash revision"><code>module load bedtools
+module load ucsc_genome/2012.05.22
+
+sizes=/home/FCAM/ssun/Genome_pro/hg38.chrom.sizes
+#bedtools genomecov tool
+bedtools genomecov -bg -i hg38.3.3.3plus.36_GAT_sorted.bed -g ${sizes} &gt; hg38.3.3.3plus.36_GAT.bedGraph 
+bedtools genomecov -bg -i hg38.3.3.3minus.14_GAT_sorted.bed -g ${sizes} &gt; hg38.3.3.3minus.14_GAT.bedGraph 
+wc -l hg38.3.3.3plus.36_GAT.bedGraph 
+wc -l hg38.3.3.3minus.14_GAT.bedGraph </code></pre>
+<p>The final step is to convert .bedGraph to .bigWig with UCSC <code>bedGraphToBigWig</code> tool.</p>
+<pre class="bash revision"><code>#UCSC bedGraphToBigWig tool
+bedGraphToBigWig hg38.3.3.3plus.36_GAT.bedGraph ${sizes} hg38.3.3.3plus.36_GAT.bigWig
+bedGraphToBigWig hg38.3.3.3minus.14_GAT.bedGraph ${sizes} hg38.3.3.3minus.14_GAT.bigWig</code></pre>
+<pre class="bash revision"><code>cat UCSCGB.sh_7536738.out</code></pre>
+<pre><code>## plus_GAT (.bed)
+## 32147038 /labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/hg38.3.3.3plus.36_GAT.bed
+## chr1 11521   11524   36  36  +   GAT
+## chr1 12188   12191   36  36  +   GAT
+## chr1 13274   13277   36  36  +   GAT
+## chr1 13314   13317   36  36  +   GAT
+## chr1 15171   15174   36  36  +   GAT
+## minus_GAT (.bed)
+## 32096009 /labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs30/seqdump/hg38.3.3.3minus.14_GAT.bed
+## chr1 11145   11148   14  14  -   GAT
+## chr1 11160   11163   14  14  -   GAT
+## chr1 11576   11579   14  14  -   GAT
+## chr1 13315   13318   14  14  -   GAT
+## chr1 19797   19800   14  14  -   GAT
+## 32147038 hg38.3.3.3plus.36_GAT_sorted.bed
+## 32096009 hg38.3.3.3minus.14_GAT_sorted.bed
+## 31502719 hg38.3.3.3plus.36_GAT.bedGraph
+## 31455328 hg38.3.3.3minus.14_GAT.bedGraph</code></pre>
+<p>**Note that the .bedGraph converted from .bed with <code>bedtools genomecov</code> has less genome coordinates entry. This is because the original .bed file contains adjacent regions, and <code>bedtools genomecov</code> collapse these regions into a single entry in the BEDGraph file by merging or summarizing the coverage data.<br />
+</p>
+<p><strong>Trackhub link</strong>: <a href="http://guertinlab.cam.uchc.edu/over3mer_hub/hub.txt" class="uri">http://guertinlab.cam.uchc.edu/over3mer_hub/hub.txt</a><br />
+The annotation BED files need to be upload via Custom Track.<br />
+</p>
+<p><strong>Section link</strong>:<br />
+</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-108"></span>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhwAAACMCAIAAAC4ZedBAAAACXBIWXMAAAsSAAALEgHS3X78AAAgAElEQVR4nO2df4jd5pnvpTS13SYD1rEdqLOQs6+87u6lbg06/6zJrQcqeXtLAwUj/dFSOnvp6uwfSxPu/UPa/rFxYAkS++MGw4VKgWZIwQtH+G65DiTxUchkQ10WjtamvrR3TI520qXu4vVIw511Enub6qLzPXmt0Tnz64xm5syc58Nh0Cu9evXoleZ99Lw/nkfMskwgwL17wgcfCMeOUXUQBEGMxiNUbw/56CMhTcdFGGI7uXHjBtXvDjO0zsMwFEUxjuOhssRxLMuy2CMMwzRNG42GKIq1Wi0Mw/1UOfsJUirEJPLcc8/Rc99h1qhzTdNEUbRtm283Gg1N03zfZ4xlWWZZlm3bvu+nacqT+7Wi9jqkVIixIAzDWq0miqIsy1EU8U/URqORfmI+NptN13Xpee0/TNP0PM/tEcdxkiSKogiC4DhOu90WBEHqUbzvUpIYH/aVUnFdF5Zyo9FYzaAGcRyLoriTshFr47qurutZlimKgsYFn6hpmvq+z08NggCPGB+txc6QKIqKXSVRFEFLaZqWpmmz2cQhTdPoUYwbuq4zxvBtoaqqJEmqqnIZYcSYpmlZVpqmPDnptTau7B+lkqapbdue56Elsm279LXLm5Xi167v+9hJ1vTu0m63Pc+DCJIkRVGEZkXX9SiKuGhpmiZJ0mq10BkiSVKWZbqu+74fBIGqqlkPVVUNw/A8L0mSKIr8Ht1uN8syfPkSe4gsyxzHwacGnjiS9AzHk0f3zZ2gkwR/u92uIAiGYTDGOp2OLMtodJIkCYLAtm1d12Gv2Lbd7XbjONY0TT93Tvmd3xmDW5lQ4jg2DEOSpFarJcsy+jckSUoLsyd0XZckSdd1wzB0XVcUpdlsRlEkSRJjrNls8s9elMZPZIwZhqGqquM4giC8995709PTk17jO8t777237vVUVYUNGgSBIAi2bUdR1G63U5pBs3fYP0qFMWaapt1DUZRWqxWGoWVZkiQlSYK2BuYLf0Exn0SWZSTTpSWBlMouEcdxo9GwekAC/pWwWu95GIb4PkAG0zRVVXVdt9lsopBOp4OueUEQLMtyXRddZN1u98SJE3Nzc/u6RseOjWhxVVWDIKjVaoqiSJJkmibG7SVJarfbjDH0f+LLY+JqcI+wr8ZU0PeVZRljrNSdhf73wfE9WNP9PpOzZ3dcZKIPxlS4RlFVFSo/CAKuGDCmglEWdMHjoUP94HvC8zzGGFQRvnZrtRpaIlVVTdOkb96xAj2WjDFsKIrS6XTQgakoCmMMnZYYupckCUeTJCkOuhBjxf5RKhh7h+2MXnhFUcIwxH40RqZp8sYIGdBsYVA3t1SI3Xt8fHxL0zTLsuI4rtVqjDGuafARUKvVms2m53loVqAtwjBkjEVRJIpimqa6rrdaLRSo93AcB7NUi6UR4wZ/B8IwpKH4vUq2j0B3ObRFpwfsEv4RhG4QTFXkA4A4Jbdy7t7N5uf3U4UQq3H27Fmqmx2G6nxCIDctBRYX89/Jk2MjELFdTE9P05jKDkN1PiHQ4kdiEnnppZfoue8wVOcTAimVvcreXbw5DnN5T58+PcJZe/dbexwkH63OL1y4sHftm707bX0rLwwpFYIgCKIy9rlS0TQNC+IGwQqVoguQ0eDeQUq+YbjPGFyCr+fHsphSkoP5SyiHz4TBLcCfK09undV8vo4g+dqeu3ZM8tKFeAWiSkvJoZKXXoyhLsi2yFDPDiNIjpU9/EltxHnadkheutAIkpdcEXOfkvyJbJ3RXpiNvOrYads28lRe7RW+6oPVzvMUn0IFku+/+QjcDwdWw2EOsSRJ3W4XjkC4lzq+tAUr8Eeb/aXrummamFlvWRZ2okC4HsHqSz4BH5SSgE9Fw9x8SZIcx0FRnU6HMcaTkH+LFeU4DvxrOY6jKMpWJMcSENQGKoSvP8BVipJvfRbQUMn55fiFLMtyHIcfLSWHSl56MUo3cvbs2bfffnsrknc6HTxfXChJkpElL1YCnGWt8Qi2T/LShUaQ3LIslGBZlqIo/MVDyc8///wWJR/5hdnIq84bHJQ/WO27IvlGqr3VakF+UOELsw8tFcMwoDa4FZIkCV8Kx5UNqg97UNdbvzRfWQnHIaqq6rqepmncA99f+MorJYFlWXhLkCFNU6z/YoxhwQ10pKIoVX3BVSX5Gp67dkxySFu8UBzHsLrgRLKUHCp56cVYzQXZOEhefFuw4HwjztOqlXywikaQvOSKGFWBZ1G55Jut9nVfdTgV5Otz99ALE8cxzB10sVQo+X5TKlEUpWmq9oCewAsKZ1DIU63TbMuyYGwWl2tx5yL4C6na7TY8IUJhFJODxfIT8cYUd1Yl/1CfryNLDuM6TVMscS+JujOSly4URRH+keBTspQcKnnpQsUbqaQ3Q1EUXddlWdY0zTRNFD6y5PiECoIAjfJqj2D7JB+sotEkL7oirlzykV+YjbzqrusqijL036cS4at91YvVDrWERtJ13Qol3z++v3YL13URDULTNNd1eRdW0cEl7FZs4KUsJYvr/IEkSZ7nNZvNYiSJYplbBz5fkySB/1c42RxN8nU9d+2M5EP9inLXCaUktgclL1G8kTt37mxR8iiKgiDgPkzhm240yQVBaDQa8Fyy7iPYGcnRybxZyUGWZXiaPOcabt82y2gvzEZe9SAI4jhGL4goinARVGG1V/iql6qdf0KhO6HCF2a/WSqMMUmSwjCE9bBbYqiqigFquGfH4B4PDdL3CvNJsujbigOz2vM8uGiFgxmECeGG6vhIvrbnrp2RnPcT8gvBfISZj/95nuRavCT5YG0MdUE2DpLzT+mhN7Izkg9eaATJbdtGLw3/juEFbquDr3WrfSOvOoY/4XEOIy575YWp1Wro1vN9X1GUKiUfbShmnOEa2HEcPqqGDRzisjPGtj5QjyF0vHaYCwCjkpss7Xa76P8OQT6KSUjSbre5JHhTV7iQKUxAwBDc1p8dj6+HHvl+JYwkefGfX1XVbreLOkFVlCTf+ujlapKXLsT/8/EOlJJDJUf5xRejeCNbH+7GiCgXcjTJTdN0ehT/kdd+BJVLziuwdKERJOclcH+RuBd4k6xkoH6EF2aDrzrK50plsNp3XvINVjsmRKDhSpKkwhdmHyqV0anC95fneXwO2MaBQtrUKZV/EHS73eL0kg0yguSV+4DaScm33sAVGU1y0zRbrdamTqlc8tEqcATJK1EqJSbtVd/hF4Z8fxXYU76/5ubm9uh63Rs3boy2uHrXuXHjRr1eP3z4MEm+YywsLBzuseckn9hXnZRKAXIoSRAEsTXITQtBEARRGaRUCKJ6fN+HMw++dA7L6IqOMTRNq9VqWACh9YD7De6zBNFLi941uCsg7qWDe9PhznVKHnEwf4/fIPf2gWiYfPlFKUkQI0NKhSAqJgzDZrOJaTntdtt1XaxjwFQcPnaKSbTF1dppmhqGgWydTsf3/SAIDMNA0OskSbB4jefvdruO49i2jcm4mIAE+BxIzFbiioTPGi/6YSslCWIrkFIhiIoJggDet9CCJ0lSXLNWRJIkrH/GPsTex3xQTPREjORWq8XXw2JpAi8D3nTW9qthmiaUShRFkKrZbBbX25aSBLEVSKkQRMXEcYy1BbxLiq8y491TuKKu66qqopsLlNadQVvwheU4WlwjzZd54y8vv+jRVlVV2Ci+72M7iiJuypSSBLFFSKkQRMXAnyMcNxXdUxa7v/gVLcsKeyBZtDm4E3KuRXC0qHigTnCJYvdXaY0eXxmOhdMYpxEEQZZlOLbiyaI2IogRIKVCEBUDawCtMyJVrFE+fD1gGw5i0frjRLjnwTgKRj7gIJWfHgSBJEnr+tUwTZN7JCx6kej2KCa31TMKMQmQUiGIijFN07IsTPfyfZ/rjGL3V9F3LHeqAUcgtm2jx6zVasE5B/zU1mo1hMHgJ8LOQHiMUvdXaeAdxgopDGIHoMWPBWjxI0EQxNYgS4UgCIKojN2Pp+K+4dqXH85+Mb+c9xX4/9DvHJA+K7X+tMWOMvn7D8NEq3+gtv9bu/mjJs/GjrHui12eIXo/avxlo/tilx17OFEy/EWo/W0/Dpr3bc/8sin+yQrf+M5/+QvrC9/athslCILY/4yFpcKOsezlDD/v2x5UC5J6Q3df768O677YzV7Oui92w1+E4S9CaBdkg0YR/0SM/y1233Abf9lY7VrdF7vOece+bKcfpDiXHWPet73s5cw6+73cgd3iQjH/0gdLSx8sFfeUMpSS62agAqlAKpAK3K8F7o3uL+mxIdHfpM+uGhLO+qpVtFoG0RU9/SCN3h++Xuyl9kszr8zw5Nz83PRfTxfr8Rv/8xuz12ZXy7+wuDD9V9M3/uUGFUgFUoFU4KQVKAjCpy5cuCDsKj957ydBJ3jhygv4Pf17T//89s/9f/CRjN6PXv2vr37m05+5+NbFi29dfOHKCxffuqg39Ge/8uxrP3stiPonHj98XHlKeeHKC89+5VnpMSn9IL341kVs83uL78Y/+umPnv3Ks+wYyy904mnlqXwi5sW3Lva3P/xQ+PDDr5791g/e+cGlf7z0pPTkwuLCoU8fEgThz/7uz048ceL20u2FxYWnf+/p7/+v799ZvvOI+MjC4sLvf+733/g/b7z87su/e/R3FxYXlj5Y+sKTX/jjV/744KMHP/yPD3kGKpAKpAKpwH1fYP1ofSxi1JdGRIJOYH7ZRD+Y9rcakui5YscYhkbSb6d8cGXtwuXvy+woK2aL/y3GRVc75V//378++M2Dufk5JJc+XLr773fDn4eHP9uPLvCZA5/pLHQefaRfe4c+fein8U95/o/+46OPs4/fufVOci+hAqlAKpAKnJwCpz8/vfuRH53XHfbnrLjHfNU0XzWL2907XeG7QvdOb5XWJ9vmq6b6N2rxxME8xaPtn7ex03ndkb4nJfcS7Gd/zrx38uVgiPz47N89+50ffoefdf2X15+ynrr+y+t8z3d++J1XfvIKT77yk1e+9MKX0nspkum99EsvfKmYgQqkAqlAKnBCChyLcMLO647wXYH/oEW4UsHRkpIQvis4rzujKRX8+lqkR0mpvP1/VwTR/Oe7/1yswSzLShmu//I6fyR4Kn//T3+/Rv70XkoFUoFUIBW4LwukcMIrocWPBEEQW4MWPxIEQRCVQUqFIAiCqAxSKgRBEERlkFIhCIIgKoOUCkGsQ7PZLEaSXw14ns/dBfU825f826+NpmkbjxKPkiFVEASbutBoIHjXUCE3GNfL7bGtQhJjAikVYhJpNpuId8Jb5GaziZglCBovy7Ioio1Gg4fYcl1XlmWerNVqQRC4rouYiYZhIGQvml1sI5wwMoRhWKvVeKQTWZZxXWyEYej7Pi4hy3KtVjMMg5/LwxJDl/DycV3E72o0GsXQxYM7mz0gIW4WNWAYBm4WtzNUAKhMCDn4tiAAjCzLURTxizYaDYTTx11zgYl9z1isqCeInSeO4yRJwjBsNptpmkZRlGWZ67q2beu6jkBbsiyjNYyiKAiCTqfDYwMzxuI4RruZpmkYhoi15Xme7/u6rodhqChKu93Gt7xhGJZl6breaDQGg2WpqsqjzXe7XcMwIF6tVoNInU4njmPDMJIkQfkILex5XrPZZIylaVpaHhCGYXHnoJHBGGu1WoZhtFotRJxUVXVQABgijDEu5GA5nU7H7oFsnU5H0zSoN1VVW62WLMuDJxL7ErJUiAlF13VJknRdh0qIokgURdu20zT1PA+tMA8Oj6i9xSYV7W8URbquB0HAGCtG+eV5cAoUj67rjDFFUdYIMKwoCoqCeNiJs3RdLwWxL54FlVPsYhq6syQeLlG81lAB1gaCoULCMIRdBZUWhiGO8vCXxL6HlApBCGgZ+ZJgjFXkzrA/aVXRwhY7fyRJiqII8eGDIBg5Ui/XW7zYEQphLHd0xBgLgoBbJEN3Fq849FqjCVDEcRxUY7v90OFe6TaJfQwpFWJCCYIgTVPf9yVJUlU1DMM4jl3X1TQtjmPGmGVZvClUFMWyrOInv6qqURThux49XWtXoyRJQRDgWx6Z8SG/bmsLgwPdU9Bhg3mCIJBlGd1rReuqtDOOY1y02icOBQzNChWLwR7XdXmSxlQmBxpTISYUSZJqtZogCO12G0pFlmUMM6DXKIoiVVVt20bXja7rtm1jON3zPDTu6JiCjilqoFIbKkmS4zjNZhOlqapqmqZt24qiwDJQFMV1Xcdxhj4L0zQxYO55HreNin1xuq77vl+r1SRJarVavu8HQdBut4s7JUlqNBq4x9GeOIRE32ARTHtjjME0wQi/oiie56mqiukA6ypdYt9Avr8KkO+viQGD2xhar5ylpaVSkY8//vijj+6TD7jiFDjoORovIYqQpUIQFTM4LPH2229PT0/vj3rudtcKq0oQpFSISWSwD4cgiEqggXqCIAiiMkipEARBEJVBSoUgCIKoDFIqBEEQRGWQUiEIgiAqg5QKQRAEURmkVAiCIIjKIKVCEARBVAYtfiSIirl+/XqpwBMnTlAlExMCKRWCqJjTp09TlRITC3V/EcSWkWVhK/7kRVEohel1XWFoqERNE0oBHG07P10U8/xDI9WHYT8D/5VE3aDwritQkHliA5BSIYiR0LR+U85DMYahUKvlO5tNIU2FRqPfjrvuw2Sjkef3/YeaQNOEXryRhzJoWq4qQBTleZDZ9/NLFDWH6+YndjpClgmm2b9uL1RLLgkKUdX8KLxAdrv59mA8MWgm3EtJ1Cjq3xQFRCE2BikVgtg8rpu3tkkiMPbw+90wBMvKG+4gyFv/NM1b8CzLd9p2v3GXpDy/7wue12/rER6xF3O3T7stcH+XQdA/EWpDVYWin3nfz5MIVWJZ/fKx33HyczcYb5Gx/Fxdz+Usieq6/SSFbiQ2BikVgtg8UZQ3tZKUK4BWS8CeNM3bZcbyVj6O859h9FVOGOYb6HpK0zyD6+aGxerB6vswlmuIZnN4D1Uc9zUKzCbetRUEuSS6vlHzAipNVfMCS6KGYf8oBU0hNgYpFYLYHrIsVwlB0B8FcZy+wQFDBLaILK+jV0yz33PVbA4ZMpGkfudbuy3wMCdh2O+zQufYCBRF5ZClQmwMUioEsXkUpf8hL8t9ncFY3sQHQf9jn7H8kGXln/kwTdC+w3bBcIXj5Kes3VijP8rz8gIHc+p6rmmglngvXBA81ApRtL4xxEd00NVWEpUnaUyF2CAZwbl7N5ufp+og1idJMkXJBCH/2+1mjGXtduZ5+R5ByEwzL0BV821Jyg91uw/zJ0m+BzlVNc+pKPmG5/WTWZZvM5ZvoHB+IcvKt7vdDP+5SdK/Ci6qKFmrlW8nSb8cXc8cp18OThyEsb5sjOUZSqJ2OvktIImiCGJNKEZ9AYpRT+x74rg8Wbnbzc0ggqgIWvxIjCtLS6MIduhQ/iNWAxO9CGLbIKVCjCuYHbtZnn9euHCBnilB7BY0UE8QBEFUBikVYg8wt1LEJUG4sXLPHD1FghgPSKkQe4AfC8JMQcoFQfjGSr3ynCDM0oMkiDGAlAqxB3ipJ+K3PhH0dE/NfK2nXcCcIPyNIAzzp0gQxI5CSoXYMxwsCHpDEA73fkUeo2dJELsNKRViD/BcT8QffiLoj3u2y7WCUpkWhP9eMGUIgtgtaEoxsQd4ThDqBSmne/1dRTPlxyszEASxW5BSIfYAJYVxeEBi0igEMSZQ9xdBEARRGWSpEOMKeRMhiD0IWSoEQRBEZZBSIYjR8f1+jPnRcN0VLoN5kPti5PtBNG1FHMgoehgO3zCGx2fhkSHxK8m88bsQRXpZiHUgpUIQmyMM+00zonMBtNq1Wt7E+34/A+I68qRt5y0+VwCum+9BTC/gunnYrSzrhxvWtCHF1morwm6laZ5HUfoB7+P4YbAu284zQ8e02/0g96ZZjugI4BGf31RRZoSdFMVccoJYFxpTIYjNYRh5ZEVFyVtzxxGgDOJYSJJ+4HlByEM1IqZ7HOftMpp7TetHeiyOFvl+Hm4RFNt65ESxjUY/crzj5FqnaNwgHiNiEzMmdDoPD4VhHnnS9/O/6xLH+bmSlF9LUVbIjPCSnU6u2Ip6lCCGQpYKQWyCKMrbelXNf1nWd88fRXlSkvK/UdS3M5rNvhWCoMPoX5KkfCcC9Q4ljvNmPU37ekLX81MY65djmvk2V0KwVBRFKNpPuJDv5+ea5pDA9kNRlPzHWL+0osxh2D8KNUkQa0NKhSAqxvP6KgEmhST1A8ajAyrL8rY7CIZ89UOj6PpDk2VoTJnSqAlGX6DkeLsfBP3ur2L32sYpyrzadQliKKRUCGITMJY3uGHYH3UAitK3JIIgb9wbjbyhd5w8p6L090dR3sQHQa5pLCvXHINtNMZUhvZW4bq+nyuJ4hg+yoHdE0X93jDkgUpwnP7OtYmi/AcNVJKZsf7RjZRDEAKF8H/I3bvZ/Py4CEOMK56XCUL+c5x8W1WzJMkUJd/DWNbpZO12P4Oq5rfgOP2k5+VJVc23JSnP1mrl2+12fmK73T/Ez1XV/FycYpr960pSP7Np9o96Xr4TV3ecPLNl5T/Q6eRHkyRPmGb+G8Tz8nNRCMosyWya+TbukSDWRsxoiRlncTH/nTw5JuIQxDbRbK4YazHNfn8dQWwdUioFJkOpLC2NctahQ/mPIAhibWhK8cQxdOx3XZ5/XrhwYdKrjiCIdaGBeoIgCKIySKlMJku9ECRF5lYmb6yMAU8QBLEhSKlMIEu9MFfFoZXZT4IrghuC8I1JrySCIEaCxlQmkOmeCpn55Mb/hyD8QBD+sVAPXxWENwTh9KTXE0EQm4cslQnkP63s7GoIwoeCsFDYc4z6vgiCGA1SKhPIpd4t8/6u/ywI/3tlf9e7gvDSwKALQRDE+lD312Qyu9I0Ob3SNDk8MG5PEASxIUipTCz1lTd+eM0kQRDEhqDuL4IgCKIyyFKZOMgvD0EQ2wdZKgRBEERlkFIhiO3CdV2xh4YYilvD9/1arYYC3VUiR4or4dlkWQ5HiNVFECNAoQEeQvFUiOpIkqQXdr7d7XYlSWq1Wr34jGovspbOGBMEodVq9aKVmD1Hn5Lned1uF9lKcrR7wSC9XniTdruNAnFIVVVFUYqZGWPIWdyj9AIFM8Y6vUD2SZKoqmr14q5IkpQg4gpBbBkaUyGIbUGSJMSVSHshHqWed2jGWKvVMgyj1WpFUeT7fpqmURRlWea6rm3baPHNgXDwQRDouo79qqpCY/UiNkaMsTRNwzBUi8HrB4A6sXv0okPGURTh6owxaTTn1QQxAHV/EcQ24rpurVZjjKHFV1UVzbeu69iIeoiiaNt2+kmE4cEmPo5jmBq8Sw1dW77v6z2C9YL96roOAVBUGIaKomxEGxHEpiClQhDbiGVZSZLEcYxGf6hBoOs673FYTRJJkqJebHp0WKH3LE3TIAg0TTMMIwiCdDDq/SowxoIgUBSFMQbtQu8AURWkVAhiW0jTVBTFMAzXbuvRrMdx7LruGuP5qqoGQYDBdt/34zhGnxgffUGGNS6EozhFURT0esFkIUuFqBAaUyGIbUGSJMdxoCdM00Tv0yCWZYVhKMsyhltWk8Q0zTiOUZqiKBhc8X3fsixkUBQlCILBwRhZlr1eAPo4jkVRZIy1220YPTBQFEWhARWiQihGfYHJiFFP7AlkWYY5AjzPG1QYBDGGkKWyn1laWrp27Rq/wXv37j322GP4K4r598Ty8vLU1BT/++STT/7qV7+ampr67W9/+/Wvf313a+bdd99d7jFUwuJ+3AvuSxCEr33ta7sreSVgbjExmbz22muPPPJI8cXmrzdY7X/5zJkzhw/vsuM+slQK7DtLZW5ubmaGB+MSPvroo0OHDuHvo48++pvf/Ob9999/6qmn+N+zZ8++88472N71F+P06dNLS0trSMj/4l5wX4IgLCwsbKB4ghhfRFEsvdj89Qar/S/Pzs5OT0/v7n3RQD1BEARRGVV2f13Vrt4Ob+dDf45yyjpVYcmX5ct/6P3hcfX4xk9ZjBavNa8tRou5k3e9fsY7c0A6UMozK84Wk8pf/MGpb9GIJUEQxOhUplQWgoW70d1vJt+8Hd6eM+am2NScMXdcPX47vH3SPHnLv3VAOvBM55mD0sE3tTcXo8UjypEz3hk0/SUltBwvX5Yv49wjypE/av8R9l+WL5+yTp00T2LjbnT3ln9LEITj6vFz7XNFYR6kD97U3qzr9Wc6zyzHy3PG3E33puIo0Hz30/vPdJ4RBGEmmykW2+/+IgiCIEalMqVS1+t1PY/7dEA6wG2Cul4/ohyZ9+fPd8/PGXMLwcJyvHxcPf5M55mr2tWb7k0YH583Pz9Y4OfUz51rn7vSuDLvzw8evZ/ev+XfOt89P8WmBo8uBHmv+hnvjCAIU2wKKgTmy+Ps8QPpgdvh7U3ZPQRBEMRGqHj2F3rATlmnoFfqen3enz+qHJ1iUwelg4Ig/Dr89XK8fNO9CQsDZw12THFNU9fr6MIqcVA6yI0hmCBF7qf3jypHBUG4Hd6+ql3l1sy8P1/X6w/SBwvBAikVgiCIyql4oP5c+9y59rmb7s0H6YPVtIXiKDPZzEw2U+qz2jj30/uCIJzvnq/rdfSVDZ56N7oLXTKTzeRdW70+sYVg4ap2FTYTJCQIgiAqpDKlshAsXKpdepA+WLuxPqIcQd8UxjnWyDnvz0MNHFGO8J330/u3w9sP0gf30/uz4uxx9fhJ8yR0TBGYIyh/MVrEFWGdQJ8dV49jJ0EQBFEhlSmVul4/qhy9VLs0Z8wNnWoF0FU1K84ux8tDh1I40FIHpYN8DP+keTKyo8iODkgHDkoHFUe50rhyVbs6ONNsik2d8c7cdG/OirNzxhwyoO8LGbhuIwiCICqkyjGVUncW5ladsk6hTedH+bA59ATmhl1rXiuVVsx2vnsefVkl/cGTl+XLy/Ey33/GO4OSB3PyJN+DwghUmWkAAAL5SURBVAmCIIitM44r6jFMAp20o5DvL4IgiK0xjivqp9jULmiUiaHe48SJE/V6XRTF4t/p6enSHp6zXq9PesURBLEByE0LQRAEURmkVAiCIIjKGEWpxMuxfFkWZ0VxVgxvh9vxMOTL8hZLjhajxpUGhDTmjPTBkOh7OMp/7nsXt3JFgiAIYhSl4t/y2RTLZjLrlGVHtnZV065q4qzYuNLAhh3ZyIb2GknooVJR4e1QnBVxVvNaU5wVa5dq8XI/NhE/1LjSSB+k8mXZv+WjKP+Wj/zIUyo2fZBqb2rKESWbybrnu/Fy7N50cUi7qjWuNLCdzWTZTMammHfGy2/nxPcm/n0gCILYEqNMKXYUBxvSAUk6KMF2Sb6Z1C7VrFOWedI05gzzpGl3bDTo2lVNr+exVK1T1tAC9bquHFH8eb97vmvMGcHCw1Db0gGpe74rX5aju1HxlPR+6t/K87MpNlggSvDO5FFU2RTrPNPB/mgxYo+z9EAa3g7V4xSXmyAIomJGH1OBCWKeNKEVpAO5dlE/p2Ij/HUI2wJmRHo/hYYYWhROV44qbIpBSxUPQW3E/x4X90sHJTbFjDkDZlCJ9H6qHFW4JcStGX/e1+u6XteLeosgCIKoitGVSjaTOYqDbqWh2kI6IKF/KZvJ1jYLVlM2qx2Ciuqe7+p1HQM8g3lg2ajH1Wwmg+ZLH6TBQqBd1WAMDR1lIQiCILbCKEoF4yhoplfLoxxR0IhHi1HtUq2qFjy9n/dcpQ/S9H4qzorqcdU8aULHFNHrevoghcKLFiPYJcFCAB0DJUfGCkEQROWMolTMk2a8HIuzoj/vY9xiEOWI4iiOMWc0rjSchrOGLbKp69qRbUc2xnIcxcHUgMGhGoy9uzddTP1CBvR9IYNyRCGlQhAEUTk77aalea2JGVzAPGmuppY2hXxZ5nPGMESPLq/NMRluWmw7H4X61Kc+9fHHH9+5c+eJJ57gf7/4xS/+7Gc/K+554oknkDOfoOE4YyA+QRDjiyAI/x9NWawjSDbgVAAAAABJRU5ErkJggg==" alt="UCSC Genome browser image" width="80%" height="80%" />
+<p class="caption">
+Figure 2: <span class="caption-title">UCSC Genome browser image</span><br>
+</p>
+</div>
 </div>
 </div>
 <div id="other-negative-control" class="section level2" number="2.7">
