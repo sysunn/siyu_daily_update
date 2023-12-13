@@ -1127,8 +1127,10 @@ densityplot( ~ abs(dis) | status,
                        columns=nlevels(df.all$strand)),
             data = df.all,
             xlim=c(0,40),
+            from=0,
+            to=40,
             xlab = "distance (bp) from 2nd GAT to 1st GAT",
-            type = "g",
+            type = "count",
             col = myColors,
             lty = 1,
             main = "ctrl vs. GATA3 peaks",
@@ -1600,7 +1602,7 @@ for (chip.peak in Sys.glob(file.path("./closest.2nd.distance.quantile*.bed"))) {
     quantile.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'closest.2nd.distance.')[[1]][2]), ".bed")[[1]][1]
     print(quantile.name)
     
-    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 9, 11)], quantile.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(4:6, 9, 11)], quantile.name)
     df.chip = rbind(df.chip, all.distance)
 }
 str(df.chip)
@@ -1613,14 +1615,14 @@ combine all single quantile plot into one plot \
 ```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 colnames(df.chip) = c("V1","V2","v3", "strand", "dis", "status")
 closest.2nd.distance.unionDHS=read.table('closest.2nd.distance.unionDHS.bed',header=F, comment.char='')
-df.ctrl = cbind(closest.2nd.distance.unionDHS[,c(1:3, 9, 11)], "ctrl")
+df.ctrl = cbind(closest.2nd.distance.unionDHS[,c(4:6, 9, 11)], "ctrl")
 colnames(df.ctrl) = c("V1","V2","v3", "strand", "dis", "status")
 head(df.chip)
 head(df.ctrl)
 
 df.all=rbind(df.chip, df.ctrl)
 df.all$status = factor(df.all$status, levels = c("quantile1", "quantile0.8", "quantile0.6",  "quantile0.4", "quantile0.2", "ctrl"))
-df.all$dis=as.numeric(df.all$dis)
+df.all$dis=as.integer(df.all$dis)
 df.all$strand=as.factor(df.all$strand)
 head(df.all)
 nrow(df.all)
@@ -1662,6 +1664,7 @@ In this plot, we use probability density function to plot the relative likelihoo
 
 It is showing a dosage effect when we decreased peak intensity (from quantile 1 to quantile 0.2). The best set is quantile 1. \
 
+
 **make a single plot** \
 
 ```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
@@ -1692,8 +1695,115 @@ densityplot( ~ abs(dis),
          })
 ```
 
-In the above plot, it is important to set `from` and `to` arguments inside `density()`. Because by default, density will extend the range so that the density curve approaches 0 at the extreme. \
 
+In the above PDF plot, the spike is at 2bp distance and 9bp distance. It is important to know that this is repoting the likelihood, not the actual counts at this two location. \
+
+If we count and compare how many entries has 0, 1, 2, 9, 10, 11bp distance, we would see that the counts is apparently higher in 0 and 10bp than in 2 and 9bp. \
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+head closest.2nd.distance.quantile1.bed
+wc -l closest.2nd.distance.quantile1.bed
+awk '$11 == 0' closest.2nd.distance.quantile1.bed | wc -l
+awk '$11 == 1' closest.2nd.distance.quantile1.bed | wc -l
+awk '$11 == 2' closest.2nd.distance.quantile1.bed | wc -l
+awk '$11 == 9' closest.2nd.distance.quantile1.bed | wc -l
+awk '$11 == 10' closest.2nd.distance.quantile1.bed | wc -l
+awk '$11 == 11' closest.2nd.distance.quantile1.bed | wc -l
+```
+
+
+Probability density plot is reporting the likelihood (y axis) of observing an event (in our case, have a 2nd closest GAT at n position) in a defined range (this is defined by from and to, in the above plot it is 50). \
+It is important to set `from` and `to` arguments inside `density()`. Because by default, density will extend the range so that the density curve approaches 0 at the extreme. \
+
+If I change the defined range from (0,50) to (0,1000), the plot would look different: \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+densityplot( ~ abs(dis),
+            groups = status,
+            data = df.all,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("#ce228e", colorRampPalette(c("red","pink"))(4), "grey60"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=1000,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd GAT to 1st GAT",
+            main = "ctrl vs. GATA3 peaks",
+            between=list(y=1.0),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("#ce228e", colorRampPalette(c("red","pink"))(4),"grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 10, lty =2)
+             panel.abline(v= 2, lty =2)
+             panel.densityplot(...)
+         })
+```
+
+Now the highest spike in quantile1 became 10bp distance. \
+
+
+**histogram** \
+
+The density plots are good to visualize the distribution of continuous numeric variables. The `densityplot()` uses **kernel density probability estimate** to calculate the density probability of numeric variables.  \
+Since we have discrete distance (in single bp resolution), histogram might be more suitable.  \
+Histograms are constructed by binning the data and counting the number of observations in each bin. We can set the binwidth to be 1bp. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+str(df.all)
+summary(df.all$dis)
+histogram(~ abs(dis) | status,
+            groups = strand,
+            key = list(space = "right", text=list(c("- strand", "+ strand"), col=c("blue","red"), cex=1)),
+            data = df.all,
+            col=c("blue", "red"),
+            aspect = 3,
+            xlim=c(0,20),
+            breaks=seq(from=0,to=24806, by=1),
+            layout=c(6,1),
+            xlab = "distance (bp) from 2nd GAT to 1st GAT",
+            main = "ctrl vs. GATA3 peaks",
+            between=list(y=1.0),
+            type="density",
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("blue", "red"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 10, lty =2)
+             panel.abline(v= 1, lty =2)
+             panel.densityplot(...)
+             panel.histogram(...)
+         })
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+str(df.all)
+summary(df.all$dis)
+histogram(~ abs(dis),
+            groups = status,
+            data=df.all,
+            auto.key = list(space = "right", rectangles=FALSE, lines=TRUE, points=FALSE, cex = 1),
+            #col=c("#ce228e", colorRampPalette(c("red","pink"))(4), "grey60"),
+            aspect = 1,
+            xlim=c(0,30),
+            breaks=seq(from=0,to=max(df.all$dis), by=1),
+            xlab = "distance (bp) from 2nd GAT to 1st GAT",
+            main = "ctrl vs. GATA3 peaks",
+            between=list(y=1.0),
+            type="density",
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("#ce228e", colorRampPalette(c("red","pink"))(4),"grey60"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(...) {
+             panel.abline(v= 10, lty =2, col="red")
+             panel.abline(v= 1, lty =2, col="red")
+             panel.histogram(...)
+             panel.densityplot(...) #darg=list(bw = 0.5, kernel="gaussian"),
+             panel.superpose(..., panel.groups=panel.histogram,
+                          col=c("#ce228e", colorRampPalette(c("red","pink"))(4),"grey60"),alpha=0.4)
+         })
+    
+
+```
 
 
 **Conclusion**: I think, quantile1 (top 20% intensity) is where we could make the cutoff in the entire GATA3 ChIP peaks. These peaks are: 1) higher intensity; 2) more than 70% peaks has GATA-like motifs found by MEME/STREME; 3) for peaks lack MEME/STREME found motif, we have good enrichment of GAT near peak summit, and a good 3mer-3mer structure. \
@@ -1799,7 +1909,44 @@ The annotation BED files need to be upload via Custom Track. \
 knitr::include_graphics("./over3mer.png") 
 ```
 
+
+I want to locate regions where the distance between closest 1st and closest 2nd GAT are 0bp, 1bp, 2bp, 9bp and 10bp. \
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: the distance between closest 1st and closest 2nd GAT is 0bp. "}
+#library(knitr)
+knitr::include_graphics("./over3mer_0bp.png") 
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: the distance between closest 1st and closest 2nd GAT is 1bp."}
+#library(knitr)
+knitr::include_graphics("./over3mer_1bp.png") 
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: the distance between closest 1st and closest 2nd GAT is 2bp."}
+#library(knitr)
+knitr::include_graphics("./over3mer_2bp.png") 
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: the distance between closest 1st and closest 2nd GAT is 9bp."}
+#library(knitr)
+knitr::include_graphics("./over3mer_9bp.png") 
+```
+
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: the distance between closest 1st and closest 2nd GAT is 10bp."}
+#library(knitr)
+knitr::include_graphics("./over3mer_10bp.png") 
+```
+
+**Notice that if `closestBed` found overlap features, ethan the distance will be reported as 0; if no overlaps are found, `closestBed` looks for the feature in B that is closest (that is, least genomic distance to the start or end of A) to A.** \
+If B is upstream of A, then it will use the start of A to subtract the end of B, then add 1; \
+If B is downstream of A, then it will use the start of B to subtract the end of A, then add 1. \
+
+Since `closestBed` add 1 in its calculation of distance, we need to know that if we want to know the actual fixed spacings between two 3mer, we use the distance -1. \
+
 ## other negative control
+
+local control: \
 
 CTCF peak sets (remove motifs 123456789) \
 
