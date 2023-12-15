@@ -731,7 +731,13 @@ function toggle_visibility(id1) {
 <ul>
 <li><a href="#visualize-3mer-gat-distribution-relative-to-the-defined-closest-gat-on-genome-browser" id="toc-visualize-3mer-gat-distribution-relative-to-the-defined-closest-gat-on-genome-browser"><span class="toc-section-number">2.6.1</span> visualize 3mer-GAT distribution relative to the defined “closest GAT” on Genome Browser</a></li>
 </ul></li>
-<li><a href="#other-negative-control" id="toc-other-negative-control"><span class="toc-section-number">2.7</span> other negative control</a></li>
+<li><a href="#other-negative-control" id="toc-other-negative-control"><span class="toc-section-number">2.7</span> Other negative control</a>
+<ul>
+<li><a href="#ctcf-peak-sets" id="toc-ctcf-peak-sets"><span class="toc-section-number">2.7.1</span> CTCF peak sets</a></li>
+<li><a href="#cdf" id="toc-cdf"><span class="toc-section-number">2.7.2</span> CDF</a></li>
+<li><a href="#pdf" id="toc-pdf"><span class="toc-section-number">2.7.3</span> PDF</a></li>
+<li><a href="#local-control" id="toc-local-control"><span class="toc-section-number">2.7.4</span> local control</a></li>
+</ul></li>
 <li><a href="#positive-control" id="toc-positive-control"><span class="toc-section-number">2.8</span> positive control</a></li>
 <li><a href="#loop-thourgh-all-bigwigs" id="toc-loop-thourgh-all-bigwigs"><span class="toc-section-number">2.9</span> loop thourgh all bigWigs</a></li>
 </ul></li>
@@ -782,14 +788,14 @@ color:blue;
 <pre><code>## also installing the dependencies &#39;Rcpp&#39;, &#39;utf8&#39;, &#39;askpass&#39;, &#39;credentials&#39;, &#39;openssl&#39;, &#39;sys&#39;, &#39;zip&#39;, &#39;gitcreds&#39;, &#39;httr2&#39;, &#39;ini&#39;, &#39;httpuv&#39;, &#39;xtable&#39;, &#39;sourcetools&#39;, &#39;later&#39;, &#39;promises&#39;, &#39;fansi&#39;, &#39;systemfonts&#39;, &#39;textshaping&#39;, &#39;pillar&#39;, &#39;pkgconfig&#39;, &#39;diffobj&#39;, &#39;rematch2&#39;, &#39;clipr&#39;, &#39;crayon&#39;, &#39;curl&#39;, &#39;gert&#39;, &#39;gh&#39;, &#39;purrr&#39;, &#39;rprojroot&#39;, &#39;rstudioapi&#39;, &#39;whisker&#39;, &#39;shiny&#39;, &#39;callr&#39;, &#39;processx&#39;, &#39;downlit&#39;, &#39;httr&#39;, &#39;ragg&#39;, &#39;tibble&#39;, &#39;xml2&#39;, &#39;htmlwidgets&#39;, &#39;prettyunits&#39;, &#39;xopen&#39;, &#39;brew&#39;, &#39;commonmark&#39;, &#39;cpp11&#39;, &#39;brio&#39;, &#39;praise&#39;, &#39;ps&#39;, &#39;waldo&#39;, &#39;usethis&#39;, &#39;desc&#39;, &#39;miniUI&#39;, &#39;pkgbuild&#39;, &#39;pkgdown&#39;, &#39;pkgload&#39;, &#39;profvis&#39;, &#39;rcmdcheck&#39;, &#39;remotes&#39;, &#39;roxygen2&#39;, &#39;rversions&#39;, &#39;sessioninfo&#39;, &#39;testthat&#39;, &#39;urlchecker&#39;, &#39;withr&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpOwozyv/downloaded_packages</code></pre>
+##  /tmp/Rtmp4ta7cr/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>library(devtools)</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre class="r watch-out"><code>devtools::install_github(&#39;andrelmartins/bigWig&#39;,
               subdir=&#39;bigWig&#39;)</code></pre>
 <pre><code>## Downloading GitHub repo andrelmartins/bigWig@HEAD</code></pre>
 <pre><code>## ── R CMD build ─────────────────────────────────────────────────────────────────
-## * checking for file ‘/private/tmp/RtmpOwozyv/remotes6a688f8cf0/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
+## * checking for file ‘/private/tmp/Rtmp4ta7cr/remotes1448156c052e/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
 ## * preparing ‘bigWig’:
 ## * checking DESCRIPTION meta-information ... OK
 ## * cleaning src
@@ -802,7 +808,7 @@ install.packages(&quot;latticeExtra&quot;)</code></pre>
 <pre><code>## also installing the dependencies &#39;deldir&#39;, &#39;RcppEigen&#39;, &#39;png&#39;, &#39;jpeg&#39;, &#39;RColorBrewer&#39;, &#39;interp&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpOwozyv/downloaded_packages</code></pre>
+##  /tmp/Rtmp4ta7cr/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>install.packages(&quot;DESeq2&quot;)</code></pre>
 <pre><code>## Warning: package &#39;DESeq2&#39; is not available for this version of R
 ## 
@@ -1337,7 +1343,7 @@ cat hg38_unionDHS_fc4_50merge_randomized_subset.bed
 --></p>
 <p><strong>remove GATA3 motifs with <code>MAST</code></strong><br />
 </p>
-<p>The full .bed file contains 2723010 regulatory regions. To make this file a proper control for our peak set, we use <code>MAST</code> to remove GATA3-like motif 123456789 from these regulatory regions (use same p-value stringency).<br />
+<p>The full .bed file contains 2723010 regulatory regions. To make this file a proper control for our peak set, we use <code>MAST</code> to remove regulatory regions that contains GATA3-like motif 123456789 (use same p-value stringency).<br />
 </p>
 <p>We have 9 motifs that found by MEME/STREME software.<br />
 </p>
@@ -3089,11 +3095,268 @@ If B is downstream of A, then it will use the start of B to subtract the end of 
 </div>
 </div>
 <div id="other-negative-control" class="section level2" number="2.7">
-<h2><span class="header-section-number">2.7</span> other negative control</h2>
-<p>local control:<br />
+<h2><span class="header-section-number">2.7</span> Other negative control</h2>
+<div id="ctcf-peak-sets" class="section level3" number="2.7.1">
+<h3><span class="header-section-number">2.7.1</span> CTCF peak sets</h3>
+<p>Besides the union DHS regions from ENCODE, we also performed CTCF ChIP-seq with MCF7 cells, which could serve as an alternative negative control for this analysis.<br />
 </p>
-<p>CTCF peak sets (remove motifs 123456789)<br />
+<p>Review of CTCF ChIP-seq:<br />
 </p>
+<p>Using MACS3 and two biological replicates of CTCF_CC libraries, we identified 94738 CTCF ChIP peaks.<br />
+To make this a proper control for our GATA3 peak sets (that without MEME/STREME motifs), we use <code>MAST</code> to remove CTCF peaks regions that contains GATA3-like motif 123456789 (use same p-value stringency).<br />
+</p>
+<p>We have 9 motifs that found by MEME/STREME software.<br />
+</p>
+<pre class="bash watch-out"><code>ls GATA3_MEME_STREME_motifs/
+#cat GATA3_MEME_STREME_motifs/meme_1.txt</code></pre>
+<pre><code>## AGATAAM_streme.txt
+## AGATDNHATCT_streme.txt
+## AGATNDWNAGATARN_meme.txt_meme_4.txt
+## BTTATCWGATB_meme_5.txt_meme.txt
+## TGATAA_streme.txt
+## WGATBDHRVAGATAA_meme.txt_meme_6.txt
+## meme_1.txt
+## meme_2.txt
+## meme_3.txt</code></pre>
+<p>First convert CTCF ChIP-peak file (100bp window) from .bed to .fasta.<br />
+</p>
+<pre class="bash watch-out"><code>#cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/overrep_3mer/CTCF_peak_without_123456789
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/CTCF_peak/
+fastaFromBed -fi $genome -bed ${dir}CTCF_ChIP_summit_100window.bed -fo CTCF_ChIP_summit_100window.fasta
+
+wc -l ${dir}CTCF_ChIP_summit_100window.bed #94738</code></pre>
+<p>MEME (<code>mast</code> uses default p-value: 0.0001)<br />
+</p>
+<pre class="bash watch-out"><code>module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+#round1
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_1.txt CTCF_ChIP_summit_100window.fasta &gt; mast_GATA3_PSWM_in_CTCF_round1.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round1.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round1.bed #584
+intersectBed -v -a ${dir}CTCF_ChIP_summit_100window.bed -b mast_GATA3_PSWM_in_CTCF_round1.bed &gt; CTCF_without_motifs_1.bed
+wc -l CTCF_without_motifs_1.bed #94154
+
+#round2
+fastaFromBed -fi $genome -bed CTCF_without_motifs_1.bed -fo CTCF_without_motifs_1.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_2.txt CTCF_without_motifs_1.fasta &gt; mast_GATA3_PSWM_in_CTCF_round2.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round2.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round2.bed #675
+intersectBed -v -a CTCF_without_motifs_1.bed -b mast_GATA3_PSWM_in_CTCF_round2.bed &gt; CTCF_without_motifs_12.bed
+wc -l CTCF_without_motifs_12.bed #93479
+
+#round3
+fastaFromBed -fi $genome -bed CTCF_without_motifs_12.bed -fo CTCF_without_motifs_12.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_3.txt CTCF_without_motifs_12.fasta &gt; mast_GATA3_PSWM_in_CTCF_round3.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round3.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round3.bed #541
+intersectBed -v -a CTCF_without_motifs_12.bed -b mast_GATA3_PSWM_in_CTCF_round3.bed &gt; CTCF_without_motifs_123.bed
+wc -l CTCF_without_motifs_123.bed # 92938
+
+#round4
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123.bed -fo CTCF_without_motifs_123.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/AGATNDWNAGATARN_meme.txt_meme_4.txt CTCF_without_motifs_123.fasta &gt; mast_GATA3_PSWM_in_CTCF_round4.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round4.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round4.bed #614
+intersectBed -v -a CTCF_without_motifs_123.bed -b mast_GATA3_PSWM_in_CTCF_round4.bed &gt; CTCF_without_motifs_1234.bed
+wc -l CTCF_without_motifs_1234.bed #92324
+
+#round5
+fastaFromBed -fi $genome -bed CTCF_without_motifs_1234.bed -fo CTCF_without_motifs_1234.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/BTTATCWGATB_meme_5.txt_meme.txt CTCF_without_motifs_1234.fasta &gt; mast_GATA3_PSWM_in_CTCF_round5.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round5.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round5.bed #490
+intersectBed -v -a CTCF_without_motifs_1234.bed -b mast_GATA3_PSWM_in_CTCF_round5.bed &gt; CTCF_without_motifs_12345.bed
+wc -l CTCF_without_motifs_12345.bed #91834
+
+
+#round6
+fastaFromBed -fi $genome -bed CTCF_without_motifs_12345.bed -fo CTCF_without_motifs_12345.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/WGATBDHRVAGATAA_meme.txt_meme_6.txt CTCF_without_motifs_12345.fasta &gt; mast_GATA3_PSWM_in_CTCF_round6.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round6.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round6.bed #653
+intersectBed -v -a CTCF_without_motifs_12345.bed -b mast_GATA3_PSWM_in_CTCF_round6.bed &gt; CTCF_without_motifs_123456.bed 
+wc -l CTCF_without_motifs_123456.bed #91181</code></pre>
+<p>STREME (<code>mast</code> uses p-value of 0.0005)<br />
+</p>
+<pre class="bash watch-out"><code>#round7
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123456.bed -fo CTCF_without_motifs_123456.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATAAM_streme.txt CTCF_without_motifs_123456.fasta &gt; mast_GATA3_PSWM_in_CTCF_round7.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round7.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round7.bed #2692
+intersectBed -v -a CTCF_without_motifs_123456.bed -b mast_GATA3_PSWM_in_CTCF_round7.bed &gt; CTCF_without_motifs_123456_7.bed
+wc -l CTCF_without_motifs_123456_7.bed #88489 
+
+
+#round8
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123456_7.bed -fo CTCF_without_motifs_123456_7.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/TGATAA_streme.txt CTCF_without_motifs_123456_7.fasta &gt; mast_GATA3_PSWM_in_CTCF_round8.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round8.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round8.bed #1914
+intersectBed -v -a CTCF_without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_CTCF_round8.bed &gt; CTCF_without_motifs_123456_78.bed 
+wc -l CTCF_without_motifs_123456_78.bed  #86575
+
+#round9
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123456_78.bed -fo CTCF_without_motifs_123456_78.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATDNHATCT_streme.txt CTCF_without_motifs_123456_78.fasta &gt; mast_GATA3_PSWM_in_CTCF_round9.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round9.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round9.bed #1840
+intersectBed -v -a CTCF_without_motifs_123456_78.bed -b mast_GATA3_PSWM_in_CTCF_round9.bed &gt; CTCF_without_motifs_123456_789.bed
+wc -l CTCF_without_motifs_123456_789.bed #84735</code></pre>
+<p><strong>Randomly subset the CTCF peaks</strong><br />
+After the removal of the 9 GATA3 motifs with <code>mast</code>, the CTCF peak set now remains 84735 regions (originally 94738, removed ~10% regions).<br />
+</p>
+<p>Here I am using <code>shuf</code> to randomly select 7800 CTCF peaks to match with the GATA peak subset (quantile1: 7796 peaks) I am going to compare with.<br />
+</p>
+<pre class="bash watch-out"><code>shuf -n 7800 CTCF_without_motifs_123456_789.bed &gt; random_7800_CTCF_without_motifs_123456_789.bed</code></pre>
+<pre class="bash watch-out"><code>wc -l random_7800_CTCF_without_motifs_123456_789.bed 
+head random_7800_CTCF_without_motifs_123456_789.bed</code></pre>
+<pre><code>##     7800 random_7800_CTCF_without_motifs_123456_789.bed
+## chr18    48951784    48951885    CTCF_ChIP_peak_36395    18.0917
+## chr19    3146694 3146795 CTCF_ChIP_peak_37117    150.667
+## chr13    51445062    51445163    CTCF_ChIP_peak_20942    238.503
+## chr1 206937764   206937865   CTCF_ChIP_peak_6646 4.83363
+## chr16    76854379    76854480    CTCF_ChIP_peak_30360    292.784
+## chrX 153887154   153887255   CTCF_ChIP_peak_84880a   4.15912
+## chr17    63882339    63882440    CTCF_ChIP_peak_33796b   396.571
+## chr14    20460965    20461066    CTCF_ChIP_peak_21906    5.58175
+## chr9 19085464    19085565    CTCF_ChIP_peak_78691    134.583
+## chr13    50126140    50126241    CTCF_ChIP_peak_20902a   12.1923</code></pre>
+<p>Read the file in and use the center as regulatory region summit:<br />
+</p>
+<pre class="r watch-out"><code>library(bigWig)
+chip.peak=read.table(&quot;random_7800_CTCF_without_motifs_123456_789.bed&quot;, header=FALSE)
+nrow(chip.peak)</code></pre>
+<pre><code>## [1] 7800</code></pre>
+<pre class="r watch-out"><code>head(chip.peak)</code></pre>
+<pre><code>##      V1        V2        V3                    V4        V5
+## 1 chr18  48951784  48951885  CTCF_ChIP_peak_36395  18.09170
+## 2 chr19   3146694   3146795  CTCF_ChIP_peak_37117 150.66700
+## 3 chr13  51445062  51445163  CTCF_ChIP_peak_20942 238.50300
+## 4  chr1 206937764 206937865   CTCF_ChIP_peak_6646   4.83363
+## 5 chr16  76854379  76854480  CTCF_ChIP_peak_30360 292.78400
+## 6  chrX 153887154 153887255 CTCF_ChIP_peak_84880a   4.15912</code></pre>
+<pre class="r watch-out"><code>chip.peak.summit=center.bed(chip.peak, upstreamWindow=0, downstreamWindow=0)
+nrow(chip.peak.summit)</code></pre>
+<pre><code>## [1] 7800</code></pre>
+<pre class="r watch-out"><code>head(chip.peak.summit)</code></pre>
+<pre><code>##      V1        V2        V3                    V4        V5
+## 1 chr18  48951834  48951835  CTCF_ChIP_peak_36395  18.09170
+## 2 chr19   3146744   3146745  CTCF_ChIP_peak_37117 150.66700
+## 3 chr13  51445112  51445113  CTCF_ChIP_peak_20942 238.50300
+## 4  chr1 206937814 206937815   CTCF_ChIP_peak_6646   4.83363
+## 5 chr16  76854429  76854430  CTCF_ChIP_peak_30360 292.78400
+## 6  chrX 153887204 153887205 CTCF_ChIP_peak_84880a   4.15912</code></pre>
+<p>find the closest GAT to summit of unionDHS with <code>closestBed</code>.<br />
+</p>
+<pre class="bash watch-out"><code>all.GAT.file=read.table(file = &quot;../peak_without_123456789/hg38.3.3.3.30_plus_minus_GAT.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+CTCF.ctrl.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = &#39;-d -t first&#39;)
+write.table(CTCF.ctrl.distance,file= &#39;CTCF.ctrl.distance.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+save.image(&#39;231214_GATA3_ChIP_clsestbed.Rdata&#39;) </code></pre>
+<pre class="bash watch-out"><code>wc -l CTCF.ctrl.distance.bed
+head -5 CTCF.ctrl.distance.bed
+
+awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; CTCF.ctrl.distance.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot;&gt; closest_1st_GAT_to_CTCF_peak.bed
+wc -l closest_1st_GAT_to_CTCF_peak.bed
+
+awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; CTCF.ctrl.distance.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | sort | uniq&gt; closest_1st_GAT_to_CTCF_uniq_peak.bed
+wc -l closest_1st_GAT_to_CTCF_uniq_peak.bed </code></pre>
+<pre><code>##     7800 CTCF.ctrl.distance.bed
+## chr1 826944  826945  chr1    826956  826959  36  36  +   GAT 12
+## chr1 913010  913011  chr1    912992  912995  14  14  -   GAT 16
+## chr1 1116689 1116690 chr1    1116512 1116515 14  14  -   GAT 175
+## chr1 1247245 1247246 chr1    1247393 1247396 36  36  +   GAT 148
+## chr1 1305399 1305400 chr1    1305387 1305390 14  14  -   GAT 10
+##     7800 closest_1st_GAT_to_CTCF_peak.bed
+##     7788 closest_1st_GAT_to_CTCF_uniq_peak.bed</code></pre>
+<pre class="bash watch-out"><code>head -5 closest_1st_GAT_to_CTCF_uniq_peak.bed
+awk &#39;$6 == &quot;+&quot; {count++} END {print &quot;Positive strand count:&quot;, count}&#39; closest_1st_GAT_to_CTCF_uniq_peak.bed
+awk &#39;$6 == &quot;-&quot; {count++} END {print &quot;Positive strand count:&quot;, count}&#39; closest_1st_GAT_to_CTCF_uniq_peak.bed</code></pre>
+<pre><code>## chr1 10033721    10033724    36  36  +   GAT
+## chr1 100463958   100463961   14  14  -   GAT
+## chr1 101357518   101357521   14  14  -   GAT
+## chr1 101769729   101769732   14  14  -   GAT
+## chr1 101971482   101971485   14  14  -   GAT
+## Positive strand count: 4004
+## Positive strand count: 3784</code></pre>
+<p><strong><code>bedtools subtract</code></strong><br />
+Subtract the 1st closest GAT from all.GAT, then find the closest 2nd GAT to the closest 1st GAT.<br />
+<code>-f</code> Requiring a minimal overlap fraction before subtracting. Here we define <code>-f 1.00</code> to make sure of a 100% overlap between two file before subtracting.<br />
+<code>-s</code> Enforcing same “strandedness” while scanning for features in <code>-b file</code> that should be subtracted from <code>-a file</code>.<br />
+</p>
+<pre class="bash watch-out"><code>module load bedtools 
+sort -k1,1 -k2,2n ../peak_without_123456789/hg38.3.3.3.30_plus_minus_GAT.bed &gt; hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+head -5 hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+#chr1   11145   11148   14  14  -   GAT
+#chr1   11160   11163   14  14  -   GAT
+#chr1   11521   11524   36  36  +   GAT
+#chr1   11576   11579   14  14  -   GAT
+#chr1   12188   12191   36  36  +   GAT
+
+sort -k1,1 -k2,2n closest_1st_GAT_to_CTCF_uniq_peak.bed &gt; closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed 
+head -5 closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed
+#chr1   826956  826959  36  36  +   GAT
+#chr1   912992  912995  14  14  -   GAT
+#chr1   1116512 1116515 14  14  -   GAT
+#chr1   1247393 1247396 36  36  +   GAT
+#chr1   1305387 1305390 14  14  -   GAT
+
+bedtools subtract -a hg38.3.3.3.30_plus_minus_GAT.sorted.bed -b closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed -f 1.00 -s &gt; hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_CTCF.bed
+
+wc -l hg38.3.3.3.30_plus_minus_GAT.sorted.bed #64243047
+wc -l closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed #7788
+wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_CTCF.bed #64235259
+
+#64243047-7788
+#[1] 64235259</code></pre>
+<p>Read the file (1st closest GAT to CTCF summit) in:<br />
+</p>
+<pre class="r watch-out"><code>closest_1st_GAT_to_CTCF=read.table(&quot;closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed&quot;, header=FALSE)
+nrow(closest_1st_GAT_to_CTCF)</code></pre>
+<pre><code>## [1] 7788</code></pre>
+<pre class="r watch-out"><code>head(closest_1st_GAT_to_CTCF)</code></pre>
+<pre><code>##     V1      V2      V3 V4 V5 V6  V7
+## 1 chr1  826956  826959 36 36  + GAT
+## 2 chr1  912992  912995 14 14  - GAT
+## 3 chr1 1116512 1116515 14 14  - GAT
+## 4 chr1 1247393 1247396 36 36  + GAT
+## 5 chr1 1305387 1305390 14 14  - GAT
+## 6 chr1 1308225 1308228 14 14  - GAT</code></pre>
+<p>Read the GAT coorrdinates file without the 1st closest GAT.<br />
+</p>
+<pre class="r watch-out"><code>all.GAT.without.1st.closest.ctrl.file=read.table(file = &quot;hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_CTCF.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+nrow(all.GAT.without.1st.closest.ctrl.file) 
+#64235259
+head(all.GAT.without.1st.closest.ctrl.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11145 11148 14 14  - GAT
+#2 chr1 11160 11163 14 14  - GAT
+#3 chr1 11521 11524 36 36  + GAT
+#4 chr1 11576 11579 14 14  - GAT
+#5 chr1 12188 12191 36 36  + GAT
+#6 chr1 13274 13277 36 36  + GAT</code></pre>
+<p>Use <code>bedtools closestBed</code> to find the <strong>2nd closest GAT</strong> to the <strong>1st closest GAT</strong> use the output from <code>bedtools subtract</code>.<br />
+</p>
+<pre class="r watch-out"><code>closest.2nd.distance.CTCF=bedTools.closest(bed1 = closest_1st_GAT_to_CTCF[,1:3], bed2 = all.GAT.without.1st.closest.ctrl.file, opt.string = &#39;-d -t first&#39;)
+write.table(closest.2nd.distance.CTCF, file= &#39;closest.2nd.distance.CTCF.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+save.image(&#39;231214_GATA3_ChIP_2nd_clsestbed.Rdata&#39;) </code></pre>
+</div>
+<div id="cdf" class="section level3" number="2.7.2">
+<h3><span class="header-section-number">2.7.2</span> CDF</h3>
+</div>
+<div id="pdf" class="section level3" number="2.7.3">
+<h3><span class="header-section-number">2.7.3</span> PDF</h3>
+</div>
+<div id="local-control" class="section level3" number="2.7.4">
+<h3><span class="header-section-number">2.7.4</span> local control</h3>
+<p>Add 200bp to the original peak summit, use this new locus as “control summit” to look for 1st and 2nd closest GAT.<br />
+</p>
+</div>
 </div>
 <div id="positive-control" class="section level2" number="2.8">
 <h2><span class="header-section-number">2.8</span> positive control</h2>
