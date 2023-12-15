@@ -544,7 +544,7 @@ cat hg38_unionDHS_fc4_50merge_randomized_subset.bed
 
 **remove GATA3 motifs with `MAST`** \
 
-The full .bed file contains 2723010 regulatory regions. To make this file a proper control for our peak set, we use `MAST` to remove GATA3-like motif 123456789 from these regulatory regions (use same p-value stringency). \
+The full .bed file contains 2723010 regulatory regions. To make this file a proper control for our peak set, we use `MAST` to remove  regulatory regions that contains GATA3-like motif 123456789 (use same p-value stringency). \
 
 We have 9 motifs that found by MEME/STREME software. \
 
@@ -1944,12 +1944,246 @@ If B is downstream of A, then it will use the start of B to subtract the end of 
 
 Since `closestBed` is adding 1bp in its calculation of distance, the actual fixed spacings between two 3mer will be **distance -1**. \
 
-## other negative control
+## Other negative control
 
-local control: \
+### CTCF peak sets
 
-CTCF peak sets (remove motifs 123456789) \
+Besides the union DHS regions from ENCODE, we also performed CTCF ChIP-seq with MCF7 cells, which could serve as an alternative negative control for this analysis. \
 
+Review of CTCF ChIP-seq: \
+
+Using MACS3 and two biological replicates of  CTCF_CC libraries, we identified 94738 CTCF ChIP peaks. \
+To make this a proper control for our GATA3 peak sets (that without MEME/STREME motifs), we use `MAST` to remove CTCF peaks regions that contains GATA3-like motif 123456789 (use same p-value stringency). \
+
+
+We have 9 motifs that found by MEME/STREME software. \
+
+```{r engine='bash', eval=T, echo=TRUE}
+ls GATA3_MEME_STREME_motifs/
+#cat GATA3_MEME_STREME_motifs/meme_1.txt
+```
+
+First convert CTCF ChIP-peak file (100bp window) from .bed to .fasta. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/overrep_3mer/CTCF_peak_without_123456789
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/CTCF_peak/
+fastaFromBed -fi $genome -bed ${dir}CTCF_ChIP_summit_100window.bed -fo CTCF_ChIP_summit_100window.fasta
+
+wc -l ${dir}CTCF_ChIP_summit_100window.bed #94738
+```
+
+
+MEME (`mast` uses default p-value: 0.0001) \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+#round1
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_1.txt CTCF_ChIP_summit_100window.fasta > mast_GATA3_PSWM_in_CTCF_round1.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round1.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round1.bed #584
+intersectBed -v -a ${dir}CTCF_ChIP_summit_100window.bed -b mast_GATA3_PSWM_in_CTCF_round1.bed > CTCF_without_motifs_1.bed
+wc -l CTCF_without_motifs_1.bed #94154
+
+#round2
+fastaFromBed -fi $genome -bed CTCF_without_motifs_1.bed -fo CTCF_without_motifs_1.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_2.txt CTCF_without_motifs_1.fasta > mast_GATA3_PSWM_in_CTCF_round2.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round2.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round2.bed #675
+intersectBed -v -a CTCF_without_motifs_1.bed -b mast_GATA3_PSWM_in_CTCF_round2.bed > CTCF_without_motifs_12.bed
+wc -l CTCF_without_motifs_12.bed #93479
+
+#round3
+fastaFromBed -fi $genome -bed CTCF_without_motifs_12.bed -fo CTCF_without_motifs_12.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/meme_3.txt CTCF_without_motifs_12.fasta > mast_GATA3_PSWM_in_CTCF_round3.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round3.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round3.bed #541
+intersectBed -v -a CTCF_without_motifs_12.bed -b mast_GATA3_PSWM_in_CTCF_round3.bed > CTCF_without_motifs_123.bed
+wc -l CTCF_without_motifs_123.bed # 92938
+
+#round4
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123.bed -fo CTCF_without_motifs_123.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/AGATNDWNAGATARN_meme.txt_meme_4.txt CTCF_without_motifs_123.fasta > mast_GATA3_PSWM_in_CTCF_round4.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round4.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round4.bed #614
+intersectBed -v -a CTCF_without_motifs_123.bed -b mast_GATA3_PSWM_in_CTCF_round4.bed > CTCF_without_motifs_1234.bed
+wc -l CTCF_without_motifs_1234.bed #92324
+
+#round5
+fastaFromBed -fi $genome -bed CTCF_without_motifs_1234.bed -fo CTCF_without_motifs_1234.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/BTTATCWGATB_meme_5.txt_meme.txt CTCF_without_motifs_1234.fasta > mast_GATA3_PSWM_in_CTCF_round5.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round5.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round5.bed #490
+intersectBed -v -a CTCF_without_motifs_1234.bed -b mast_GATA3_PSWM_in_CTCF_round5.bed > CTCF_without_motifs_12345.bed
+wc -l CTCF_without_motifs_12345.bed #91834
+
+
+#round6
+fastaFromBed -fi $genome -bed CTCF_without_motifs_12345.bed -fo CTCF_without_motifs_12345.fasta
+mast -hit_list -best ../GATA3_MEME_STREME_motifs/WGATBDHRVAGATAA_meme.txt_meme_6.txt CTCF_without_motifs_12345.fasta > mast_GATA3_PSWM_in_CTCF_round6.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round6.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round6.bed #653
+intersectBed -v -a CTCF_without_motifs_12345.bed -b mast_GATA3_PSWM_in_CTCF_round6.bed > CTCF_without_motifs_123456.bed 
+wc -l CTCF_without_motifs_123456.bed #91181
+```
+
+STREME (`mast` uses p-value of 0.0005) \
+```{r engine='bash', eval=F, echo=TRUE}
+#round7
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123456.bed -fo CTCF_without_motifs_123456.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATAAM_streme.txt CTCF_without_motifs_123456.fasta > mast_GATA3_PSWM_in_CTCF_round7.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round7.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round7.bed #2692
+intersectBed -v -a CTCF_without_motifs_123456.bed -b mast_GATA3_PSWM_in_CTCF_round7.bed > CTCF_without_motifs_123456_7.bed
+wc -l CTCF_without_motifs_123456_7.bed #88489 
+
+
+#round8
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123456_7.bed -fo CTCF_without_motifs_123456_7.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/TGATAA_streme.txt CTCF_without_motifs_123456_7.fasta > mast_GATA3_PSWM_in_CTCF_round8.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round8.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round8.bed #1914
+intersectBed -v -a CTCF_without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_CTCF_round8.bed > CTCF_without_motifs_123456_78.bed 
+wc -l CTCF_without_motifs_123456_78.bed  #86575
+
+#round9
+fastaFromBed -fi $genome -bed CTCF_without_motifs_123456_78.bed -fo CTCF_without_motifs_123456_78.fasta
+mast -mt 0.0005 -hit_list -best ../GATA3_MEME_STREME_motifs/AGATDNHATCT_streme.txt CTCF_without_motifs_123456_78.fasta > mast_GATA3_PSWM_in_CTCF_round9.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_CTCF_round9.txt
+wc -l mast_GATA3_PSWM_in_CTCF_round9.bed #1840
+intersectBed -v -a CTCF_without_motifs_123456_78.bed -b mast_GATA3_PSWM_in_CTCF_round9.bed > CTCF_without_motifs_123456_789.bed
+wc -l CTCF_without_motifs_123456_789.bed #84735
+```
+
+**Randomly subset the CTCF peaks** \
+After the removal of the 9 GATA3 motifs with `mast`, the CTCF peak set now remains 84735 regions (originally 94738, removed ~10% regions). \
+
+Here I am using `shuf` to randomly select 7800 CTCF peaks to match with the GATA peak subset (quantile1: 7796 peaks) I am going to compare with. \
+```{r engine='bash', eval=F, echo=TRUE}
+shuf -n 7800 CTCF_without_motifs_123456_789.bed > random_7800_CTCF_without_motifs_123456_789.bed
+```
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
+wc -l random_7800_CTCF_without_motifs_123456_789.bed 
+head random_7800_CTCF_without_motifs_123456_789.bed
+```
+
+Read the file in and use the center as regulatory region summit: \
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(bigWig)
+chip.peak=read.table("random_7800_CTCF_without_motifs_123456_789.bed", header=FALSE)
+nrow(chip.peak)
+head(chip.peak)
+
+chip.peak.summit=center.bed(chip.peak, upstreamWindow=0, downstreamWindow=0)
+nrow(chip.peak.summit)
+head(chip.peak.summit)
+```
+find the closest GAT to summit of unionDHS with `closestBed`. \
+```{r engine='bash', eval=F, echo=TRUE}
+all.GAT.file=read.table(file = "../peak_without_123456789/hg38.3.3.3.30_plus_minus_GAT.bed", sep="\t", header=FALSE)
+CTCF.ctrl.distance=bedTools.closest(bed1 = chip.peak.summit[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+write.table(CTCF.ctrl.distance,file= 'CTCF.ctrl.distance.bed', quote=F,sep="\t",col.names=F,row.names=F)
+save.image('231214_GATA3_ChIP_clsestbed.Rdata') 
+```
+
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
+wc -l CTCF.ctrl.distance.bed
+head -5 CTCF.ctrl.distance.bed
+
+awk '{print $4, $5, $6, $7, $8, $9, $10}' CTCF.ctrl.distance.bed | awk '{$1=$1}1' OFS="\t"> closest_1st_GAT_to_CTCF_peak.bed
+wc -l closest_1st_GAT_to_CTCF_peak.bed
+
+awk '{print $4, $5, $6, $7, $8, $9, $10}' CTCF.ctrl.distance.bed | awk '{$1=$1}1' OFS="\t" | sort | uniq> closest_1st_GAT_to_CTCF_uniq_peak.bed
+wc -l closest_1st_GAT_to_CTCF_uniq_peak.bed 
+```
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
+head -5 closest_1st_GAT_to_CTCF_uniq_peak.bed
+awk '$6 == "+" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_CTCF_uniq_peak.bed
+awk '$6 == "-" {count++} END {print "Positive strand count:", count}' closest_1st_GAT_to_CTCF_uniq_peak.bed
+```
+
+**`bedtools subtract`** \
+Subtract the 1st closest GAT from all.GAT, then find the closest 2nd GAT to the closest 1st GAT. \
+`-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
+`-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools 
+sort -k1,1 -k2,2n ../peak_without_123456789/hg38.3.3.3.30_plus_minus_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+head -5 hg38.3.3.3.30_plus_minus_GAT.sorted.bed
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11521	11524	36	36	+	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	12188	12191	36	36	+	GAT
+
+sort -k1,1 -k2,2n closest_1st_GAT_to_CTCF_uniq_peak.bed > closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed 
+head -5 closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed
+#chr1	826956	826959	36	36	+	GAT
+#chr1	912992	912995	14	14	-	GAT
+#chr1	1116512	1116515	14	14	-	GAT
+#chr1	1247393	1247396	36	36	+	GAT
+#chr1	1305387	1305390	14	14	-	GAT
+
+bedtools subtract -a hg38.3.3.3.30_plus_minus_GAT.sorted.bed -b closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed -f 1.00 -s > hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_CTCF.bed
+
+wc -l hg38.3.3.3.30_plus_minus_GAT.sorted.bed #64243047
+wc -l closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed #7788
+wc -l hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_CTCF.bed #64235259
+
+#64243047-7788
+#[1] 64235259
+```
+
+Read the file (1st closest GAT to CTCF summit) in: \
+```{r engine='R', eval=TRUE, echo=TRUE}
+closest_1st_GAT_to_CTCF=read.table("closest_1st_GAT_to_CTCF_uniq_peak.sorted.bed", header=FALSE)
+nrow(closest_1st_GAT_to_CTCF)
+head(closest_1st_GAT_to_CTCF)
+```
+
+Read the GAT coorrdinates file without the 1st closest GAT. \
+
+```{r engine='R', eval=F, echo=TRUE}
+all.GAT.without.1st.closest.ctrl.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT_without_1st_closest_GAT_CTCF.bed", sep="\t", header=FALSE)
+nrow(all.GAT.without.1st.closest.ctrl.file) 
+#64235259
+head(all.GAT.without.1st.closest.ctrl.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11145 11148 14 14  - GAT
+#2 chr1 11160 11163 14 14  - GAT
+#3 chr1 11521 11524 36 36  + GAT
+#4 chr1 11576 11579 14 14  - GAT
+#5 chr1 12188 12191 36 36  + GAT
+#6 chr1 13274 13277 36 36  + GAT
+```
+
+
+Use `bedtools closestBed` to find the **2nd closest GAT** to the **1st closest GAT** use the output from `bedtools subtract`. \
+  
+```{r engine='R', eval=F, echo=TRUE}
+closest.2nd.distance.CTCF=bedTools.closest(bed1 = closest_1st_GAT_to_CTCF[,1:3], bed2 = all.GAT.without.1st.closest.ctrl.file, opt.string = '-d -t first')
+write.table(closest.2nd.distance.CTCF, file= 'closest.2nd.distance.CTCF.bed', quote=F,sep="\t",col.names=F,row.names=F)
+save.image('231214_GATA3_ChIP_2nd_clsestbed.Rdata') 
+```
+
+### CDF
+
+### PDF
+
+
+### local control
+
+Add 200bp to the original peak summit, use this new locus as "control summit" to look for 1st and 2nd closest GAT. \
 
 ## positive control
 There are 9 GATA3 peak sets each with 1 known enriched GATA3-like motif found by MEME/STREME. \
