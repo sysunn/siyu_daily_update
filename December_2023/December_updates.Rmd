@@ -731,6 +731,7 @@ second_min <- function(vec) {
 }
 ```
 -->
+
 We are plotting the cumulative distribution function to evaluate whether a 3mer GAT are closer to the summit of GATA3 ChIP peaks (that might use 3mer GAT as a binding sequence) than they are to the summit of a random subset of union DHS regions (ctrl). \
 
 
@@ -2177,8 +2178,12 @@ write.table(closest.2nd.distance.CTCF, file= 'closest.2nd.distance.CTCF.bed', qu
 save.image('231214_GATA3_ChIP_2nd_clsestbed.Rdata') 
 ```
 
+We decided to not use the CTCF ChIP peak as the negative control because it will bias the comparison. Since CTCF peaks will be enriched of CTCF motifs and these binding element will have fewer GAT, ATC... \
+<!--
 ### CDF
 ### PDF
+
+-->
 
 # goals and plans
 
@@ -2209,7 +2214,7 @@ Use this data we could make criteria for the GATA3 binding element: 1) threshold
 
 # Week of Dec 18th
 
-### local control
+## local control
 
 Goal: add 200bp to the original peak summit, use this new locus as "control summit" to look for 1st and 2nd closest GAT. \
 
@@ -2256,7 +2261,7 @@ head(quantile0.2_summits.200bpctrl)
 #write.table(quantile0.2_summits.200bpctrl, file= 'quantile0.2_summits.200bpctrl.bed', quote=F,sep="\t",col.names=F,row.names=F)
 ```
 
-### Find closest 1st GAT to local control peak summit
+## Find closest 1st GAT to local control peak summit
 
 In this section, we use `bedtools closestBed` (refer to: https://bedtools.readthedocs.io/en/latest/content/tools/closest.html) to find the closest GAT to each provided peak summit. \
 Input: \
@@ -2321,11 +2326,11 @@ Here we choose to use `-t first` to report the first coordinates when tie occurr
 Find the closest GAT to peak summit regardless of GAT strandedness \
 ```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
 # load closestBed function
-localctrl.200.distance.quantile1=bedTools.closest(bed1 = quantile1_summits.200bpctrl.bed[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
-localctrl.200.distance.quantile0.8=bedTools.closest(bed1 = quantile0.8_summits.200bpctrl.bed[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
-localctrl.200.distance.quantile0.6=bedTools.closest(bed1 = quantile0.6_summits.200bpctrl.bed[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
-localctrl.200.distance.quantile0.4=bedTools.closest(bed1 = quantile0.4_summits.200bpctrl.bed[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
-localctrl.200.distance.quantile0.2=bedTools.closest(bed1 = quantile0.2_summits.200bpctrl.bed[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+localctrl.200.distance.quantile1=bedTools.closest(bed1 = quantile1_summits.200bpctrl[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+localctrl.200.distance.quantile0.8=bedTools.closest(bed1 = quantile0.8_summits.200bpctrl[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+localctrl.200.distance.quantile0.6=bedTools.closest(bed1 = quantile0.6_summits.200bpctrl[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+localctrl.200.distance.quantile0.4=bedTools.closest(bed1 = quantile0.4_summits.200bpctrl[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+localctrl.200.distance.quantile0.2=bedTools.closest(bed1 = quantile0.2_summits.200bpctrl[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
 
 
 write.table(localctrl.200.distance.quantile1,file= 'localctrl.200.distance.quantile1.bed', quote=F,sep="\t",col.names=F,row.names=F)
@@ -2337,23 +2342,658 @@ write.table(localctrl.200.distance.quantile0.2,file= 'localctrl.200.distance.qua
 save.image('231218_GATA3_ChIP_clsestbed.Rdata') 
 ```
 
-### empirically determine binding distance for each quantile 
+### preopare data
+
+**negative control 1** \
+In previous analysis, we have used union DHS regions as negative control, and have saved the 1st closest GAT information in file "ctrl.distance.bed". \
+
+Read in the file in R, notice that V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest GAT 3mer** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
+head(ctrl.distance)
+nrow(ctrl.distance)
+nrow(ctrl.distance[ctrl.distance$V9=="+",])
+nrow(ctrl.distance[ctrl.distance$V9=="-",])
+```
+
+**negative control2** \
+We have also just created 5 files each with the GATA3 peak summit shifted to downstream 200bp, these file will be used as a local control. \
+
+Notice that the first three column is the local control summit (200bp downstream of real peak summit), and column 4 to 10 is the 1st closest GAT coordinates found by `closestbed`, the last column is the distance. \
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+for i in localctrl.200.distance.quantile*.bed
+do
+  wc -l $i
+  head -5 $i
+done
+```
+
+Read tne file in R with distance info of local control. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+localctrl.200.distance.1=read.table('localctrl.200.distance.quantile1.bed',header=F, comment.char='')
+localctrl.200.distance.0.8=read.table('localctrl.200.distance.quantile0.8.bed',header=F, comment.char='')
+localctrl.200.distance.0.6=read.table('localctrl.200.distance.quantile0.6.bed',header=F, comment.char='')
+localctrl.200.distance.0.4=read.table('localctrl.200.distance.quantile0.4.bed',header=F, comment.char='')
+localctrl.200.distance.0.2=read.table('localctrl.200.distance.quantile0.2.bed',header=F, comment.char='')
+
+head(localctrl.200.distance.1)
+nrow(localctrl.200.distance.1)
+nrow(localctrl.200.distance.1[localctrl.200.distance.1$V9=="+",])
+nrow(localctrl.200.distance.1[localctrl.200.distance.1$V9=="-",])
+```
+
+**GATA3 peaks** \
+
+We have also generated 5 quantile files with 1st closest GAT to GATA3 peak summits info. These GATA3 peaks are peaks without MEME/MOTIF found motifs and have ranked by peak intensity. \
+
+Notice that V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+all.distance.quantile1=read.table('all.distance.quantile1.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+```
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+all.distance.quantile0.8=read.table('all.distance.quantile0.8.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+all.distance.quantile0.6=read.table('all.distance.quantile0.6.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+all.distance.quantile0.4=read.table('all.distance.quantile0.4.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+all.distance.quantile0.2=read.table('all.distance.quantile0.2.bed',header=F, comment.char='')
+head(all.distance.quantile1)
+```
+
+
+**combine data** \
+
+GATA3 peak info + distance + status. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.chip = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.chip) = c("V1","V2","v3", "dis", "status")
+for (chip.peak in Sys.glob(file.path("./all.distance.quantile*.bed"))) {
+    print(chip.peak)
+    quantile.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'all.distance.')[[1]][2]), ".bed")[[1]][1]
+    print(quantile.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 11)], quantile.name)
+    df.chip = rbind(df.chip, all.distance)
+}
+str(df.chip)
+unique(df.chip$quantile.name)
+colnames(df.chip) = c("V1","V2","V3", "dis", "status")
+head(df.chip)
+```
+
+union DHS peak info + distance +status. \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+ctrl.distance=read.table('ctrl.distance.bed',header=F, comment.char='')
+df.ctrl = cbind(ctrl.distance[,c(1:3, 11)], "unionDHS_ctrl")
+colnames(df.ctrl) = c(colnames(ctrl.distance)[1:3], "dis", "status")
+head(df.ctrl)
+```
+
+
+local control peak info + distance +status. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.ctrl2 = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.ctrl2) = c("V1","V2","v3", "dis", "status")
+for (chip.peak in Sys.glob(file.path("./localctrl.200.distance.quantile*.bed"))) {
+    print(chip.peak)
+    quantile.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'localctrl.200.distance.')[[1]][2]), ".bed")[[1]][1]
+    print(quantile.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 11)], paste0("localctrl_200_", quantile.name)) 
+    df.ctrl2 = rbind(df.ctrl2, all.distance)
+}
+str(df.ctrl2)
+colnames(df.ctrl2) = c("V1","V2","V3", "dis", "status")
+unique(df.ctrl2$status)
+head(df.ctrl2)
+```
+
+merge files. \
+```{r engine='R', eval=TRUE, class.source = "revision", echo=TRUE}
+df.all=rbind(df.chip, df.ctrl, df.ctrl2)
+df.all$status = factor(df.all$status, levels = c("quantile0.2", "quantile0.4", "quantile0.6", "quantile0.8", "quantile1", "unionDHS_ctrl", "localctrl_200_quantile0.2", "localctrl_200_quantile0.4", "localctrl_200_quantile0.6", "localctrl_200_quantile0.8", "localctrl_200_quantile1" ))
+head(df.all)
+nrow(df.all)
+```
+
+
+### empirically determine binding distance for each quantile
+
+We can empirically determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+unique(df.all$status)
+```
+
+Previously, comparing between subset of unionDHS regions and GATA3 peak in quantile1, we determined the converging/parallel distance cutoff at ~13bp. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'unionDHS_ctrl'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
+match.y = seq(0, 184, by=1) # creating indices
+rep.y = seq(0, 184, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 13; 
+
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+Now that we have made local controls, we can determine the cutoff of GATA3 peak in each quantiles compared with its coresponding local ctrl: \
+quantile1 vs. localctrl_200_quantile1: \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+match = ecdf(abs(df.all$dis)[df.all$status == 'localctrl_200_quantile1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
+match.y = seq(0, 184, by=1) 
+rep.y = seq(0, 184, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+
+quantile0.8 vs. localctrl_200_quantile0.8: \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+match = ecdf(abs(df.all$dis)[df.all$status == 'localctrl_200_quantile0.8'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
+match.y = seq(0, 247, by=1) 
+rep.y = seq(0, 247, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+quantile0.6 vs. localctrl_200_quantile0.6: \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+match = ecdf(abs(df.all$dis)[df.all$status == 'localctrl_200_quantile0.6'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
+match.y = seq(0, 260, by=1) 
+rep.y = seq(0, 260, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+quantile0.4 vs. localctrl_200_quantile0.4: \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+match = ecdf(abs(df.all$dis)[df.all$status == 'localctrl_200_quantile0.4'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
+match.y = seq(0, 270, by=1) 
+rep.y = seq(0, 270, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+quantile0.2 vs. localctrl_200_quantile0.2: \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+match = ecdf(abs(df.all$dis)[df.all$status == 'localctrl_200_quantile0.2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
+match.y = seq(0, 360, by=1) 
+rep.y = seq(0, 360, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak CDF - ctrl(unionDHS) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
 
 ### CDF
 
-### find closest 2nd GAT
+We are plotting the cumulative distribution function to evaluate whether a 3mer GAT are closer to the summit of GATA3 ChIP peaks (that might use 3mer GAT as a binding sequence) than they are to the summit of a random subset of union DHS regions (unionDHS_ctrl), as well as to the local control (summit shifted to downstream 200bp). \
 
-In this section, we need to consider two things: \
+**negative control comparison** \
+First, we want to ask if the local control is comparable to the union DHS control? \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df.nc=rbind(df.ctrl, df.ctrl2)
+df.nc$status = factor(df.nc$status, levels = c("unionDHS_ctrl", "localctrl_200_quantile0.2", "localctrl_200_quantile0.4", "localctrl_200_quantile0.6", "localctrl_200_quantile0.8", "localctrl_200_quantile1" ))
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.nc,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("blue", colorRampPalette(c("grey85","grey30"))(5)),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("blue", colorRampPalette(c("grey85","grey30"))(5)), lwd=3), strip.background=list(col="grey85"))
+         )
+    
+```
+The blue trace is the subset of union DHS regions, it mostly overlap with the local control use peak in quantile1. \
+
+**single plot for each quantile** \
+
+quantile1 vs. localctrl_200_quantile1 vs. union DHS control: \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile1",], df.ctrl, df.ctrl2[df.ctrl2$status=="localctrl_200_quantile1",])
+df1$status = factor(df1$status, levels = c("quantile1", "unionDHS_ctrl", "localctrl_200_quantile1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "lightblue", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "lightblue", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 13, lty =2, col="lightblue")
+             panel.abline(v= 16, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+    
+```
+
+It seems that unionDHS control is mostly overlap with local control within quantile1. \
+And GATA3 peak in quantile1 is clearly separated (left shift) from both control. \
+
+The light blue vertical line at 13 bp is what we empirically determined as the converging point compared between GATA3 peak in quantile 1 and unionDHS control; the grey vertical line at 16bp is what we empirically determined as the converging point compared between GATA3 peak in quantile 1 and local control. \
+
+quantile0.8 vs. localctrl_200_quantile0.8 vs. union DHS control: \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df0.8=rbind(df.chip[df.chip$status=="quantile0.8",], df.ctrl, df.ctrl2[df.ctrl2$status=="localctrl_200_quantile0.8",])
+df0.8$status = factor(df0.8$status, levels = c("quantile0.8", "unionDHS_ctrl", "localctrl_200_quantile0.8"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df0.8,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "lightblue", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "lightblue", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 4, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+    
+```
+
+quantile0.6 vs. localctrl_200_quantile0.6 vs. union DHS control: \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df0.6=rbind(df.chip[df.chip$status=="quantile0.6",], df.ctrl, df.ctrl2[df.ctrl2$status=="localctrl_200_quantile0.6",])
+df0.6$status = factor(df0.6$status, levels = c("quantile0.6", "unionDHS_ctrl", "localctrl_200_quantile0.6"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df0.6,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "lightblue", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "lightblue", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 2, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+    
+```
+
+
+quantile0.4 vs. localctrl_200_quantile0.4 vs. union DHS control: \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df0.4=rbind(df.chip[df.chip$status=="quantile0.4",], df.ctrl, df.ctrl2[df.ctrl2$status=="localctrl_200_quantile0.4",])
+df0.4$status = factor(df0.4$status, levels = c("quantile0.4", "unionDHS_ctrl", "localctrl_200_quantile0.4"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df0.4,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "lightblue", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "lightblue", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 0, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+    
+```
+
+quantile0.2 vs. localctrl_200_quantile0.2 vs. union DHS control: \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df0.2=rbind(df.chip[df.chip$status=="quantile0.2",], df.ctrl, df.ctrl2[df.ctrl2$status=="localctrl_200_quantile0.2",])
+df0.2$status = factor(df0.2$status, levels = c("quantile0.2", "unionDHS_ctrl", "localctrl_200_quantile0.2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df0.2,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "lightblue", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "lightblue", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 20, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+    
+```
+
+GATA3 peaks in quantile 0.8 to 0.2 looks similar with the corresponding local control. It suggests that these peaks has no significant enrichment of 3mer GAT proximal to their summit compared to control. \
+
+
+**all in one plot** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", "blue", colorRampPalette(c("grey85","grey30"))(5)),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", "blue", colorRampPalette(c("grey85","grey30"))(5)), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 1.2, lty =2) #log10(16)=1.2
+             panel.ecdfplot(...)
+         })
+    
+```
+
+The above cumulative distribution function (PDF) plot is showing the distance between 3mer-GAT to the summit of GATA3 ChIP peak (red), or summit of the ctrl peak set (blue: random subset from the union DHS regions; grey: local control, downstream 200bp of the proginal peak summit). \
+
+The left-shift of the red curve suggests that the 3mer-GAT are closer to the GATA3 ChIP peak set in quantile1 than the ctrl peak set. \
+
+The vertical dashed line indicates at which distance (log10 of 16bp) the two CDF traces became parallel. This suggests that the 3mer-GAT often binds within 16 bp of the GATA3 peak summit. \
+
+
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+ecdfplot(~abs(dis), groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", "blue", colorRampPalette(c("grey85","grey30"))(5)),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", "blue", colorRampPalette(c("grey85","grey30"))(5)), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 16, lty =2) 
+             panel.ecdfplot(...)
+         })
+    
+```
+
+The difference between this CDF with the previous one is: The above one is plotting actual distance in bp, the previous one is plotting log10 of the distance. The two CDF plots are essentially communicating the same thing. \
+
+
+## find closest 2nd GAT
+
+**In this section, we need to consider two things**: \
 One is to define spacing/distance as the relative position of two zinc finger; \
 the other is to separate the cases with different strand orientation. \
 
-```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
 
+**negative control1** \
+In previous analysis, we used union DHS regions as the negative control for GATA3 peaks to compare against. \
 
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed
+head -5 closest_1st_GAT_to_unionDHS_uniq_peak.sorted.bed
 ```
+**negative control2** \
+
+We have also generated 5 local controls in intensity-ranked quantiles, each with the GATA3 peak summit shifted to downstream 200bp. \
+
+Notice that the first three column is the local control summit (200bp downstream of real peak summit), and column 4 to 10 is the 1st closest GAT coordinates found by `closestbed`, the last column is the distance. \
+
+We can sort and select only the 3mer coordinates info to new file. \
+
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+for i in localctrl.200.distance.quantile*.bed
+do
+  nm=$(echo $i | awk -F "localctrl.200.distance." '{print $2}' | awk -F".bed" '{print $1}')
+  echo $nm
+  awk '{print $4, $5, $6, $7, $8, $9, $10}' $i | awk '{$1=$1}1' OFS="\t" | sort | uniq > closest_1st_GAT_to_localctrl_200_uniq_${nm}.sorted.bed
+  wc -l closest_1st_GAT_to_localctrl_200_uniq_${nm}.sorted.bed
+  head -5 closest_1st_GAT_to_localctrl_200_uniq_${nm}.sorted.bed
+done
+```
+
+
+**GATA3 peaks** \
+In previous analysis we have called the closest GAT to GATA3 peaks (without MEME/STREME motifs) and saved them in 5 quantile files ranked by their intensity. \
+```{r engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+for i in closest_1st_GAT_to_GATA_uniq_peak_quantile*.bed
+do
+  wc -l $i
+  head -5 $i
+done
+```
+
+
+
 
 ### PDF
 
+## ENCODE DHS in MCF7 cells
+
+Stam_MCF-7_1: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM736581 \
+Stam_MCF-7_2: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM736588 \
+
+GSE29692: "Cells were grown according to the approved ENCODE cell culture protocols. Digital DNaseI was performed by DNaseI digestion of intact nuclei, isolating DNaseI 'double-hit' fragments as described in Sabo et al. (2006), and direct sequencing of fragment ends (which correspond to in vivo DNaseI cleavage sites) using the Solexa platform (36 bp reads). Uniquely mapping high-quality reads were mapped to the genome. DNaseI sensitivity is directly reflected in raw tag density (Raw Signal), which is shown in the track as density of tags mapping within a 150 bp sliding window (at a 20 bp step across the genome). DNaseI sensitive zones (HotSpots) were identified using the HotSpot algorithm described in Sabo et al. (2004). 1.0% false discovery rate thresholds (FDR 0.01) were computed for each cell type by applying the HotSpot algorithm to an equivalent number of random uniquely mapping 36mers. DNaseI hypersensitive sites (DHSs or Peaks) were identified as signal peaks within FDR 1.0% hypersensitive zones using a peak-finding algorithm." \
+
+
+Notice that these data are using hg19 genome, we need to use UCSC liftover to convert data to hg38. \
 
 ## positive control
 There are 9 GATA3 peak sets each with 1 known enriched GATA3-like motif found by MEME/STREME. \
