@@ -773,13 +773,31 @@ function toggle_visibility(id1) {
 </ul></li>
 <li><a href="#exhaustive-streme--mast-for-gata3" id="toc-exhaustive-streme--mast-for-gata3"><span class="toc-section-number">4</span> Exhaustive STREME -MAST for GATA3</a>
 <ul>
-<li><a href="#streme-round7" id="toc-streme-round7"><span class="toc-section-number">4.1</span> STREME-round7</a></li>
-<li><a href="#streme-round8" id="toc-streme-round8"><span class="toc-section-number">4.2</span> STREME-round8</a></li>
-<li><a href="#ordered-markov-background-model-1" id="toc-ordered-markov-background-model-1"><span class="toc-section-number">4.3</span> 2-ordered Markov Background Model</a>
+<li><a href="#streme-round7" id="toc-streme-round7"><span class="toc-section-number">4.1</span> STREME-round7</a>
 <ul>
-<li><a href="#meme-with-2-ordered-markov-background-model" id="toc-meme-with-2-ordered-markov-background-model"><span class="toc-section-number">4.3.1</span> MEME with 2-ordered Markov Background Model</a></li>
-<li><a href="#streme-with-2-ordered-markov-background-model" id="toc-streme-with-2-ordered-markov-background-model"><span class="toc-section-number">4.3.2</span> STREME with 2-ordered Markov Background Model</a></li>
-<li><a href="#streme-for-spanned-region" id="toc-streme-for-spanned-region"><span class="toc-section-number">4.3.3</span> STREME for spanned region</a></li>
+<li><a href="#find-de-novo-motifs-at-central-100bp-window" id="toc-find-de-novo-motifs-at-central-100bp-window"><span class="toc-section-number">4.1.1</span> find de novo motifs at central 100bp window</a></li>
+<li><a href="#mast-6" id="toc-mast-6"><span class="toc-section-number">4.1.2</span> MAST</a></li>
+</ul></li>
+<li><a href="#streme-round8" id="toc-streme-round8"><span class="toc-section-number">4.2</span> STREME-round8</a>
+<ul>
+<li><a href="#find-de-novo-motifs-at-central-100bp-window-1" id="toc-find-de-novo-motifs-at-central-100bp-window-1"><span class="toc-section-number">4.2.1</span> find de novo motifs at central 100bp window</a></li>
+<li><a href="#mast-7" id="toc-mast-7"><span class="toc-section-number">4.2.2</span> MAST</a></li>
+</ul></li>
+<li><a href="#streme-round" id="toc-streme-round"><span class="toc-section-number">4.3</span> STREME-round –</a></li>
+<li><a href="#ordered-markov-background-model-1" id="toc-ordered-markov-background-model-1"><span class="toc-section-number">4.4</span> 2-ordered Markov Background Model</a>
+<ul>
+<li><a href="#meme-with-2-ordered-markov-background-model" id="toc-meme-with-2-ordered-markov-background-model"><span class="toc-section-number">4.4.1</span> MEME with 2-ordered Markov Background Model</a></li>
+<li><a href="#streme-with-2-ordered-markov-background-model" id="toc-streme-with-2-ordered-markov-background-model"><span class="toc-section-number">4.4.2</span> STREME with 2-ordered Markov Background Model</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#section-1" id="toc-section-1"><span class="toc-section-number">5</span> —</a>
+<ul>
+<li><a href="#streme-for-spanned-region" id="toc-streme-for-spanned-region"><span class="toc-section-number">5.1</span> STREME for spanned region</a>
+<ul>
+<li><a href="#prepare-file" id="toc-prepare-file"><span class="toc-section-number">5.1.1</span> prepare file</a></li>
+<li><a href="#streme-to-find-de-novo-motifs-at-the-spanned-region" id="toc-streme-to-find-de-novo-motifs-at-the-spanned-region"><span class="toc-section-number">5.1.2</span> <code>STREME</code> to find de novo motifs at the spanned region</a></li>
+<li><a href="#mast-8" id="toc-mast-8"><span class="toc-section-number">5.1.3</span> MAST</a></li>
+<li><a href="#need-some-thoughts" id="toc-need-some-thoughts"><span class="toc-section-number">5.1.4</span> –[need some thoughts]</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -838,14 +856,14 @@ color:blue
 <pre><code>## also installing the dependencies &#39;Rcpp&#39;, &#39;utf8&#39;, &#39;askpass&#39;, &#39;credentials&#39;, &#39;openssl&#39;, &#39;sys&#39;, &#39;zip&#39;, &#39;gitcreds&#39;, &#39;httr2&#39;, &#39;ini&#39;, &#39;httpuv&#39;, &#39;xtable&#39;, &#39;sourcetools&#39;, &#39;later&#39;, &#39;promises&#39;, &#39;fansi&#39;, &#39;systemfonts&#39;, &#39;textshaping&#39;, &#39;pillar&#39;, &#39;pkgconfig&#39;, &#39;diffobj&#39;, &#39;rematch2&#39;, &#39;clipr&#39;, &#39;crayon&#39;, &#39;curl&#39;, &#39;gert&#39;, &#39;gh&#39;, &#39;purrr&#39;, &#39;rprojroot&#39;, &#39;rstudioapi&#39;, &#39;whisker&#39;, &#39;shiny&#39;, &#39;callr&#39;, &#39;processx&#39;, &#39;downlit&#39;, &#39;httr&#39;, &#39;ragg&#39;, &#39;tibble&#39;, &#39;xml2&#39;, &#39;htmlwidgets&#39;, &#39;prettyunits&#39;, &#39;xopen&#39;, &#39;brew&#39;, &#39;commonmark&#39;, &#39;cpp11&#39;, &#39;brio&#39;, &#39;praise&#39;, &#39;ps&#39;, &#39;waldo&#39;, &#39;usethis&#39;, &#39;desc&#39;, &#39;miniUI&#39;, &#39;pkgbuild&#39;, &#39;pkgdown&#39;, &#39;pkgload&#39;, &#39;profvis&#39;, &#39;rcmdcheck&#39;, &#39;remotes&#39;, &#39;roxygen2&#39;, &#39;rversions&#39;, &#39;sessioninfo&#39;, &#39;testthat&#39;, &#39;urlchecker&#39;, &#39;withr&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/Rtmp9HgrN8/downloaded_packages</code></pre>
+##  /tmp/RtmpxUEtd9/downloaded_packages</code></pre>
 <pre class="r watch-out"><code>library(devtools)</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre class="r watch-out"><code>devtools::install_github(&#39;andrelmartins/bigWig&#39;,
               subdir=&#39;bigWig&#39;)</code></pre>
 <pre><code>## Downloading GitHub repo andrelmartins/bigWig@HEAD</code></pre>
 <pre><code>## ── R CMD build ─────────────────────────────────────────────────────────────────
-## * checking for file ‘/private/tmp/Rtmp9HgrN8/remotescd2e21e5e5/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
+## * checking for file ‘/private/tmp/RtmpxUEtd9/remotes10e4165c4007/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
 ## * preparing ‘bigWig’:
 ## * checking DESCRIPTION meta-information ... OK
 ## * cleaning src
@@ -858,7 +876,7 @@ install.packages(&quot;latticeExtra&quot;)</code></pre>
 <pre><code>## also installing the dependencies &#39;deldir&#39;, &#39;RcppEigen&#39;, &#39;png&#39;, &#39;jpeg&#39;, &#39;RColorBrewer&#39;, &#39;interp&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/Rtmp9HgrN8/downloaded_packages</code></pre>
+##  /tmp/RtmpxUEtd9/downloaded_packages</code></pre>
 <p>Install <code>bedtools</code><br />
 </p>
 <pre class="bash watch-out"><code>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
@@ -3070,21 +3088,150 @@ meme -p 40 -oc GATA3_without_motif123456_top10000_output -nmotifs 3 -objfun clas
 
 # top 5 motifs do not match with GATA</code></pre>
 <ol start="2" style="list-style-type: decimal">
-<li>find motif at the spanned region: substitute the central 60bp to 50 Ns, then increase sequence width to two ends (now we are searching for motifs at 70bp-NNN-70bp regions.)<br />
+<li>find motif at the spanned region: substitute the <strong>central 60bp</strong> to <strong>50 Ns</strong>, then increase sequence width to two ends (now we are searching for motifs at 70bp-NNN-70bp regions.)<br />
 </li>
 </ol>
+<p>In this part, I previously did wrong in substituting the <strong>central 100bp</strong> to <strong>50Ns</strong>, and increased width to 50bp at each end; 100bp at each end; and 200bp at each end.<br />
+<code>MEME</code> <strong>did not</strong> find de novo motif match to GATA3 at the spanned region, so I moved to next step—<code>STREME</code>.<br />
+</p>
 </div>
 </div>
 <div id="exhaustive-streme--mast-for-gata3" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Exhaustive STREME -MAST for GATA3</h1>
 <div id="streme-round7" class="section level2" number="4.1">
 <h2><span class="header-section-number">4.1</span> STREME-round7</h2>
+<div id="find-de-novo-motifs-at-central-100bp-window" class="section level3" number="4.1.1">
+<h3><span class="header-section-number">4.1.1</span> find de novo motifs at central 100bp window</h3>
+<pre class="bash revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6) (100bp window)
+streme --o GATA3_without_123456_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 15 --p without_motifs_123456.fasta</code></pre>
+<p>STREME found 1 motif (out of 10) that matches to GATA3<br />
+</p>
+</div>
+<div id="mast-6" class="section level3" number="4.1.2">
+<h3><span class="header-section-number">4.1.2</span> MAST</h3>
+<p>First, save the STREME-found GATA3-like motif file as <code>AGATAAM_streme.txt</code> in <code>individual_meme</code> folder.<br />
+</p>
+<p>Then use <code>MAST</code> to find GATA3-like motif7 (STREME-found) coordinated within peak regions (100bp window).<br />
+Notice that from here, we have increase the p-value stringency to 0.0005 (default is p&lt;0.0001) for <code>MAST</code>.<br />
+</p>
+<pre class="bash revision"><code>mast -mt 0.0005 -hit_list -best individual_meme/AGATAAM_streme.txt without_motifs_123456.fasta &gt; mast_GATA3_PSWM_in_peaks_round7.txt #8736
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round7.txt
+wc -l mast_GATA3_PSWM_in_peaks_round7.bed #8733</code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round7.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round7.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round7.bed
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round7.bed</code></pre>
+<pre><code>##     8736 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round7.txt
+## # Best single (non-overlapping) hit for each motif in all sequences from &quot;without_motifs_123456.fasta&quot;.
+## # sequence_name (strand+/-)motif id alt_id hit_start hit_end score hit_p-value
+## chr1:845746-845847 +1 AGATNDWNAGATARN - 35 41  1169.98 2.70e-04
+## chr1:1504971-1505072 +1 AGATNDWNAGATARN - 78 84  1284.91 9.58e-05
+## chr1:1746897-1746998 +1 AGATNDWNAGATARN - 51 57   724.65 4.45e-04
+##     8733 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round7.bed
+## chr1 845781  845787  1169.98 0.00027 +   1
+## chr1 1505049 1505055 1284.91 9.58e-05    +   1
+## chr1 1746948 1746954 724.65  0.000445    +   1
+## chr1 3186512 3186518 1284.91 9.58e-05    -   1
+## chr1 6623440 6623446 1241.81 0.000175    +   1</code></pre>
+<p>Use <code>intersectBed</code> to find GATA3 peaks without motif 123456 and the STREME-found motif7.<br />
+</p>
+<pre class="bash revision"><code># From peaks (without motif1, 2, 3, 4, 5, 6), exclude peaks with motif7 (STREME)
+intersectBed -v -a without_motifs_123456.bed -b mast_GATA3_PSWM_in_peaks_round7.bed &gt; without_motifs_123456_7.bed #47305
+fastaFromBed -fi $genome -bed without_motifs_123456_7.bed -fo without_motifs_123456_7.fasta</code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_7.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_7.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_7.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_7.fasta</code></pre>
+<pre><code>##    47305 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_7.bed
+## chr1 827330  827431  GATA_ChIP_peak_28   9.30478
+## chr1 916719  916820  GATA_ChIP_peak_31   7.79887
+## chr1 924803  924904  GATA_ChIP_peak_33   3.78065
+## chr1 966603  966704  GATA_ChIP_peak_34   3.78065
+## chr1 999458  999559  GATA_ChIP_peak_36   2.11515
+##    94610 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_7.fasta
+## &gt;chr1:827330-827431
+## AGCATTTCCGGGCGTCGCGGGACTCCCCGCCGACAGGAGGGCGGTTGCCGAGCCTGTGACATCCGCGGAGACCAGCAGACCCCGGGTGTGGAGGACGCCGC
+## &gt;chr1:916719-916820
+## GATAAGAAACTAATAATTTATGCTTCCAGCTCCCGGGGCCGGCGCCGAGGGAAGGTTGGGCCACAGCCTCCCCCGCACTGAGCGGCTGCAGTCCTTTATTG
+## &gt;chr1:924803-924904</code></pre>
+</div>
 </div>
 <div id="streme-round8" class="section level2" number="4.2">
 <h2><span class="header-section-number">4.2</span> STREME-round8</h2>
+<div id="find-de-novo-motifs-at-central-100bp-window-1" class="section level3" number="4.2.1">
+<h3><span class="header-section-number">4.2.1</span> find de novo motifs at central 100bp window</h3>
+<p>Perform <code>STREME</code> to peaks without motif 1234567 (central 100bp window).<br />
+</p>
+<pre class="r revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7) (100bp central window)
+streme --oc GATA3_without_123456_7_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 15 --p without_motifs_123456_7.fasta</code></pre>
+<p><strong>One of the 10 enriched de novo motif match to GATA3.</strong><br />
+</p>
 </div>
-<div id="ordered-markov-background-model-1" class="section level2" number="4.3">
-<h2><span class="header-section-number">4.3</span> 2-ordered Markov Background Model</h2>
+<div id="mast-7" class="section level3" number="4.2.2">
+<h3><span class="header-section-number">4.2.2</span> MAST</h3>
+<p>First save the streme motif file as TGATAA_streme.txt in individual_meme folder.<br />
+Then use <code>MAST</code> to query this motif from all GATA3 peaks without motif 1234567 (100bp window) to find motif coodinates within peak regions.<br />
+</p>
+<pre class="bash revision"><code># Mast find peaks with motif8 (Streme)
+mast -mt 0.0005 -hit_list -best individual_meme/TGATAA_streme.txt without_motifs_123456_7.fasta &gt; mast_GATA3_PSWM_in_peaks_round8.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round8.txt
+wc -l mast_GATA3_PSWM_in_peaks_round8.bed #4452</code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round8.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round8.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round8.bed
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round8.bed</code></pre>
+<pre><code>##     4455 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round8.txt
+## # Best single (non-overlapping) hit for each motif in all sequences from &quot;without_motifs_123456_7.fasta&quot;.
+## # sequence_name (strand+/-)motif id alt_id hit_start hit_end score hit_p-value
+## chr1:1775793-1775894 +1 AGATNDWNAGATARN - 63 68  1142.66 3.49e-04
+## chr1:1855841-1855942 +1 AGATNDWNAGATARN - 79 84  1142.66 3.49e-04
+## chr1:1883543-1883644 -1 AGATNDWNAGATARN - 20 25  1142.66 3.49e-04
+##     4452 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round8.bed
+## chr1 1775856 1775861 1142.66 0.000349    +   1
+## chr1 1855920 1855925 1142.66 0.000349    +   1
+## chr1 1883563 1883568 1142.66 0.000349    -   1
+## chr1 2135607 2135612 1142.66 0.000349    -   1
+## chr1 3613592 3613597 1142.66 0.000349    -   1</code></pre>
+<p>Use <code>intersectBed</code> with <code>-v</code> option to find GATA3 peaks without motif 12345678.<br />
+And convert to fasta.<br />
+</p>
+<pre class="bash revision"><code># From peaks (without motif1, 2, 3, 4, 5, 6, 7), exclude peaks with motif8 (STREME)
+intersectBed -v -a without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_peaks_round8.bed &gt; without_motifs_123456_78.bed #42853
+fastaFromBed -fi $genome -bed without_motifs_123456_78.bed -fo without_motifs_123456_78.fasta</code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78.fasta</code></pre>
+<pre><code>##    42853 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78.bed
+## chr1 827330  827431  GATA_ChIP_peak_28   9.30478
+## chr1 916719  916820  GATA_ChIP_peak_31   7.79887
+## chr1 924803  924904  GATA_ChIP_peak_33   3.78065
+## chr1 966603  966704  GATA_ChIP_peak_34   3.78065
+## chr1 999458  999559  GATA_ChIP_peak_36   2.11515
+##    85706 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78.fasta
+## &gt;chr1:827330-827431
+## AGCATTTCCGGGCGTCGCGGGACTCCCCGCCGACAGGAGGGCGGTTGCCGAGCCTGTGACATCCGCGGAGACCAGCAGACCCCGGGTGTGGAGGACGCCGC
+## &gt;chr1:916719-916820
+## GATAAGAAACTAATAATTTATGCTTCCAGCTCCCGGGGCCGGCGCCGAGGGAAGGTTGGGCCACAGCCTCCCCCGCACTGAGCGGCTGCAGTCCTTTATTG
+## &gt;chr1:924803-924904</code></pre>
+</div>
+</div>
+<div id="streme-round" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> STREME-round –</h2>
+<p>For peaks without MEME-found motif 1 to 6, and STREME found motif 7,8, we again perform <code>STREME</code> to the central 100bp window looking for top 10 de novo motifs.<br />
+</p>
+<pre class="r revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7, 8) (100bp central window)
+streme --oc GATA3_without_123456_78_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 15 --p without_motifs_123456_78.fasta</code></pre>
+<p><strong>At this point, none of the top 10 de novo motifs found by STREME match to GATA3.</strong><br />
+</p>
+</div>
+<div id="ordered-markov-background-model-1" class="section level2" number="4.4">
+<h2><span class="header-section-number">4.4</span> 2-ordered Markov Background Model</h2>
+<p>To further increase power of MEME/STREME software finding de novo motifs of our candidate factor GATA3, we also generated a 2-ordered Markov Background Model.<br />
+</p>
 <pre class="bash revision"><code>module load meme/5.4.1
 module load bedtools
 module load R/4.1.2
@@ -3093,15 +3240,203 @@ genome=/home/FCAM/ssun/Genome/hg38.fa
 sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
 
 fasta-get-markov -m 2 $genome &gt; hg38_bkgrnd_2mer.txt</code></pre>
-<pre class="bash revision"><code></code></pre>
-<div id="meme-with-2-ordered-markov-background-model" class="section level3" number="4.3.1">
-<h3><span class="header-section-number">4.3.1</span> MEME with 2-ordered Markov Background Model</h3>
+<pre class="bash revision"><code>head Exhaustive_MEME_MAST_round1to6/hg38_bkgrnd_2mer.txt
+tail Exhaustive_MEME_MAST_round1to6/hg38_bkgrnd_2mer.txt</code></pre>
+<pre><code>## # 2-order Markov frequencies from file /home/FCAM/ssun/Genome/hg38.fa
+## # seqs: 455    min: 970    max: 248956422    avg: 7053376.1    sum: 3209286105    alph: DNA
+## # order 0
+## A 2.950e-01
+## C 2.050e-01
+## G 2.050e-01
+## T 2.950e-01
+## # order 1
+## AA 9.775e-02
+## AC 5.051e-02
+## TCG 2.279e-03
+## TCT 2.228e-02
+## TGA 1.965e-02
+## TGC 1.443e-02
+## TGG 1.840e-02
+## TGT 2.023e-02
+## TTA 2.037e-02
+## TTC 2.003e-02
+## TTG 1.900e-02
+## TTT 3.834e-02</code></pre>
+<div id="meme-with-2-ordered-markov-background-model" class="section level3" number="4.4.1">
+<h3><span class="header-section-number">4.4.1</span> MEME with 2-ordered Markov Background Model</h3>
+<p>First, <strong>sort</strong> and <strong>select</strong> the top 10,000 peaks from GATA3 peaks without motif12345678 (100bp central window).<br />
+</p>
+<pre class="bash revision"><code>module load meme/5.4.1
+# select top 10000
+sort -nrk5,5 without_motifs_123456_78.bed | head -n 10000 &gt; without_motifs_123456_78_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_123456_78_top10000.bed -fo without_motifs_123456_78_top10000.fasta</code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_top10000.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_top10000.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_top10000.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_top10000.fasta</code></pre>
+<pre><code>##    10000 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_top10000.bed
+## chr17    61336165    61336266    GATA_ChIP_peak_31684    5845.12
+## chr20    51716023    51716124    GATA_ChIP_peak_45316b   3544.85
+## chr20    53786183    53786284    GATA_ChIP_peak_45404b   3403.22
+## chr11    85269261    85269362    GATA_ChIP_peak_14322c   3015.71
+## chr3 63940552    63940653    GATA_ChIP_peak_49289    2783.94
+##    20000 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_top10000.fasta
+## &gt;chr17:61336165-61336266
+## CTTGGCAAGTCCAGGACCGGATTGATGATCTGTAAAGTGGATTTGTTATTTGGCTGTTTGCTTTGGCAGCTCTTGAAAGCACTTTGCTGATTACAGTCCCA
+## &gt;chr20:51716023-51716124
+## gtgggggcgggtggggtgataggaacaggcaCTGGGgaacttcctggggtgatggaaatgttccatatcttgattgaggtggtatttatgtggaggctgac
+## &gt;chr20:53786183-53786284</code></pre>
+<p>Then perform <code>MEME</code> to find top enriched de novo motif use the 2-ordered Markov Background Model.<br />
+</p>
+<pre class="bash revision"><code># MEME-classic
+meme -p 32 -o  bkgrnd_2mer_GATA3_without_123456_78_top10000_output -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 3 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 without_motifs_123456_78_top10000.fasta</code></pre>
+<p>The above MEME generates the top enriched motif using 2mer background, minwidth==3, and top 10000 peaks without 12345678 gives FOS::JUN-like motif.<br />
+</p>
+<p><strong>Increase the <code>nmotif</code> search to 5</strong>:<br />
+</p>
+<pre class="bash revision"><code>module load meme/5.4.1
+# MEME-classic
+meme -p 32 -o  bkgrnd_2mer_GATA3_without_123456_78_top10000_output2 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 3 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 without_motifs_123456_78_top10000.fasta</code></pre>
+<p>the top 5 enriched motifs found by MEME <strong>do not match GATA3 motifs</strong>.<br />
+</p>
 </div>
-<div id="streme-with-2-ordered-markov-background-model" class="section level3" number="4.3.2">
-<h3><span class="header-section-number">4.3.2</span> STREME with 2-ordered Markov Background Model</h3>
+<div id="streme-with-2-ordered-markov-background-model" class="section level3" number="4.4.2">
+<h3><span class="header-section-number">4.4.2</span> STREME with 2-ordered Markov Background Model</h3>
+<p>Perform <code>STREME</code> on all peak without 12345678 at central 100bp window with the 2-ordered Markov Background Model .<br />
+</p>
+<pre class="bash revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7,8) (100bp window)
+streme --o bkgrnd_2mer_GATA3_without_123456_78_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd_2mer.txt --dna --minw 4 --maxw 15 --p without_motifs_123456_78.fasta</code></pre>
+<p>To increase the chance of finding candidate motif, with consideration of a 3mer might be sufficient for GATA3 binding, I change the searching criteria to <code>--minw 3</code> and <code>--maxw 20</code>.<br />
+</p>
+<pre class="r revision"><code>module load meme/5.4.1
+#streme -oc ZNF143_no_12345.streme_output --maxw 29 --nmotifs 10 --p without_motifs_12345_wide_NNN.fasta
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7,8) (100bp window)
+streme --o bkgrnd_2mer_GATA3_without_123456_78_streme_output2 --nmotifs 10 --objfun de --bfile hg38_bkgrnd_2mer.txt --dna --minw 3 --maxw 20 --p without_motifs_123456_78.fasta</code></pre>
+<p><strong>(no GATA3-like motifs found)</strong><br />
+</p>
 </div>
-<div id="streme-for-spanned-region" class="section level3" number="4.3.3">
-<h3><span class="header-section-number">4.3.3</span> STREME for spanned region</h3>
+</div>
+</div>
+<div id="section-1" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> —</h1>
+<div id="streme-for-spanned-region" class="section level2" number="5.1">
+<h2><span class="header-section-number">5.1</span> STREME for spanned region</h2>
+<p>In previous analysis, we focus on 100bp central window around peak summit. Considering GATA3 binding sites might exceeds the 100bp window (or overlap at window edges), we would like to also perform <code>STREME</code> on the flanking region to find possible binding sites.<br />
+</p>
+<div id="prepare-file" class="section level3" number="5.1.1">
+<h3><span class="header-section-number">5.1.1</span> prepare file</h3>
+<p>Substitute the central 60bp region to 50 Ns, then perform “STREME” use the Markov 2mer background file.<br />
+</p>
+<pre class="bash revision"><code>#200window flank with central 80bp substituted with 50 Ns. 
+
+awk &#39;!/^&gt;/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 30) &quot;NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN&quot; substr($0, mid + 31); } 1&#39; without_motifs_123456_78_200bpwindow.fasta &gt; without_motifs_123456_78_200bpwindow_60NNN.fasta</code></pre>
+<pre class="bash revision"><code>head -8 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_200bpwindow.fasta
+head -8 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_200bpwindow_60NNN.fasta</code></pre>
+</div>
+<div id="streme-to-find-de-novo-motifs-at-the-spanned-region" class="section level3" number="5.1.2">
+<h3><span class="header-section-number">5.1.2</span> <code>STREME</code> to find de novo motifs at the spanned region</h3>
+<p>Notice: with a 2-ordered Markov Background Model<br />
+</p>
+<pre class="bash revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7, 8) on flanking region
+streme --oc bkgrnd_2mer_GATA3_without_123456_78_200bp_60NNN_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd_2mer.txt --dna --minw 3 --maxw 15 --p without_motifs_123456_78_200bpwindow_60NNN.fasta</code></pre>
+<p>The above STREME found 10 motifs on the flanking regions. The 8th motif is a GAT-ATC with a 3bp spacing between the two 3mers.<br />
+</p>
+</div>
+<div id="mast-8" class="section level3" number="5.1.3">
+<h3><span class="header-section-number">5.1.3</span> MAST</h3>
+<p>Save the 8th streme motif file as AGATDNHATCT_streme.txt in individual_meme folder.<br />
+Then use <code>MAST</code> to query this motif from the 200bp window GATA3 peaks (without motif 12345678) to find motif coordinates within peak region.<br />
+</p>
+<pre class="bash revision"><code>mast -mt 0.0005 -hit_list -best individual_meme/AGATDNHATCT_streme.txt without_motifs_123456_78_200bpwindow.fasta &gt; mast_GATA3_PSWM_in_peaks_round9_1.txt #3874
+
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round9_1.txt</code></pre>
+<pre class="bash revision"><code>head -8 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_78_200bpwindow.fasta
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round9_1.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round9_1.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round9_1.bed #3871
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round9_1.bed </code></pre>
+<pre><code>## &gt;chr1:827280-827481
+## GACGGAACCGGACACAGACGCAGATCTGGCAGCTGAGCGACAGGCTTCGGAGCATTTCCGGGCGTCGCGGGACTCCCCGCCGACAGGAGGGCGGTTGCCGAGCCTGTGACATCCGCGGAGACCAGCAGACCCCGGGTGTGGAGGACGCCGCAGGGAGGGGACTGCGTGGCTGGGTTTGGCCACAAAAAGCGGAGGGCACTC
+## &gt;chr1:916669-916870
+## GCCACCAGCTCCCGCCAGGCCCTGGCAGCATGAGCGATGGCAGGCCCAGCGATAAGAAACTAATAATTTATGCTTCCAGCTCCCGGGGCCGGCGCCGAGGGAAGGTTGGGCCACAGCCTCCCCCGCACTGAGCGGCTGCAGTCCTTTATTGCACAAATTATTAACGACCAGAGAATGAATGACTCTGTAATCAGATCAGGT
+## &gt;chr1:924753-924954
+## TGCTGGACAACGGCGAGCCGTGCATCGAGGTGGAGTGCGGCGCCAACCGCGCGCTGCTCTACGTGCGCAAACTCTGCCAGGGCAGCAAGGGCCCGTCCATCCGCCACCGCGGCGAGTGGCTCACGCCCAACGAGTTCCAGTTCGTCAGCGGCCGCGAGACGGCCAAGGACTGGAAGCGCAGCATCCGCCACAAAGGTGCCG
+## &gt;chr1:966553-966754
+## CTCAGGCCCCCAGGAGGCTCCGGGCCTCCTTCTCCAGAAAGCCCTCGCTGAAGGGAAACAGGTGAGCGGGGCGTGGGTGCGGCCACCTGGGCGCAGGGCTCCCCCACCCGCTCCGGGGCCAAGCCACGAGACCCCTTGCCTTGTCCCCAGAGAGGACAGCGCGCGGATGTCGGCCGGCCTGCCGGGCCCCGAGGCTGCTCG
+##     3874 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round9_1.txt
+## # Best single (non-overlapping) hit for each motif in all sequences from &quot;without_motifs_123456_78_200bpwindow.fasta&quot;.
+## # sequence_name (strand+/-)motif id alt_id hit_start hit_end score hit_p-value
+## chr1:1208441-1208642 +1 8-AGATDNHATCT STREME-8 178 188  1134.37 1.41e-04
+## chr1:1692445-1692646 +1 8-AGATDNHATCT STREME-8 12 22  1073.48 2.09e-04
+## chr1:1745707-1745908 +1 8-AGATDNHATCT STREME-8 25 35  1073.48 2.09e-04
+##     3871 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round9_1.bed
+## chr1 1208619 1208629 1134.37 0.000141    +   1
+## chr1 1692457 1692467 1073.48 0.000209    +   1
+## chr1 1745732 1745742 1073.48 0.000209    +   1
+## chr1 1859470 1859480 1088.71 0.000191    +   1
+## chr1 3554808 3554818 1195.25 8.35e-05    +   1</code></pre>
+</div>
+<div id="need-some-thoughts" class="section level3" number="5.1.4">
+<h3><span class="header-section-number">5.1.4</span> –[need some thoughts]</h3>
+<p>Use <code>intersectBed</code> to find peaks without motif 123456789 (200bp window)</p>
+<pre class="bash revision"><code># From peaks (without motif1, 2, 3, 4, 5, 6, 7, 8) (200bp window), exclude peaks with motif9 (STREME)
+intersectBed -v -a without_motifs_123456_78_200bpwindow.bed -b mast_GATA3_PSWM_in_peaks_round9_1.bed &gt; without_motifs_123456_789.bed #38980
+fastaFromBed -fi $genome -bed without_motifs_123456_789.bed -fo without_motifs_123456_789.fasta </code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.fasta </code></pre>
+<pre><code>##    38980 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.bed
+## chr1 827280  827481  GATA_ChIP_peak_28   9.30478
+## chr1 916669  916870  GATA_ChIP_peak_31   7.79887
+## chr1 924753  924954  GATA_ChIP_peak_33   3.78065
+## chr1 966553  966754  GATA_ChIP_peak_34   3.78065
+## chr1 999408  999609  GATA_ChIP_peak_36   2.11515
+## &gt;chr1:827280-827481
+## GACGGAACCGGACACAGACGCAGATCTGGCAGCTGAGCGACAGGCTTCGGAGCATTTCCGGGCGTCGCGGGACTCCCCGCCGACAGGAGGGCGGTTGCCGAGCCTGTGACATCCGCGGAGACCAGCAGACCCCGGGTGTGGAGGACGCCGCAGGGAGGGGACTGCGTGGCTGGGTTTGGCCACAAAAAGCGGAGGGCACTC
+## &gt;chr1:916669-916870
+## GCCACCAGCTCCCGCCAGGCCCTGGCAGCATGAGCGATGGCAGGCCCAGCGATAAGAAACTAATAATTTATGCTTCCAGCTCCCGGGGCCGGCGCCGAGGGAAGGTTGGGCCACAGCCTCCCCCGCACTGAGCGGCTGCAGTCCTTTATTGCACAAATTATTAACGACCAGAGAATGAATGACTCTGTAATCAGATCAGGT
+## &gt;chr1:924753-924954</code></pre>
+<p>**Did this step really removes all GATA3-like peak in 200bp window? Probably not. But I guess it does not matter because if there are any GATA-like motif at the spanned region that was remained, we should be able to find them using STREME.<br />
+</p>
+<p>Substitute the central 60bp region to 50 Ns.<br />
+</p>
+<pre class="bash revision"><code>awk &#39;!/^&gt;/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 30) &quot;NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN&quot; substr($0, mid + 31); } 1&#39; without_motifs_123456_789.fasta &gt; without_motifs_123456_789_200bpwindow_60NNN.fasta</code></pre>
+<pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.fasta
+head -8 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.fasta
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789_200bpwindow_60NNN.fasta
+head -8 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789_200bpwindow_60NNN.fasta</code></pre>
+<pre><code>##    77960 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789.fasta
+## &gt;chr1:827280-827481
+## GACGGAACCGGACACAGACGCAGATCTGGCAGCTGAGCGACAGGCTTCGGAGCATTTCCGGGCGTCGCGGGACTCCCCGCCGACAGGAGGGCGGTTGCCGAGCCTGTGACATCCGCGGAGACCAGCAGACCCCGGGTGTGGAGGACGCCGCAGGGAGGGGACTGCGTGGCTGGGTTTGGCCACAAAAAGCGGAGGGCACTC
+## &gt;chr1:916669-916870
+## GCCACCAGCTCCCGCCAGGCCCTGGCAGCATGAGCGATGGCAGGCCCAGCGATAAGAAACTAATAATTTATGCTTCCAGCTCCCGGGGCCGGCGCCGAGGGAAGGTTGGGCCACAGCCTCCCCCGCACTGAGCGGCTGCAGTCCTTTATTGCACAAATTATTAACGACCAGAGAATGAATGACTCTGTAATCAGATCAGGT
+## &gt;chr1:924753-924954
+## TGCTGGACAACGGCGAGCCGTGCATCGAGGTGGAGTGCGGCGCCAACCGCGCGCTGCTCTACGTGCGCAAACTCTGCCAGGGCAGCAAGGGCCCGTCCATCCGCCACCGCGGCGAGTGGCTCACGCCCAACGAGTTCCAGTTCGTCAGCGGCCGCGAGACGGCCAAGGACTGGAAGCGCAGCATCCGCCACAAAGGTGCCG
+## &gt;chr1:966553-966754
+## CTCAGGCCCCCAGGAGGCTCCGGGCCTCCTTCTCCAGAAAGCCCTCGCTGAAGGGAAACAGGTGAGCGGGGCGTGGGTGCGGCCACCTGGGCGCAGGGCTCCCCCACCCGCTCCGGGGCCAAGCCACGAGACCCCTTGCCTTGTCCCCAGAGAGGACAGCGCGCGGATGTCGGCCGGCCTGCCGGGCCCCGAGGCTGCTCG
+##    77960 Exhaustive_MEME_MAST_round1to6/without_motifs_123456_789_200bpwindow_60NNN.fasta
+## &gt;chr1:827280-827481
+## GACGGAACCGGACACAGACGCAGATCTGGCAGCTGAGCGACAGGCTTCGGAGCATTTCCGGGCGTCGCGGNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNCCCGGGTGTGGAGGACGCCGCAGGGAGGGGACTGCGTGGCTGGGTTTGGCCACAAAAAGCGGAGGGCACTC
+## &gt;chr1:916669-916870
+## GCCACCAGCTCCCGCCAGGCCCTGGCAGCATGAGCGATGGCAGGCCCAGCGATAAGAAACTAATAATTTANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGCGGCTGCAGTCCTTTATTGCACAAATTATTAACGACCAGAGAATGAATGACTCTGTAATCAGATCAGGT
+## &gt;chr1:924753-924954
+## TGCTGGACAACGGCGAGCCGTGCATCGAGGTGGAGTGCGGCGCCAACCGCGCGCTGCTCTACGTGCGCAANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNCGAGTTCCAGTTCGTCAGCGGCCGCGAGACGGCCAAGGACTGGAAGCGCAGCATCCGCCACAAAGGTGCCG
+## &gt;chr1:966553-966754
+## CTCAGGCCCCCAGGAGGCTCCGGGCCTCCTTCTCCAGAAAGCCCTCGCTGAAGGGAAACAGGTGAGCGGGNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNACCCCTTGCCTTGTCCCCAGAGAGGACAGCGCGCGGATGTCGGCCGGCCTGCCGGGCCCCGAGGCTGCTCG</code></pre>
+<p>Perform the next round of <code>STREME</code><br />
+</p>
+<pre class="r revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7, 8, 9) on flanking region
+streme --oc bkgrnd_2mer_GATA3_without_123456_789_200bp_60NNN_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd_2mer.txt --dna --minw 3 --maxw 15 --p without_motifs_123456_789_200bpwindow_60NNN.fasta</code></pre>
+<p>try maxw=20<br />
+</p>
+<pre class="r revision"><code>module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7, 8, 9) on flanking region
+streme --oc bkgrnd_2mer_GATA3_without_123456_789_200bp_60NNN_streme_output2 --nmotifs 10 --objfun de --bfile hg38_bkgrnd_2mer.txt --dna --minw 3 --maxw 20 --p without_motifs_123456_789_200bpwindow_60NNN.fasta</code></pre>
+<p>At this point, STREME no longer found GATA-like motifs. <strong>41.14% peaks do not contain GATA3 binding motifs reported by both MEME-classic and STREME</strong><br />
+</p>
 </div>
 </div>
 </div>
