@@ -40,7 +40,7 @@ pre[class] {
 }
 
 .revision {
-  background-color: lightpink;
+  background-color: #FFF4F2;
   border: 3px solid lightgrey;
   font-weight: bold;
 }
@@ -59,6 +59,7 @@ pre[class] {
 ```{r engine='R', eval=TRUE, echo=F}
 knitr::opts_chunk$set(class.source = "watch-out")
 ```
+
 
 # Nov 28th
 
@@ -1252,6 +1253,605 @@ done <all_64_df.txt
 
 
 
+# Exhaustive MEME -MAST for GATA3
 
+```{r engine='R', eval=TRUE, echo=F}
+knitr::opts_chunk$set(class.source = "revision")
+```
+
+## Previous Workflow Summary
+
+In previous analysis, I have used a 3-ordered Markov Background Model, which defined all k-mer frequencies up to 4-mer. \
+Then I sort the top 10000 GATA peaks (with 100bp window centered around the peak summit). \
+I use MEME to find the top 1 motif with `-minw 4` and `-maxw 20`. \
+ \
+If the de novo motif match to GATA3, I use `MAST` to query that single motif (meme.txt) from the complete GATA3 peak sets (100bp window), and find motif coordinates relative to peak regions. \
+Then I use `intersectBed` with `-v` option to find peak regions without that motif. \
+This new sets of peaks (without first GATA3-like motif) will then be used to do another round of MEME analysis. (sorting 10000, MEME, MAST, intersectBed) \
+... \
+... \
+In the case that the top de novo motif do not match with GATA3, I will first increase number of motif we ask MEME to search for (`-nmotifs` from 1 to 2/3). If the second or third motif match to GATA3, we repeat the same analysis; if we still not see GATA3-like motifs, I will try to find motif at the spanned region: \
+... \
+... \
+
+When we are sure of we have exhaustive the MEME analysis to GATA3 peaks, and could not find more de novo motifs that match with GATA3, we use **`STREME`**, which is typically good for searching short de novo sequences. \
+STREME can work with larger amount of sequences with a fast speed (compared to MEME), so for each round of STREME, we use all peaks (without the already found GATA3-like motifs) and search for top 10 enriched motifs. \
+Similar as in MEME analysis, if any de novo motif in that 10 enriched STREME motifs match to GATA3, I use `MAST` to query that single motif (meme.txt) from the GATA3 peak sets (100bp window), and find motif coordinates relative to peak regions. \
+
+If at a point, we could not find GATA3-like motifs use STREME in central 100bp window, we will try find motifs at the spanned region. \
+... \
+... \
+
+Besides these, I also tried to use the 2-ordered Markov Background Model, and see if this could increase the chance MEME or STREME find GATA3-like de novo motifs. \
+
+
+## 3-ordered Markov Background Model
+
+GATA3 TF binding sites are short, commonly seen are 3-mer GAT/ATC or 4-mer GATA/GATC. \
+To account for this fact, we want to generate the markov background model from the reference genome, which estimates the probability of a candidate motif appearing in the dataset by chance. \
+
+I use `fasta-get-markov` with `-m 3` option to generate a 3-ordered Markov Background Model for hg38 ref genome. The output file defines all k-mer frequencies from 1-mer to 4-mer. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+fasta-get-markov -m 3 $genome > hg38_bkgrnd.txt
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head Exhaustive_MEME_MAST_round1to6/hg38_bkgrnd.txt
+tail Exhaustive_MEME_MAST_round1to6/hg38_bkgrnd.txt
+```
+
+### load packages
+```{r, engine='bash', eval=F, echo=TRUE}
+module load deeptools/3.5.0
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/
+```
+
+
+## MEME-round1:
+
+### find de novo motifs
+**Sort** peaks by intensity, and select top 10,000 peaks. \
+```{r, engine='bash', eval=F, echo=TRUE}
+name=GATA_ChIP
+# sort out the top 10000 GATA peaks and search for top 1 motif
+sort -nrk5,5 ${dir}${name}_summit_100window.bed | head -n 10000 > ${name}_top10000_summit_100window.bed
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/GATA_ChIP_summit_100window.bed
+head -5 Exhaustive_MEME_MAST_round1to6/GATA_ChIP_summit_100window.bed
+wc -l Exhaustive_MEME_MAST_round1to6/GATA_ChIP_top10000_summit_100window.bed
+head Exhaustive_MEME_MAST_round1to6/GATA_ChIP_top10000_summit_100window.bed
+```
+
+convert this top 10,000 peak bed file to **.fasta** file with `fastaFromBed`. \
+```{r, engine='bash', eval=F, echo=TRUE}
+name=${name}_top10000
+fastaFromBed -fi $genome -bed ${name}_summit_100window.bed -fo ${name}_summit_100window.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/GATA_ChIP_top10000_summit_100window.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/GATA_ChIP_top10000_summit_100window.fasta
+```
+
+Perform **MEME** on top 10,000 GATA3 peaks with `-minw 4`, `-maxw 20` and the 3-ordered Markov Background Model. \
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME
+meme -p 48 -oc ${name}_motif.meme_output -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 ${name}_summit_100window.fasta
+```
+
+The top enriched de novo motif found in the top 10,000 GATA3 peaks match to GATA3. \
+
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 1"}
+library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA_ChIP_top10000_motif.meme_output/logo1.png") 
+```
+
+### MAST
+
+After the finding of GATA3-like de novo motif, we will then perform `MAST` to query this motif in all GATA3 peak regions (100bp window), and look for motif coordinates within the peak regions. \
+First convert bed filr for all GATA3 peak regions to fasta. \
+```{r, engine='bash', eval=F, echo=TRUE}
+fastaFromBed -fi $genome -bed ${dir}GATA_ChIP_summit_100window.bed -fo GATA_ChIP_summit_100window.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/GATA_ChIP_summit_100window.fasta
+head -6 Exhaustive_MEME_MAST_round1to6/GATA_ChIP_summit_100window.fasta
+```
+
+MAST: \
+```{r, engine='bash', eval=F, echo=TRUE}
+mast -hit_list -best GATA_ChIP_top10000_motif.meme_output/meme.txt GATA_ChIP_summit_100window.fasta > mast_GATA3_PSWM_in_peaks_round1.txt
+
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round1.txt
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round1.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round1.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round1.bed 
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round1.bed
+```
+
+
+
+Then we use `intersectBed` with `-v` option to find GATA3 peaks without GATA3-like motif1 (use the queried motif1 coordinates). \
+```{r, engine='bash', eval=F, echo=TRUE}
+#peaks without motif1
+intersectBed -v -a ${dir}GATA_ChIP_summit_100window.bed -b mast_GATA3_PSWM_in_peaks_round1.bed > without_motifs_1.bed #85440
+fastaFromBed -fi $genome -bed without_motifs_1.bed -fo without_motifs_1.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1.fasta
+```
+
+
+## MEME-Round2:
+
+### find de novo motifs
+
+**Sort** and select the top 10,000 peaks from **GATA3 peaks without motif1**. \
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_1.bed | head -n 10000 > without_motifs_1_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_1_top10000.bed -fo without_motifs_1_top10000.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1_top10000.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1_top10000.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1_top10000.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1_top10000.fasta
+```
+
+Perform **MEME** to find most enriched de novo motif in top 10,000 GATA3 peaks without motif1. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 48 -oc GATA3_without_motif1_top10000_output -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1_top10000.fasta 
+```
+
+The top enriched de novo motif found in the top 10,000 GATA3 peaks (without motif1) match to GATA3. \
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 2"}
+library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA3_without_motif1_top10000_output/logo1.png") 
+```
+
+### MAST
+
+Now we want to use `MAST` to query the 2nd GATA-3 like de novo motif from all GATA3 peaks that do not have GATA3-like motif1. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+mast -hit_list -best GATA3_without_motif1_top10000_output/meme.txt without_motifs_1.fasta > mast_GATA3_PSWM_in_peaks_round2.txt
+
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round2.txt
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round2.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round2.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round2.bed #10460
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round2.bed
+```
+
+Then we use `intersectBed` with `-v` option to exclude peaks contains GATA3-like motif2 from peaks contains GATA3-like motif1. \
+
+The output file will be GATA3 peak regions (100bp) that do not contain GATA3-like motif 1 and 2. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#peaks without motif1 and motif2
+intersectBed -v -a without_motifs_1.bed -b mast_GATA3_PSWM_in_peaks_round2.bed > without_motifs_12.bed #74979
+
+fastaFromBed -fi $genome -bed without_motifs_12.bed -fo without_motifs_12.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12.fasta
+```
+
+
+## MEME-Round3:
+
+### find denovo motif with MEME
+
+Again, **sort** and **select** the top 10,000 peaks from GATA3 peaks without motif 1 and 2 (100bp window). \
+Then convert .bed to .fasta. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_12.bed | head -n 10000 > without_motifs_12_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12_top10000.bed -fo without_motifs_12_top10000.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12_top10000.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12_top10000.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12_top10000.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12_top10000.fasta
+```
+
+Perform `MEME`. \
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 64 -oc GATA3_without_motif12_top10000_output -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_12_top10000.fasta 
+```
+
+Top motif enriched in top 10,000 peak (exclude the first round and second round GATA motif) match to GATA3 (single sites) \
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 3"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA3_without_motif12_top10000_output/logo1.png") 
+```
+
+### MAST 
+
+Query the GATA3-like motif3 from GATA3 peaks without motif 1 and 2 (100bp window) and find motif3 coordinates in peak regions. \
+```{r, engine='bash', eval=F, echo=TRUE}
+mast -hit_list -best GATA3_without_motif12_top10000_output/meme.txt without_motifs_12.fasta > mast_GATA3_PSWM_in_peaks_round3.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round3.txt
+wc -l mast_GATA3_PSWM_in_peaks_round3.bed #5202
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round3.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round3.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round3.bed
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round3.bed
+```
+
+Use `intersectBed` with `-v` to find GATA3 peaks without motif 123. \
+```{r, engine='bash', eval=F, echo=TRUE}
+#peaks without motif1 and motif2 and motif3
+intersectBed -v -a without_motifs_12.bed -b mast_GATA3_PSWM_in_peaks_round3.bed > without_motifs_123.bed #69777
+fastaFromBed -fi $genome -bed without_motifs_123.bed -fo without_motifs_123.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123.fasta
+```
+
+## brief summary:
+
+In the first 3 rounds of MEME analysis, we are asking MEME to find only 1 de novo motif, and these top enriched motifs match to GATA3. \
+ \
+In the next few rounds, we will see cases where the top enriched de novo motif found by MEME do not match to GATA3. \
+In these cases, we would increase the number of de novo motif we ask MEME to find use `nmotifs` option, and see if the second or third enriched de novo motif match to GATA3. \
+
+## MEME-Round4:
+
+### find 1st de novo motif
+Sort and select top 10,000 peaks from GATA3 peaks without GATA3-like motif123. \
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_123.bed | head -n 10000 > without_motifs_123_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_123_top10000.bed -fo without_motifs_123_top10000.fasta
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 64 -oc GATA3_without_motif123_top10000_output -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123_top10000.fasta 
+```
+
+Top motif in top 10,000 peak (exclude the first/second/third round GATA motifs) match to **FOX**. \
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 3"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA3_without_motif123_top10000_output/logo1.png") 
+```
+
+### find 2nd de novo motif
+
+repeat previous MEME-classic with `-nmotifs` set to 2. \
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 64 -oc GATA3_without_motif123_top10000_output_1 -nmotifs 2 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123_top10000.fasta
+```
+
+Second motif in top 10,000 peak (exclude the first/second/third round GATA motifs) match to GATA3 (4 spaces between half sites) \
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 4"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA3_without_motif123_top10000_output_1/logo2.png") 
+```
+
+### MAST
+
+First isolate individual memes from the MEME output meme.txt file. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+wget https://raw.githubusercontent.com/guertinlab/adipogenesis/master/motif_analysis/MEME_individual_from_db.py
+python2.7 MEME_individual_from_db.py -i GATA3_without_motif123_top10000_output_1/meme.txt
+# AGATNDWNAGATARN_meme.txt_meme.txt   ---motif4 (match to GATA3)
+# TRTTTRCTYWD_meme.txt_meme.txt ---FOX
+
+mkdir individual_meme
+mv AGATNDWNAGATARN_meme.txt_meme.txt individual_meme/
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+cat Exhaustive_MEME_MAST_round1to6/individual_meme/AGATNDWNAGATARN_meme.txt_meme.txt
+```
+
+Use `MAST` to query this GATA3-like motif4 from GATA3 peaks without motif123. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+mast -hit_list -best individual_meme/AGATNDWNAGATARN_meme.txt_meme.txt without_motifs_123.fasta > mast_GATA3_PSWM_in_peaks_round4.txt
+
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round4.txt
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round4.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round4.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round4.bed #5665
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round4.bed 
+```
+
+Use `intersectBed` to exclude peaks that contains motif4 from GATA3 peaks without motif 123. \
+Then convert to fasta. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# From peaks (without motif1, 2, 3), exclude peaks with motif4
+intersectBed -v -a without_motifs_123.bed -b mast_GATA3_PSWM_in_peaks_round4.bed > without_motifs_1234.bed #64112
+fastaFromBed -fi $genome -bed without_motifs_1234.bed -fo without_motifs_1234.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1234.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1234.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1234.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1234.fasta
+```
+
+## MEME-Round5:
+
+### find de novo motif
+
+**Sort** and **select** the top 10,000 peaks from peaks without motif1234. \
+And convert to fasta. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_1234.bed | head -n 10000 > without_motifs_1234_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_1234_top10000.bed -fo without_motifs_1234_top10000.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1234_top10000.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1234_top10000.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_1234_top10000.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_1234_top10000.fasta
+```
+
+In previous run, we have already found top enriched de novo motif match to factors other than GATA3. We would expect to see that FOX-like motif reappear in this round. \
+
+Thus, we will search for more motifs (`-nmotifs`) with MEME.
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 64 -oc GATA3_without_motif1234_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1234_top10000.fasta 
+
+#to confirm top motif won't be GATA3
+#meme -p 64 -oc GATA3_without_motif1234_top10000_output_testsingle -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1234_top10000.fasta 
+
+# for finding only one motif, we are getting FOX again. 
+```
+
+The third de novo motif found in top 10,000 peak (exclude the 1234 round GATA motifs) match to GATA3. \
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 5"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA3_without_motif1234_top10000_output/logo_rc3.png") 
+```
+
+### MAST
+
+First, isolate individual memes from the MEME output meme.txt file. \
+
+```{r, engine='R', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/guertinlab/adipogenesis/master/motif_analysis/MEME_individual_from_db.py
+python2.7 MEME_individual_from_db.py -i GATA3_without_motif1234_top10000_output/meme.txt
+# BTTATCWGATB_meme.txt_meme.txt   ---motif5 (match to GATA3)
+
+mv BTTATCWGATB_meme.txt_meme.txt individual_meme/
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+cat Exhaustive_MEME_MAST_round1to6/individual_meme/BTTATCWGATB_meme.txt_meme.txt
+```
+
+Use `MAST` to query this GATA3-like motif5 from GATA3 peaks without motif 1234 (100bp window) and find the motif coordinates within peak regions. 
+```{r, engine='bash', eval=F, echo=TRUE}
+# Mast find peaks with motif5
+mast -hit_list -best individual_meme/BTTATCWGATB_meme.txt_meme.txt without_motifs_1234.fasta > mast_GATA3_PSWM_in_peaks_round5.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round5.txt
+wc -l mast_GATA3_PSWM_in_peaks_round5.bed #3564
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round5.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round5.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round5.bed
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round5.bed
+```
+
+Use `intersectBed` to find peaks without GATA3-like motif 12345. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# From peaks (without motif1, 2, 3,4), exclude peaks with motif5
+intersectBed -v -a without_motifs_1234.bed -b mast_GATA3_PSWM_in_peaks_round5.bed > without_motifs_12345.bed #60548
+fastaFromBed -fi $genome -bed without_motifs_12345.bed -fo without_motifs_12345.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12345.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12345.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12345.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12345.fasta
+```
+
+
+## MEME-Round6:
+
+### find de novo motifs
+
+**sort** and **select** top 10,000 peaks from GATA3 peaks without motif12345. \
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_12345.bed | head -n 10000 > without_motifs_12345_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345_top10000.bed -fo without_motifs_12345_top10000.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12345_top10000.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12345_top10000.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_12345_top10000.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_12345_top10000.fasta
+```
+
+Same reason as before, since we have found top enriched de novo motif no longer match to GATA3, we will loosen the `-nmotif` option to 3. \
+
+```{r, engine='R', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 40 -oc GATA3_without_motif12345_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_12345_top10000.fasta
+```
+
+The third de novo motif found in top 10,000 peak (exclude the 12345 round GATA motifs) match to GATA3. \
+
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 6"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to6/GATA3_without_motif12345_top10000_output/logo3.png") 
+```
+
+### MAST 
+
+First isolate individual memes from the MEME output meme.txt file, and move the GATA3-like motif to a separate folder. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/guertinlab/adipogenesis/master/motif_analysis/MEME_individual_from_db.py
+python2.7 MEME_individual_from_db.py -i GATA3_without_motif12345_top10000_output/meme.txt
+# WGATBDHRVAGATAA_meme.txt_meme.txt   ---motif6 (match to GATA3)
+
+mv WGATBDHRVAGATAA_meme.txt_meme.txt individual_meme/
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+cat Exhaustive_MEME_MAST_round1to6/individual_meme/WGATBDHRVAGATAA_meme.txt_meme.txt
+```
+
+
+Then use `MAST` to query GATA3-like motif6 from GATA3 peaks without motif 12345. \
+The output contains the motif coordinated within peak regions (100bp). \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# Mast find peaks with motif6
+mast -hit_list -best individual_meme/WGATBDHRVAGATAA_meme.txt_meme.txt without_motifs_12345.fasta > mast_GATA3_PSWM_in_peaks_round6.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round6.txt
+wc -l mast_GATA3_PSWM_in_peaks_round6.bed #4510
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round6.txt
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round6.txt
+wc -l Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round6.bed #4510
+head -5 Exhaustive_MEME_MAST_round1to6/mast_GATA3_PSWM_in_peaks_round6.bed
+```
+
+Use `intersectBed` with `-v` option to find peaks without motif 123456. \
+
+And convert to fasta. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# From peaks (without motif1, 2, 3, 4, 5), exclude peaks with motif6
+intersectBed -v -a without_motifs_12345.bed -b mast_GATA3_PSWM_in_peaks_round6.bed > without_motifs_123456.bed #56038
+fastaFromBed -fi $genome -bed without_motifs_123456.bed -fo without_motifs_123456.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456.bed
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456.bed
+wc -l Exhaustive_MEME_MAST_round1to6/without_motifs_123456.fasta
+head -5 Exhaustive_MEME_MAST_round1to6/without_motifs_123456.fasta
+```
+
+## --
+
+**sort** and select top 10000 from peaks without motif 123455. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_123456.bed | head -n 10000 > without_motifs_123456_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_123456_top10000.bed -fo without_motifs_123456_top10000.fasta
+```
+
+**-nmotifs 3**
+```{r, engine='bash', eval=F, echo=TRUE}
+# MEME-classic
+meme -p 40 -oc GATA3_without_motif123456_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_top10000.fasta
+```
+
+
+**At this point, MEME no longer reports de novo motifs that match to GATA3 in central 100bp window.** 
+
+1) further increase number of `-nmotif` we ask MEME to find in central 100bp window; \
+
+**-nmotifs 5**
+```{r, engine='bash', eval=F, echo=TRUE}
+meme -p 40 -oc GATA3_without_motif123456_top10000_output_test -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_top10000.fasta
+
+# top 5 motifs do not match with GATA
+```
+
+
+2) find motif at the spanned region: substitute the central 60bp to 50 Ns, then increase sequence width to two ends (now we are searching for motifs at 70bp-NNN-70bp regions.) \
+
+# Exhaustive STREME -MAST for GATA3
+
+
+## STREME-round7
+## STREME-round8
+
+## 2-ordered Markov Background Model 
+```{r, engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+fasta-get-markov -m 2 $genome > hg38_bkgrnd_2mer.txt
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+
+```
+
+
+### MEME with 2-ordered Markov Background Model 
+### STREME with 2-ordered Markov Background Model 
+
+### STREME for spanned region
 
 
