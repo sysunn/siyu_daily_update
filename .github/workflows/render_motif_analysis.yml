@@ -26,5 +26,5 @@ jobs:
       - name: Commit and push changes
         run: |
           git add December_2023/GATA3_ChIP_motif_analysis.html
-          git commit -m "GATA3_ChIP_motif_analysis.Rmd to HTML "
+          git commit -m "Render GATA3_ChIP_motif_analysis.Rmd to HTML "
           git push origin HEAD:main
