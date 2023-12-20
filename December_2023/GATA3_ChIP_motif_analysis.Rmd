@@ -935,17 +935,15 @@ awk '!/^>/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 41) "NNNNNNNNNN
 head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_top10000.fasta
 head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
 ```
-
-
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
 #SBATCH --job-name=streme8N_1.sh    
-#SBATCH -N 2
-#SBATCH -n 2
-#SBATCH -c 32
-#SBATCH -p himem
-#SBATCH --qos=himem
-#SBATCH --mem=48G
+#SBATCH -N 12
+#SBATCH -n 12
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
 #SBATCH -o streme8N_1.sh_%j.out
@@ -956,7 +954,58 @@ export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 # MEME-classic
-meme -p 64 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
+meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
+```
+
+To save time and run job in parallel, I will divide this file into two files each with 5k sequences. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+head -10000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta > without_motifs_123456_78_161bpwindow_81NNN_top10000_1.fasta
+tail -10000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta > without_motifs_123456_78_161bpwindow_81NNN_top10000_2.fasta
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=MEME8N_1.1.sh    
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o MEME8N_1.sh_%j.out
+#SBATCH -e MEME8N_1.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output_1 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000_1.fasta
+```   
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=MEME8N_1.2.sh    
+#SBATCH -N 8
+#SBATCH -n 8
+#SBATCH -c 20
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=30G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o MEME8N_1.2.sh_%j.out
+#SBATCH -e MEME8N_1.2.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 160 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output_2 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000_2.fasta
 ```
 
 # Next step
@@ -966,7 +1015,7 @@ First concatenate previous 8 PSWMs into a single file (from code). \
 Then run the concatenated 8 PSWMs with `MAST` on the expanded region. \
 Coherence check: For the expanded region--161bp (without swapping central to N), the central (~100bp) region should have no hits for the 8 previous PSWMs. \
 
-## Cancatenate files
+## Concatenate files
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 mkdir individual_meme
@@ -1009,4 +1058,15 @@ cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
 ls Exhaustive_MEME_MAST_round1to8/individual_meme
 ```
 
-MEME_concatenate_motifs_to_db_python3.py \
+This python script will concatenate all files in your directory, with common headers and each motif's PSWMs. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_concatenate_motifs_to_db_python3.py
+python MEME_concatenate_motifs_to_db_python3.py individual_meme/ cat_8_motifs.txt
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head -20 Exhaustive_MEME_MAST_round1to8/cat_8_motifs.txt
+```
+
+
