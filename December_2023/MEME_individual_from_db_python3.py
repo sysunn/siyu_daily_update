@@ -1,5 +1,6 @@
 #! /usr/bin/python
 import sys
+import re
 
 def separate_motifs(filename):
     with open(filename, 'r') as infile:
@@ -50,19 +51,19 @@ def separate_motifs(filename):
 
 def write_motif_to_file(motif_name, motif_lines, meme_version, alphabet, strands, motif_letter_freq, background_letter_freq):
     with open(motif_name + '_meme.txt', 'w') as outfile:
-        outfile.write(meme_version + '\n\n')
-        outfile.write('\n')  # Empty line
+        outfile.write(meme_version + '\n')
         outfile.write(alphabet + '\n\n')
-        outfile.write('\n')  # Empty line
         outfile.write(strands + '\n\n')
-        outfile.write('\n')  # Empty line
-        outfile.write(motif_letter_freq + '\n\n')
-        outfile.write('\n')  # Empty line
+        outfile.write(motif_letter_freq + '\n')
         outfile.write(background_letter_freq + '\n\n')
-        outfile.write('\n')  # Empty line
-        
-        for line in motif_lines:
-            outfile.write(line + '\n')
+
+        # Extract motif-specific information
+        motif_content = '\n'.join(motif_lines)
+        motif_info = re.search(r'MOTIF\s+{}(.*?)Time'.format(motif_name), motif_content, re.DOTALL)
+        if motif_info:
+            motif_content = motif_info.group(1)
+            outfile.write('MOTIF\t' + motif_name + '\n')
+            outfile.write(motif_content.strip())
 
 def main():
     if len(sys.argv) != 2:
