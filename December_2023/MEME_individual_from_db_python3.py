@@ -56,7 +56,7 @@ def separate_motifs(filename):
             write_motif_to_file(current_motif_name, current_motif_lines, meme_version, alphabet, strands, background_letter_freq, weight_matrix)
 
 def write_motif_to_file(motif_name, motif_lines, meme_version, alphabet, strands, background_letter_freq, weight_matrix):
-    with open(motif_name + '_output.txt', 'w') as outfile:
+    with open(motif_name + '_meme.txt', 'w') as outfile:
         outfile.write(meme_version + '\n\n')
         outfile.write(alphabet + '\n\n')
         outfile.write(strands + '\n\n')
