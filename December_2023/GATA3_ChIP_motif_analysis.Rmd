@@ -390,22 +390,29 @@ First isolate individual memes from the MEME output meme.txt file. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_motif123_top10000_output_1/meme.txt
-# AGATNDWNAGATARN_meme.txt_meme.txt   ---motif4 (match to GATA3)
-# TRTTTRCTYWD_meme.txt_meme.txt ---FOX
+python MEME_individual_from_db_python3.py ../GATA3_without_motif123_top10000_output_1/meme.txt
+        # output: # AGATNDWNAGATARN_meme.txt ---motif4 (match to GATA3)
+                  # TRTTTRCTYWD_meme.txt ---FOX
 
 mkdir individual_meme
-mv AGATNDWNAGATARN_meme.txt_meme.txt individual_meme/
+#MEME-round1 motif1
+cp GATA_ChIP_top10000_motif.meme_output/meme.txt individual_meme/GATAmotif1_meme.txt
+#MEME-round2 motif2
+cp GATA3_without_motif1_top10000_output/meme.txt individual_meme/GATAmotif2_meme.txt
+#MEME-round3 motif3
+cp GATA3_without_motif12_top10000_output/meme.txt individual_meme/GATAmotif3_meme.txt
+#MEME-round4 motif4
+cp AGATNDWNAGATARN_meme.txt individual_meme/GATAmotif4_meme.txt
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
-cat Exhaustive_MEME_MAST_round1to8/individual_meme/AGATNDWNAGATARN_meme.txt_meme.txt
+cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif4_meme.txt
 ```
 
 Use `MAST` to query this GATA3-like motif4 from GATA3 peaks without motif123. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
-mast -hit_list -best individual_meme/AGATNDWNAGATARN_meme.txt_meme.txt without_motifs_123.fasta > mast_GATA3_PSWM_in_peaks_round4.txt
+mast -hit_list -best individual_meme/GATAmotif4_meme.txt without_motifs_123.fasta > mast_GATA3_PSWM_in_peaks_round4.txt
 
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round4.txt
 ```
@@ -479,20 +486,19 @@ First, isolate individual memes from the MEME output meme.txt file. \
 
 ```{r, engine='R', eval=F, echo=TRUE}
 #wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_motif1234_top10000_output/meme.txt
-# BTTATCWGATB_meme.txt_meme.txt   ---motif5 (match to GATA3)
-
-mv BTTATCWGATB_meme.txt_meme.txt individual_meme/
+python MEME_individual_from_db_python3.py ../GATA3_without_motif1234_top10000_output/meme.txt
+        # BTTATCWGATB_meme.txt    ---motif5 (match to GATA3)
+cp BTTATCWGATB_meme.txt individual_meme/GATAmotif5_meme.txt
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
-cat Exhaustive_MEME_MAST_round1to8/individual_meme/BTTATCWGATB_meme.txt_meme.txt
+cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif5_meme.txt
 ```
 
 Use `MAST` to query this GATA3-like motif5 from GATA3 peaks without motif 1234 (101bp window) and find the motif coordinates within peak regions. 
 ```{r, engine='bash', eval=F, echo=TRUE}
 # Mast find peaks with motif5
-mast -hit_list -best individual_meme/BTTATCWGATB_meme.txt_meme.txt without_motifs_1234.fasta > mast_GATA3_PSWM_in_peaks_round5.txt
+mast -hit_list -best individual_meme/GATAmotif5_meme.txt without_motifs_1234.fasta > mast_GATA3_PSWM_in_peaks_round5.txt
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round5.txt
 wc -l mast_GATA3_PSWM_in_peaks_round5.bed #3564
 ```
@@ -558,14 +564,13 @@ First isolate individual memes from the MEME output meme.txt file, and move the 
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 #wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_motif12345_top10000_output/meme.txt
-# WGATBDHRVAGATAA_meme.txt_meme.txt   ---motif6 (match to GATA3)
-
-mv WGATBDHRVAGATAA_meme.txt_meme.txt individual_meme/
+python MEME_individual_from_db_python3.py ../GATA3_without_motif12345_top10000_output/meme.txt
+        # WGATBDHRVAGATAA_meme.txt    ---motif6 (match to GATA3)
+cp WGATBDHRVAGATAA_meme.txt individual_meme/GATAmotif6_meme.txt
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
-cat Exhaustive_MEME_MAST_round1to8/individual_meme/WGATBDHRVAGATAA_meme.txt_meme.txt
+cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif6_meme.txt
 ```
 
 
@@ -574,7 +579,7 @@ The output contains the motif coordinated within peak regions (101bp). \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 # Mast find peaks with motif6
-mast -hit_list -best individual_meme/WGATBDHRVAGATAA_meme.txt_meme.txt without_motifs_12345.fasta > mast_GATA3_PSWM_in_peaks_round6.txt
+mast -hit_list -best individual_meme/GATAmotif6_meme.txt without_motifs_12345.fasta > mast_GATA3_PSWM_in_peaks_round6.txt
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round6.txt
 wc -l mast_GATA3_PSWM_in_peaks_round6.bed #4510
 ```
@@ -660,6 +665,12 @@ knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_123456_s
 ### MAST
 
 First, save the STREME-found GATA3-like motif file as `AGATAAM_streme.txt` in `individual_meme` folder. \
+```{r, engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py GATA3_without_123456_streme_output/streme.txt
+cp 4-AGATAAM_meme.txt individual_meme/AGATAAM_streme.txt
+```
+
 
 Then use `MAST` to find GATA3-like motif7 (STREME-found) coordinated within peak regions (101bp window). \
 Notice that from here, we have increase the p-value stringency to 0.0005 (default is p<0.0001) for `MAST`. \
@@ -710,6 +721,13 @@ knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_123456_7
 
 ### MAST
 First save the streme motif file as TGATAA_streme.txt in individual_meme folder. \
+```{r, engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py GATA3_without_123456_7_streme_output/streme.txt
+cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
+```
+
+
 Then use `MAST` to query this motif from all GATA3 peaks without motif 1234567 (101bp window) to find motif coodinates within peak regions. \
 ```{r, engine='bash', eval=F, echo=TRUE}
 # Mast find peaks with motif8 (Streme)
@@ -873,9 +891,9 @@ head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NN
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
 #SBATCH --job-name=streme8N.sh    
-#SBATCH -N 8
-#SBATCH -n 8
-#SBATCH -c 24
+#SBATCH -N 12
+#SBATCH -n 12
+#SBATCH -c 16
 #SBATCH -p general
 #SBATCH --qos=general
 #SBATCH --mem=48G
@@ -924,7 +942,7 @@ head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NN
 #SBATCH --job-name=streme8N_1.sh    
 #SBATCH -N 2
 #SBATCH -n 2
-#SBATCH -c 64
+#SBATCH -c 32
 #SBATCH -p himem
 #SBATCH --qos=himem
 #SBATCH --mem=48G
@@ -938,8 +956,57 @@ export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 # MEME-classic
-meme -p 128 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
+meme -p 64 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
+```
+
+# Next step
+
+Figure out how to deal with the previous 8 PSWMs and the expanded regions. \
+First concatenate previous 8 PSWMs into a single file (from code). \
+Then run the concatenated 8 PSWMs with `MAST` on the expanded region. \
+Coherence check: For the expanded region--161bp (without swapping central to N), the central (~100bp) region should have no hits for the 8 previous PSWMs. \
+
+## Cancatenate files
+
+```{r, engine='bash', eval=F, echo=TRUE}
+mkdir individual_meme
+#MEME-round1 motif1
+cp ../GATA_ChIP_top10000_motif.meme_output/meme.txt individual_meme/GATAmotif1_meme.txt
+#MEME-round2 motif2
+cp ../GATA3_without_motif1_top10000_output/meme.txt individual_meme/GATAmotif2_meme.txt
+#MEME-round3 motif3
+cp ../GATA3_without_motif12_top10000_output/meme.txt individual_meme/GATAmotif3_meme.txt
+#MEME-round4 motif4
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py ../GATA3_without_motif123_top10000_output_1/meme.txt
+        # output: # AGATNDWNAGATARN_meme.txt ---motif4 (match to GATA3)
+                  # TRTTTRCTYWD_meme.txt ---FOX
+cp AGATNDWNAGATARN_meme.txt individual_meme/GATAmotif4_meme.txt
+
+#MEME-round5 motif5
+python MEME_individual_from_db_python3.py ../GATA3_without_motif1234_top10000_output/meme.txt
+        # BTTATCWGATB_meme.txt    ---motif5 (match to GATA3)
+cp BTTATCWGATB_meme.txt individual_meme/GATAmotif5_meme.txt
+
+#MEME-round6 motif6
+python MEME_individual_from_db_python3.py ../GATA3_without_motif12345_top10000_output/meme.txt
+        # WGATBDHRVAGATAA_meme.txt    ---motif6 (match to GATA3)
+cp WGATBDHRVAGATAA_meme.txt individual_meme/GATAmotif6_meme.txt
+
+
+#STREME-round1 motif7
+python MEME_individual_from_db_python3.py ../GATA3_without_123456_streme_output/streme.txt
+cp 4-AGATAAM_meme.txt individual_meme/AGATAAM_streme.txt
+#STREME-round2 motif8
+python MEME_individual_from_db_python3.py ../GATA3_without_123456_7_streme_output/streme.txt
+cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
+
+#rm *meme.txt #remove the non-used individual motifs
 ```
 
 
-The next big step is to figure out how to deal with the previous 8 PSWMs and the expanded regions. Run previous 8 MAST on the expanded region, but first concatenate the PSWM files (from code). The coherence check is to make sure there are no hits in the central ~100 bases. \
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+ls Exhaustive_MEME_MAST_round1to8/individual_meme
+```
+
+MEME_concatenate_motifs_to_db_python3.py \
