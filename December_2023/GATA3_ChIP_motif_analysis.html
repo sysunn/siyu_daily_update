@@ -775,7 +775,7 @@ function toggle_visibility(id1) {
 </ul></li>
 <li><a href="#next-step" id="toc-next-step"><span class="toc-section-number">6</span> Next step</a>
 <ul>
-<li><a href="#cancatenate-files" id="toc-cancatenate-files"><span class="toc-section-number">6.1</span> Cancatenate files</a></li>
+<li><a href="#concatenate-files" id="toc-concatenate-files"><span class="toc-section-number">6.1</span> Concatenate files</a></li>
 </ul></li>
 </ul>
 </div>
@@ -2107,12 +2107,12 @@ head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NN
 ## ACTTCCTCTGCTTCAGACTGCCTCAGAAAGCATGTCTGGNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNttccagattagatcaaattaaatGCTACATAAGACATCTTC</code></pre>
 <pre class="bash revision"><code>#!/bin/bash
 #SBATCH --job-name=streme8N_1.sh    
-#SBATCH -N 2
-#SBATCH -n 2
-#SBATCH -c 32
-#SBATCH -p himem
-#SBATCH --qos=himem
-#SBATCH --mem=48G
+#SBATCH -N 12
+#SBATCH -n 12
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
 #SBATCH -o streme8N_1.sh_%j.out
@@ -2123,7 +2123,49 @@ export TMPDIR=&quot;${HOME}/temp&quot;
 module load meme/5.4.1
 
 # MEME-classic
-meme -p 64 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta</code></pre>
+meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta</code></pre>
+<p>To save time and run job in parallel, I will divide this file into two files each with 5k sequences.<br />
+</p>
+<pre class="bash revision"><code>head -10000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta &gt; without_motifs_123456_78_161bpwindow_81NNN_top10000_1.fasta
+tail -10000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta &gt; without_motifs_123456_78_161bpwindow_81NNN_top10000_2.fasta</code></pre>
+<pre class="bash revision"><code>#!/bin/bash
+#SBATCH --job-name=MEME8N_1.1.sh    
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o MEME8N_1.sh_%j.out
+#SBATCH -e MEME8N_1.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output_1 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000_1.fasta</code></pre>
+<pre class="bash revision"><code>#!/bin/bash
+#SBATCH --job-name=MEME8N_1.2.sh    
+#SBATCH -N 8
+#SBATCH -n 8
+#SBATCH -c 20
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=30G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o MEME8N_1.2.sh_%j.out
+#SBATCH -e MEME8N_1.2.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 160 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output_2 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000_2.fasta</code></pre>
 </div>
 </div>
 <div id="next-step" class="section level1" number="6">
@@ -2133,8 +2175,8 @@ First concatenate previous 8 PSWMs into a single file (from code).<br />
 Then run the concatenated 8 PSWMs with <code>MAST</code> on the expanded region.<br />
 Coherence check: For the expanded region–161bp (without swapping central to N), the central (~100bp) region should have no hits for the 8 previous PSWMs.<br />
 </p>
-<div id="cancatenate-files" class="section level2" number="6.1">
-<h2><span class="header-section-number">6.1</span> Cancatenate files</h2>
+<div id="concatenate-files" class="section level2" number="6.1">
+<h2><span class="header-section-number">6.1</span> Concatenate files</h2>
 <pre class="bash revision"><code>mkdir individual_meme
 #MEME-round1 motif1
 cp ../GATA_ChIP_top10000_motif.meme_output/meme.txt individual_meme/GATAmotif1_meme.txt
@@ -2177,8 +2219,31 @@ cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
 ## GATAmotif5_meme.txt
 ## GATAmotif6_meme.txt
 ## TGATAA_streme.txt</code></pre>
-<p>MEME_concatenate_motifs_to_db_python3.py<br />
+<p>This python script will concatenate all files in your directory, with common headers and each motif’s PSWMs.<br />
 </p>
+<pre class="bash revision"><code>wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_concatenate_motifs_to_db_python3.py
+python MEME_concatenate_motifs_to_db_python3.py individual_meme/ cat_8_motifs.txt</code></pre>
+<pre class="bash revision"><code>head -20 Exhaustive_MEME_MAST_round1to8/cat_8_motifs.txt</code></pre>
+<pre><code>## MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
+## 
+## ALPHABET= ACGT
+## 
+## strands: + -
+## 
+## Background letter frequencies
+## A 0.295 C 0.205 G 0.205 T 0.295
+## 
+## 
+## ********************************************************************************
+## 
+## 
+## ********************************************************************************
+## MOTIF 4-AGATAAM STREME-4
+## 
+## 
+## letter-probability matrix: alength= 4 w= 7 nsites= 6893 E= 1.1e-018
+## 0.999455 0.000430 0.000047 0.000068
+## 0.000068 0.000047 0.999817 0.000068</code></pre>
 </div>
 </div>
 
