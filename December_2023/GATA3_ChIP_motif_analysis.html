@@ -773,6 +773,10 @@ function toggle_visibility(id1) {
 <li><a href="#meme" id="toc-meme"><span class="toc-section-number">5.1</span> MEME</a></li>
 <li><a href="#meme-10000-peaks" id="toc-meme-10000-peaks"><span class="toc-section-number">5.2</span> MEME-10,000 peaks</a></li>
 </ul></li>
+<li><a href="#next-step" id="toc-next-step"><span class="toc-section-number">6</span> Next step</a>
+<ul>
+<li><a href="#cancatenate-files" id="toc-cancatenate-files"><span class="toc-section-number">6.1</span> Cancatenate files</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -1222,41 +1226,105 @@ Figure 5: <span class="caption-title">GATA3 motif variants 4</span><br>
 <p>First isolate individual memes from the MEME output meme.txt file.<br />
 </p>
 <pre class="bash revision"><code>wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_motif123_top10000_output_1/meme.txt
-# AGATNDWNAGATARN_meme.txt_meme.txt   ---motif4 (match to GATA3)
-# TRTTTRCTYWD_meme.txt_meme.txt ---FOX
+python MEME_individual_from_db_python3.py ../GATA3_without_motif123_top10000_output_1/meme.txt
+        # output: # AGATNDWNAGATARN_meme.txt ---motif4 (match to GATA3)
+                  # TRTTTRCTYWD_meme.txt ---FOX
 
 mkdir individual_meme
-mv AGATNDWNAGATARN_meme.txt_meme.txt individual_meme/</code></pre>
-<pre class="bash revision"><code>cat Exhaustive_MEME_MAST_round1to8/individual_meme/AGATNDWNAGATARN_meme.txt_meme.txt</code></pre>
+#MEME-round1 motif1
+cp GATA_ChIP_top10000_motif.meme_output/meme.txt individual_meme/GATAmotif1_meme.txt
+#MEME-round2 motif2
+cp GATA3_without_motif1_top10000_output/meme.txt individual_meme/GATAmotif2_meme.txt
+#MEME-round3 motif3
+cp GATA3_without_motif12_top10000_output/meme.txt individual_meme/GATAmotif3_meme.txt
+#MEME-round4 motif4
+cp AGATNDWNAGATARN_meme.txt individual_meme/GATAmotif4_meme.txt</code></pre>
+<pre class="bash revision"><code>cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif4_meme.txt</code></pre>
 <pre><code>## MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
 ## 
 ## ALPHABET= ACGT
 ## 
 ## strands: + -
 ## 
-## A 0.295 C 0.205 G 0.205 T 0.295 
+## Background letter frequencies (from file hg38_bkgrnd.txt):
+## A 0.295 C 0.205 G 0.205 T 0.295
+## Background model order: 3
+## ********************************************************************************
 ## 
-## MOTIF    AGATNDWNAGATARN
-## letter-probability matrix: alength= 4 w= 15 nsites= 1064 E= 1.8e-469 
-##  0.718985  0.017857  0.000000  0.263158 
-##  0.000000  0.000000  1.000000  0.000000 
-##  1.000000  0.000000  0.000000  0.000000 
-##  0.000940  0.000000  0.015038  0.984023 
-##  0.218045  0.192669  0.331767  0.257519 
-##  0.325188  0.120301  0.208647  0.345865 
-##  0.432331  0.157895  0.186090  0.223684 
-##  0.296992  0.262218  0.230263  0.210526 
-##  0.631579  0.031015  0.039474  0.297932 
-##  0.000000  0.000000  1.000000  0.000000 
-##  0.981203  0.000000  0.000000  0.018797 
-##  0.000000  0.000000  0.000000  1.000000 
-##  0.671992  0.013158  0.022556  0.292293 
-##  0.512218  0.071429  0.256579  0.159774 
-##  0.345865  0.187030  0.260338  0.206767</code></pre>
+## MOTIF AGATNDWNAGATARN MEME-2 width =  15  sites = 1064  llr = 10219  E-value = 1.8e-469
+## ********************************************************************************
+## --------------------------------------------------------------------------------
+## Motif AGATNDWNAGATARN MEME-2 Description
+## --------------------------------------------------------------------------------
+## Simplified        A  7:a:23436:a:753
+## pos.-specific     C  ::::2123:::::12
+## probability       G  :a::3222:a:::33
+## matrix            T  3::a33223::a322
+## 
+## bits    2.3  *       *
+## 2.1  *       *
+## 1.8  **      * *
+## 1.6  ***     ***
+## Relative         1.4  ***     ***
+## Entropy          1.1  ***     ***
+## (13.9 bits)      0.9 ****     ***
+## 0.7 ****     ****
+## 0.5 ****    *****
+## 0.2 ****    ******
+## 0.0 ---------------
+## 
+## Multilevel           AGATGTAAAGATAAA
+## consensus            T   TATCT   TGG
+## sequence                 AG G      T
+## T
+## --------------------------------------------------------------------------------
+## 
+## --------------------------------------------------------------------------------
+## Motif AGATNDWNAGATARN MEME-2 position-specific scoring matrix
+## --------------------------------------------------------------------------------
+## log-odds matrix: alength= 4 w= 15 n= 870000 bayes= 11.43 E= 1.8e-469
+## 129   -352  -1670    -16
+## -1670  -1670    229  -1670
+## 176  -1670  -1670  -1670
+## -829  -1670   -377    174
+## -44     -9     69    -20
+## 14    -77      3     23
+## 55    -38    -14    -40
+## 1     36     17    -49
+## 110   -272   -238      1
+## -1670  -1670    229  -1670
+## 173  -1670  -1670   -397
+## -1670  -1670  -1670    176
+## 119   -396   -318     -1
+## 80   -152     32    -88
+## 23    -13     34    -51
+## --------------------------------------------------------------------------------
+## 
+## --------------------------------------------------------------------------------
+## Motif AGATNDWNAGATARN MEME-2 position-specific probability matrix
+## --------------------------------------------------------------------------------
+## 
+## 
+## letter-probability matrix: alength= 4 w= 15 nsites= 1064 E= 1.8e-469
+## 0.718985  0.017857  0.000000  0.263158
+## 0.000000  0.000000  1.000000  0.000000
+## 1.000000  0.000000  0.000000  0.000000
+## 0.000940  0.000000  0.015038  0.984023
+## 0.218045  0.192669  0.331767  0.257519
+## 0.325188  0.120301  0.208647  0.345865
+## 0.432331  0.157895  0.186090  0.223684
+## 0.296992  0.262218  0.230263  0.210526
+## 0.631579  0.031015  0.039474  0.297932
+## 0.000000  0.000000  1.000000  0.000000
+## 0.981203  0.000000  0.000000  0.018797
+## 0.000000  0.000000  0.000000  1.000000
+## 0.671992  0.013158  0.022556  0.292293
+## 0.512218  0.071429  0.256579  0.159774
+## 0.345865  0.187030  0.260338  0.206767
+## --------------------------------------------------------------------------------</code></pre>
 <p>Use <code>MAST</code> to query this GATA3-like motif4 from GATA3 peaks without motif123.<br />
 </p>
-<pre class="bash revision"><code>mast -hit_list -best individual_meme/AGATNDWNAGATARN_meme.txt_meme.txt without_motifs_123.fasta &gt; mast_GATA3_PSWM_in_peaks_round4.txt
+<pre class="bash revision"><code>mast -hit_list -best individual_meme/GATAmotif4_meme.txt without_motifs_123.fasta &gt; mast_GATA3_PSWM_in_peaks_round4.txt
 
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round4.txt</code></pre>
 <pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round4.txt
@@ -1349,35 +1417,87 @@ Figure 6: <span class="caption-title">GATA3 motif variants 5</span><br>
 <p>First, isolate individual memes from the MEME output meme.txt file.<br />
 </p>
 <pre class="r revision"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_motif1234_top10000_output/meme.txt
-# BTTATCWGATB_meme.txt_meme.txt   ---motif5 (match to GATA3)
-
-mv BTTATCWGATB_meme.txt_meme.txt individual_meme/</code></pre>
-<pre class="bash revision"><code>cat Exhaustive_MEME_MAST_round1to8/individual_meme/BTTATCWGATB_meme.txt_meme.txt</code></pre>
+python MEME_individual_from_db_python3.py ../GATA3_without_motif1234_top10000_output/meme.txt
+        # BTTATCWGATB_meme.txt    ---motif5 (match to GATA3)
+cp BTTATCWGATB_meme.txt individual_meme/GATAmotif5_meme.txt</code></pre>
+<pre class="bash revision"><code>cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif5_meme.txt</code></pre>
 <pre><code>## MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
 ## 
 ## ALPHABET= ACGT
 ## 
 ## strands: + -
 ## 
-## A 0.295 C 0.205 G 0.205 T 0.295 
+## Background letter frequencies (from file hg38_bkgrnd.txt):
+## A 0.295 C 0.205 G 0.205 T 0.295
+## Background model order: 3
+## ********************************************************************************
 ## 
-## MOTIF    BTTATCWGATB
-## letter-probability matrix: alength= 4 w= 11 nsites= 780 E= 3.1e-321 
-##  0.125641  0.291026  0.296154  0.287179 
-##  0.176923  0.143590  0.011538  0.667949 
-##  0.112821  0.000000  0.041026  0.846154 
-##  1.000000  0.000000  0.000000  0.000000 
-##  0.000000  0.000000  0.000000  1.000000 
-##  0.000000  1.000000  0.000000  0.000000 
-##  0.456410  0.000000  0.000000  0.543590 
-##  0.000000  0.003846  0.996154  0.000000 
-##  1.000000  0.000000  0.000000  0.000000 
-##  0.000000  0.000000  0.000000  1.000000 
-##  0.106410  0.297436  0.238462  0.357692</code></pre>
+## MOTIF BTTATCWGATB MEME-3 width =  11  sites = 780  llr = 7683  E-value = 3.1e-321
+## ********************************************************************************
+## --------------------------------------------------------------------------------
+## Motif BTTATCWGATB MEME-3 Description
+## --------------------------------------------------------------------------------
+## Simplified        A  121a::5:a:1
+## pos.-specific     C  31:::a::::3
+## probability       G  3::::::a::2
+## matrix            T  378:a:5::a4
+## 
+## bits    2.3      * *
+## 2.1      * *
+## 1.8    *** ***
+## 1.6    *** ***
+## Relative         1.4    *** ***
+## Entropy          1.1   **** ***
+## (14.2 bits)      0.9   **** ***
+## 0.7   ********
+## 0.5  *********
+## 0.2 ***********
+## 0.0 -----------
+## 
+## Multilevel           GTTATCTGATT
+## consensus            C     A   C
+## sequence             T         G
+## 
+## --------------------------------------------------------------------------------
+## 
+## --------------------------------------------------------------------------------
+## Motif BTTATCWGATB MEME-3 position-specific scoring matrix
+## --------------------------------------------------------------------------------
+## log-odds matrix: alength= 4 w= 11 n= 910000 bayes= 12.1003 E= 3.1e-321
+## -123     51     53     -4
+## -74    -51   -415    118
+## -139  -1625   -232    152
+## 176  -1625  -1625  -1625
+## -1625  -1625  -1625    176
+## -1625    229  -1625  -1625
+## 63  -1625  -1625     88
+## -1625   -574    228  -1625
+## 176  -1625  -1625  -1625
+## -1625  -1625  -1625    176
+## -147     54     22     28
+## --------------------------------------------------------------------------------
+## 
+## --------------------------------------------------------------------------------
+## Motif BTTATCWGATB MEME-3 position-specific probability matrix
+## --------------------------------------------------------------------------------
+## 
+## 
+## letter-probability matrix: alength= 4 w= 11 nsites= 780 E= 3.1e-321
+## 0.125641  0.291026  0.296154  0.287179
+## 0.176923  0.143590  0.011538  0.667949
+## 0.112821  0.000000  0.041026  0.846154
+## 1.000000  0.000000  0.000000  0.000000
+## 0.000000  0.000000  0.000000  1.000000
+## 0.000000  1.000000  0.000000  0.000000
+## 0.456410  0.000000  0.000000  0.543590
+## 0.000000  0.003846  0.996154  0.000000
+## 1.000000  0.000000  0.000000  0.000000
+## 0.000000  0.000000  0.000000  1.000000
+## 0.106410  0.297436  0.238462  0.357692
+## --------------------------------------------------------------------------------</code></pre>
 <p>Use <code>MAST</code> to query this GATA3-like motif5 from GATA3 peaks without motif 1234 (101bp window) and find the motif coordinates within peak regions.</p>
 <pre class="bash revision"><code># Mast find peaks with motif5
-mast -hit_list -best individual_meme/BTTATCWGATB_meme.txt_meme.txt without_motifs_1234.fasta &gt; mast_GATA3_PSWM_in_peaks_round5.txt
+mast -hit_list -best individual_meme/GATAmotif5_meme.txt without_motifs_1234.fasta &gt; mast_GATA3_PSWM_in_peaks_round5.txt
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round5.txt
 wc -l mast_GATA3_PSWM_in_peaks_round5.bed #3564</code></pre>
 <pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round5.txt
@@ -1462,41 +1582,97 @@ Figure 7: <span class="caption-title">GATA3 motif variants 6</span><br>
 <p>First isolate individual memes from the MEME output meme.txt file, and move the GATA3-like motif to a separate folder.<br />
 </p>
 <pre class="bash revision"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_motif12345_top10000_output/meme.txt
-# WGATBDHRVAGATAA_meme.txt_meme.txt   ---motif6 (match to GATA3)
-
-mv WGATBDHRVAGATAA_meme.txt_meme.txt individual_meme/</code></pre>
-<pre class="bash revision"><code>cat Exhaustive_MEME_MAST_round1to8/individual_meme/WGATBDHRVAGATAA_meme.txt_meme.txt</code></pre>
+python MEME_individual_from_db_python3.py ../GATA3_without_motif12345_top10000_output/meme.txt
+        # WGATBDHRVAGATAA_meme.txt    ---motif6 (match to GATA3)
+cp WGATBDHRVAGATAA_meme.txt individual_meme/GATAmotif6_meme.txt</code></pre>
+<pre class="bash revision"><code>cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif6_meme.txt</code></pre>
 <pre><code>## MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
 ## 
 ## ALPHABET= ACGT
 ## 
 ## strands: + -
 ## 
-## A 0.295 C 0.205 G 0.205 T 0.295 
+## Background letter frequencies (from file hg38_bkgrnd.txt):
+## A 0.295 C 0.205 G 0.205 T 0.295
+## Background model order: 3
+## ********************************************************************************
 ## 
-## MOTIF    WGATBDHRVAGATAA
-## letter-probability matrix: alength= 4 w= 15 nsites= 818 E= 2.3e-331 
-##  0.625917  0.003667  0.001222  0.369193 
-##  0.002445  0.008557  0.951100  0.037897 
-##  0.943765  0.008557  0.017115  0.030562 
-##  0.022005  0.040342  0.015892  0.921760 
-##  0.135697  0.289731  0.300733  0.273839 
-##  0.311736  0.149144  0.217604  0.321516 
-##  0.309291  0.202934  0.139364  0.348411 
-##  0.446210  0.106357  0.266504  0.180929 
-##  0.353301  0.259169  0.265281  0.122249 
-##  0.645477  0.034230  0.001222  0.319071 
-##  0.000000  0.000000  1.000000  0.000000 
-##  1.000000  0.000000  0.000000  0.000000 
-##  0.000000  0.000000  0.000000  1.000000 
-##  0.849633  0.000000  0.000000  0.150367 
-##  0.764059  0.015892  0.133252  0.086797</code></pre>
+## MOTIF WGATBDHRVAGATAA MEME-3 width =  15  sites = 818  llr = 8040  E-value = 2.3e-331
+## ********************************************************************************
+## --------------------------------------------------------------------------------
+## Motif WGATBDHRVAGATAA MEME-3 Description
+## --------------------------------------------------------------------------------
+## Simplified        A  6:9:133446:a:88
+## pos.-specific     C  ::::31213::::::
+## probability       G  :a::32133:a:::1
+## matrix            T  4::9333213::a21
+## 
+## bits    2.3           *
+## 2.1           *
+## 1.8  *        ***
+## 1.6  *        ***
+## Relative         1.4  ***      ***
+## Entropy          1.1  ***      ****
+## (14.2 bits)      0.9  ***      ****
+## 0.7 ****     ******
+## 0.5 ****     ******
+## 0.2 *****  ********
+## 0.0 ---------------
+## 
+## Multilevel           AGATGTTAAAGATAA
+## consensus            T   CAAGGT
+## sequence                 TGC C
+## 
+## --------------------------------------------------------------------------------
+## 
+## --------------------------------------------------------------------------------
+## Motif WGATBDHRVAGATAA MEME-3 position-specific scoring matrix
+## --------------------------------------------------------------------------------
+## log-odds matrix: alength= 4 w= 15 n= 870000 bayes= 9.78827 E= 2.3e-331
+## 109   -580   -739     32
+## -691   -458    221   -296
+## 168   -458   -358   -327
+## -374   -235   -369    164
+## -112     50     55    -11
+## 8    -46      9     12
+## 7     -1    -56     24
+## 60    -95     38    -71
+## 26     34     37   -127
+## 113   -258   -739     11
+## -1632  -1632    229  -1632
+## 176  -1632  -1632  -1632
+## -1632  -1632  -1632    176
+## 153  -1632  -1632    -97
+## 137   -369    -62   -176
+## --------------------------------------------------------------------------------
+## 
+## --------------------------------------------------------------------------------
+## Motif WGATBDHRVAGATAA MEME-3 position-specific probability matrix
+## --------------------------------------------------------------------------------
+## 
+## 
+## letter-probability matrix: alength= 4 w= 15 nsites= 818 E= 2.3e-331
+## 0.625917  0.003667  0.001222  0.369193
+## 0.002445  0.008557  0.951100  0.037897
+## 0.943765  0.008557  0.017115  0.030562
+## 0.022005  0.040342  0.015892  0.921760
+## 0.135697  0.289731  0.300733  0.273839
+## 0.311736  0.149144  0.217604  0.321516
+## 0.309291  0.202934  0.139364  0.348411
+## 0.446210  0.106357  0.266504  0.180929
+## 0.353301  0.259169  0.265281  0.122249
+## 0.645477  0.034230  0.001222  0.319071
+## 0.000000  0.000000  1.000000  0.000000
+## 1.000000  0.000000  0.000000  0.000000
+## 0.000000  0.000000  0.000000  1.000000
+## 0.849633  0.000000  0.000000  0.150367
+## 0.764059  0.015892  0.133252  0.086797
+## --------------------------------------------------------------------------------</code></pre>
 <p>Then use <code>MAST</code> to query GATA3-like motif6 from GATA3 peaks without motif 12345.<br />
 The output contains the motif coordinated within peak regions (101bp).<br />
 </p>
 <pre class="bash revision"><code># Mast find peaks with motif6
-mast -hit_list -best individual_meme/WGATBDHRVAGATAA_meme.txt_meme.txt without_motifs_12345.fasta &gt; mast_GATA3_PSWM_in_peaks_round6.txt
+mast -hit_list -best individual_meme/GATAmotif6_meme.txt without_motifs_12345.fasta &gt; mast_GATA3_PSWM_in_peaks_round6.txt
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round6.txt
 wc -l mast_GATA3_PSWM_in_peaks_round6.bed #4510</code></pre>
 <pre class="bash revision"><code>wc -l Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round6.txt
@@ -1590,6 +1766,9 @@ Figure 8: <span class="caption-title">GATA3 motif variants 7</span><br>
 <h3><span class="header-section-number">3.1.2</span> MAST</h3>
 <p>First, save the STREME-found GATA3-like motif file as <code>AGATAAM_streme.txt</code> in <code>individual_meme</code> folder.<br />
 </p>
+<pre class="bash revision"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py GATA3_without_123456_streme_output/streme.txt
+cp 4-AGATAAM_meme.txt individual_meme/AGATAAM_streme.txt</code></pre>
 <p>Then use <code>MAST</code> to find GATA3-like motif7 (STREME-found) coordinated within peak regions (101bp window).<br />
 Notice that from here, we have increase the p-value stringency to 0.0005 (default is p&lt;0.0001) for <code>MAST</code>.<br />
 </p>
@@ -1646,7 +1825,7 @@ head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_7.fasta</code></pre
 streme --oc GATA3_without_123456_7_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 15 --p without_motifs_123456_7.fasta</code></pre>
 <p><strong>One of the 10 enriched de novo motif match to GATA3.</strong><br />
 </p>
-<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-77"></span>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-78"></span>
 <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAToAAAEmCAYAAADyVly8AAAJMmlDQ1BkZWZhdWx0X3JnYi5pY2MAAEiJlZVnUJNZF8fv8zzphUASQodQQ5EqJYCUEFoo0quoQOidUEVsiLgCK4qINEWQRQEXXJUia0UUC4uCAhZ0gywCyrpxFVFBWXDfGZ33HT+8/5l7z2/+c+bec8/5cAEgiINlwct7YlK6wNvJjhkYFMwE3yiMn5bC8fR0A9/VuxEArcR7ut/P+a4IEZFp/OW4uLxy+SmCdACg7GXWzEpPWeGjy0wPj//CZ1dYsFzgMt9Y4eh/eexLzr8s+pLj681dfhUKABwp+hsO/4b/c++KVDiC9NioyGymT3JUelaYIJKZttIJHpfL9BQkR8UmRH5T8P+V/B2lR2anr0RucsomQWx0TDrzfw41MjA0BF9n8cbrS48hRv9/z2dFX73kegDYcwAg+7564ZUAdO4CQPrRV09tua+UfAA67vAzBJn/eqiVDQ0IgALoQAYoAlWgCXSBETADlsAWOAAX4AF8QRDYAPggBiQCAcgCuWAHKABFYB84CKpALWgATaAVnAad4Dy4Aq6D2+AuGAaPgRBMgpdABN6BBQiCsBAZokEykBKkDulARhAbsoYcIDfIGwqCQqFoKAnKgHKhnVARVApVQXVQE/QLdA66At2EBqGH0Dg0A/0NfYQRmATTYQVYA9aH2TAHdoV94fVwNJwK58D58F64Aq6HT8Id8BX4NjwMC+GX8BwCECLCQJQRXYSNcBEPJBiJQgTIVqQQKUfqkVakG+lD7iFCZBb5gMKgaCgmShdliXJG+aH4qFTUVlQxqgp1AtWB6kXdQ42jRKjPaDJaHq2DtkDz0IHoaHQWugBdjm5Et6OvoYfRk+h3GAyGgWFhzDDOmCBMHGYzphhzGNOGuYwZxExg5rBYrAxWB2uF9cCGYdOxBdhK7EnsJewQdhL7HkfEKeGMcI64YFwSLg9XjmvGXcQN4aZwC3hxvDreAu+Bj8BvwpfgG/Dd+Dv4SfwCQYLAIlgRfAlxhB2ECkIr4RphjPCGSCSqEM2JXsRY4nZiBfEU8QZxnPiBRCVpk7ikEFIGaS/pOOky6SHpDZlM1iDbkoPJ6eS95CbyVfJT8nsxmpieGE8sQmybWLVYh9iQ2CsKnqJO4VA2UHIo5ZQzlDuUWXG8uIY4VzxMfKt4tfg58VHxOQmahKGEh0SiRLFEs8RNiWkqlqpBdaBGUPOpx6hXqRM0hKZK49L4tJ20Bto12iQdQ2fRefQ4ehH9Z/oAXSRJlTSW9JfMlqyWvCApZCAMDQaPkcAoYZxmjDA+SilIcaQipfZItUoNSc1Ly0nbSkdKF0q3SQ9Lf5RhyjjIxMvsl+mUeSKLktWW9ZLNkj0ie012Vo4uZynHlyuUOy33SB6W15b3lt8sf0y+X35OQVHBSSFFoVLhqsKsIkPRVjFOsUzxouKMEk3JWilWqUzpktILpiSTw0xgVjB7mSJleWVn5QzlOuUB5QUVloqfSp5Km8oTVYIqWzVKtUy1R1WkpqTmrpar1qL2SB2vzlaPUT+k3qc+r8HSCNDYrdGpMc2SZvFYOawW1pgmWdNGM1WzXvO+FkaLrRWvdVjrrjasbaIdo12tfUcH1jHVidU5rDO4Cr3KfFXSqvpVo7okXY5upm6L7rgeQ89NL0+vU++Vvpp+sP5+/T79zwYmBgkGDQaPDamGLoZ5ht2GfxtpG/GNqo3uryavdly9bXXX6tfGOsaRxkeMH5jQTNxNdpv0mHwyNTMVmLaazpipmYWa1ZiNsulsT3Yx+4Y52tzOfJv5efMPFqYW6RanLf6y1LWMt2y2nF7DWhO5pmHNhJWKVZhVnZXQmmkdan3UWmijbBNmU2/zzFbVNsK20XaKo8WJ45zkvLIzsBPYtdvNcy24W7iX7RF7J/tC+wEHqoOfQ5XDU0cVx2jHFkeRk4nTZqfLzmhnV+f9zqM8BR6f18QTuZi5bHHpdSW5+rhWuT5z03YTuHW7w+4u7gfcx9aqr01a2+kBPHgeBzyeeLI8Uz1/9cJ4eXpVez33NvTO9e7zofls9Gn2eedr51vi+9hP0y/Dr8ef4h/i3+Q/H2AfUBogDNQP3BJ4O0g2KDaoKxgb7B/cGDy3zmHdwXWTISYhBSEj61nrs9ff3CC7IWHDhY2UjWEbz4SiQwNCm0MXwzzC6sPmwnnhNeEiPpd/iP8ywjaiLGIm0iqyNHIqyiqqNGo62ir6QPRMjE1MecxsLDe2KvZ1nHNcbdx8vEf88filhICEtkRcYmjiuSRqUnxSb7JicnbyYIpOSkGKMNUi9WCqSOAqaEyD0tandaXTlz/F/gzNjF0Z45nWmdWZ77P8s85kS2QnZfdv0t60Z9NUjmPOT5tRm/mbe3KVc3fkjm/hbKnbCm0N39qzTXVb/rbJ7U7bT+wg7Ijf8VueQV5p3tudATu78xXyt+dP7HLa1VIgViAoGN1tubv2B9QPsT8M7Fm9p3LP58KIwltFBkXlRYvF/OJbPxr+WPHj0t6ovQMlpiVH9mH2Je0b2W+z/0SpRGlO6cQB9wMdZcyywrK3BzcevFluXF57iHAo45Cwwq2iq1Ktcl/lYlVM1XC1XXVbjXzNnpr5wxGHh47YHmmtVagtqv14NPbogzqnuo56jfryY5hjmceeN/g39P3E/qmpUbaxqPHT8aTjwhPeJ3qbzJqamuWbS1rgloyWmZMhJ+/+bP9zV6tua10bo63oFDiVcerFL6G/jJx2Pd1zhn2m9az62Zp2WnthB9SxqUPUGdMp7ArqGjzncq6n27K7/Ve9X4+fVz5ffUHyQslFwsX8i0uXci7NXU65PHsl+spEz8aex1cDr97v9eoduOZ67cZ1x+tX+zh9l25Y3Th/0+LmuVvsW523TW939Jv0t/9m8lv7gOlAxx2zO113ze92D64ZvDhkM3Tlnv296/d5928Prx0eHPEbeTAaMip8EPFg+mHCw9ePMh8tPN4+hh4rfCL+pPyp/NP637V+bxOaCi+M24/3P/N59niCP/Hyj7Q/Fifzn5Ofl08pTTVNG02fn3Gcufti3YvJlykvF2YL/pT4s+aV5quzf9n+1S8KFE2+Frxe+rv4jcyb42+N3/bMec49fZf4bmG+8L3M+xMf2B/6PgZ8nFrIWsQuVnzS+tT92fXz2FLi0tI/QiyQvpTNDAsAAAAGYktHRAD/AP8A/6C9p5MAAAAJcEhZcwAAD2EAAA9hAag/p2kAAAAddEVYdFNvZnR3YXJlAEdQTCBHaG9zdHNjcmlwdCA5LjI1wZk/DQAAHNtJREFUeJztnT9y48p6xU+73gb4Eue8S+CUywugMkau0ixBswQpu++VE6pe4MCRlDgfhaYjcQnDJVwuwFW+XMLnoBsiCAJE4/9B8/yqWDMiAfDgI3DQX/91ZgYhhEiZf5pagBBCDI2MTgiRPDI6IUTyyOiEEMkjoxNCJI+MTgiRPDI6IUTyyOiEEMkjoxNCJI+MTgiRPDI6IUTyyOiEEMkjoxNCJI+MTgiRPDI6IUTyyOiEEMkjoxNCJI+MTgiRPDI6IUTyyOiEEMkjoxNCJI+MTgiRPDI6IUTyyOiEEMkjoxNCJI+MTgiRPDI6IUTy0Budc27hnNs65/5wzln49805t5hamxBiHjgzm1rDTZxzPwE8lnx0MLNvY+sRQswP6hKdc26Fs8n9MDMHIDO3lXOuzACFEOICaqMD8JWemtl7+PcA4BDeXk0hSggxL/4ytYAaDgAeSt5X/ZwQIhr6OroizrknAG/hz98ArFFeh/eFmZWZpRDiTmAv0V3gnNsCeA5//jCzo3NuCW92t/b7lNkJcb/MokQXzOwnfJ3cCcB3M9tH7msA9jI6Ie4X+hJdaHn9hK+X28Ob3GlaVUKIOUFvdPAluQVUKhNCtIS6e0noJ7cMf67DyIj8azulPiHEPKA2OqifnBCiB2bRGNEFNUYIIdhLdEII0RkZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZLnL1MLGAv3d2dTa6jg1X63l6lFDMnBuU8A65rN9iuzh7bfkfLvO0b8usCuD1CJTozDsqdt7hX2+LHrk9GJUaC/Echhjx+7PhmdECJ9ZHRiUA7OrYbY9l5gjx+7voy7aYy4G3ZuAWAFXzl8AnDAxvYTKloMtO29wB4/dn0AZHTp4A1uC+ARxQtq504A3gG8YmOn8cUJMS1KXVNg59YA/gDwhPKn5gLAM4Bf2I2ePtR1O2i77b3AHj92fQBkdPNn554AfCIuLVgC+JzA7ISYFBndnPGGtW241wIyO3FnyOjmiq+T+4l2Fbx+X3+MoWliqDLfa9jjx64PgIxuzryhWyfMZTiGEMkjo5sjvvHhsYcjPYZjDUkTM1b3kmvY48euD4CMbq70WRIbulTX5EZQ6noNe/zY9QGQ0c0P38ra57jBZTimEMkio5sfzzM5ZqshPwfnNLg/wB4/dn15ZHRzYuceMcwsEMtw7L5pUycjozvDHj92fV/I6ObFkCmm0leRLDK6ubBzSww7hGYdvqPfYzZHDRJn2OPHru8LGd18GKPENUT62hR1MekGe/wm0Sejmw9jmJDSV5EkMro54MeljlGJu+w5fW2Tpqgx4gx7/Nj1fSGjmwdjppRTp6/sqRc77PFT6ioqGdN8+mzwUOmsG+zxY9f3hYyOnfHS1ox1j7OatNGtyTfPsMePXd8XMjp+2GeNFYIeGR0/U5hO575OXVZ8OrhR5smjhj1+7PqK3NPiOG1Xwloiroh+DK+m1O0zS6NDt0rnFZr/XnP9fasYO35NYdd3wd0Ynf1uD232c393W8QNev+w3+2lzXdUMvxccVXMLnWd5e8rRkOpKzfTGU53k+2y/2xa8waEPX7s+i6Q0XEz5bjPKb9bRtcN9viNru9uUteZ0tZsTgAO4f9tn7zsN4sQ0ahEx4rvP9emwvcVwG/Y2AM29gDgNwAfLY7T1ei6lAjvvtUV/PFj13eBjI6XNhfSD2zsBRs7fb2zsSM29h3eAJswZYOESpPdYI+f6ujEF00vhhds7L3y0429oGnJrtsAf/abjR32+LHru0BGx0uTEt0eG4spsf2Ar7+LZSqj0+Sb/PFj13eBjI6XJqljXFrqU9omKexUhqM6um6wx091dAJNU8Y9Nhbfy9yX/GJLda0uyC7DgwR//Nj1lSGj46TJhVRdL9d9n7YXdJ1B1hrtwU02KoQB9vix67tCRsdJrMEcsbE2XUfamGOfHOo3ETdgjx+dPhkdJ7EpYxuT811O4i7Gtk/duv2aNIjcI+zxY9d3hYyOk9g6ui4zQLQzyX44ov5muOfUtQ72+NHpk9FxEnMRnBo1QlwTt+9usIpnuvRmZrDHj0qfjI6N+GnMu83ntbED4uZKa9PyWmeObedouxfY48eu7woZHR+xJag+npgxxxiiz1NMajO7Lgwjwh4/On0yOj7GKdF5YoxuqLU76Z76RLDHj13fFTI6PuKMxaeeXRmqHqXuRoi5CWY1lrJn2OPHru+KUY3OObdwoaNg+P+zc27rnHsaUwc5MSW6vubbn6TCeGUWs/7CPRvdTdjjx6hvtIk3nR828gl/IzsAWwBPuc+XZpqTH3EXQD8GtbETdq5uq0apa4PhQVSpDQvs8WPXV8WYJbpnXJZWMpPLbtpn5zpNC5QKMSW6Pi+ivldjqtMfrX2OYyp7gD1+7PpKGdPoHuGD8Ffn3GN472Rm33CeUUNGF1eC6tPoxu7Ffiz8ewv2WTimgD1+lPrGbow4mtkJ55u52DtfF3YM3ToKF+k7xYjq8R7qccQ17PFj11fK2Ea3CnV1WYkuu2Ezg6MbIzcqcaMQxo5R30N1mtQv3mPqWgd7/Cj1jWl0H/CG9gs+RT0B2DvnnnFdX3evxJRo+47RqCumF6h76quEfxv2+NHoG9PoXnB5k76GNHZR+PueGbshYgiaPKXZz2UK2OPHrq+U0bqXmM/Zv4XU9WTnHH4PYG9WX+8UGjGeALyY9dJhlo0pUtcjxi3VUaY2M4I9fpT6xuxH9wkAZvaQf9/M9qHT8CeAhyrDCwb5Bl/qmbpIPiX9PiX93HQPtdvFU9dynjfqAzQdUxH2+LHrK2VQowvmtA1/rsJ7nyWbZsG7MjDn3DbsSxEwAmjSgQr67CJ0jw809vix6ytl6BLdAtcGdcuwym7iezK5e0jVKFObGcEeP0p9QxvdEefOwFmXkqqZbQ9l9W75VNc5Z/3KmyH99qHrlZgFT1aXDU4p1rO2hj1+7PpuMajRhQaHFwBwzmXv9TqeNUwScC8lvtSIWS1qydb5lAj2+NHoG7PVdagB+2v4cbQpUFeUZ+9+U1fn0qY0ugR/vWRfsMePXV8lQzdGbAFvctn/b9HSDN9xO8BljR+s1F1INKlABU3rXNjPZ2zY48eur5KhS3RZSesFcaWuxkZnNXNfZSmz4GNldjrU/z6a6KEC9vgx6dMMw6JPhiiR3pPRscePXV8lgxqdmTkzc/n/33oNqYWeXdRcfDSpQAVtLlraVuQJYI8fu75KRmuMyAiTaz7i/HT4SHQ4V1PuqeTSBMWlG+zxG0XfmEPAFihMnx54ds7tAXyvG9R/96U+fuoqq9s83e9pdAR7/Nj1VTL2VOqZyZ3gg5I1Iqwxr9ZRUU6bi1al+TPs8WPXV8nYRgf4mUf+amYPZvYb/IDyE/yknOr4e5u59ydr0w9Q18QZ9vjR6ptiKvXX/BthtpL38Oc9pSltoDW6yOFBFE93Rtjjx66vjjGN7ghgGerqimS5P22gRoC90ngoaut1DuXXjPCwx49C36BG55xbZy+cS22/wsLVa+fcU5i2aQ3g3e57TOPcja7uYu0yfO0eZjFhjx+7vpsM3epaNfdc2XCwJwA/hpUjBqTuYq0qrbOP3x0L9vix67uJRkaISYms11HqWgF7/Fj0jTIyIvY1pBYxOLNObQhgjx+7vpuoRCf6oq6O8Vb9K0V6MzHs8WPXd5PRh4CJTjS/YHZfjT3t2Qxe2q5bREWp623Y4ze5PpXo5sSGt58S6tOPLi3qc2+RjoE9fuz6biKjE31R91SmTm0IYI8fu76byOgEA3WlgXtojOgCe/wm1yejE52JGR6EbqnN1HVMg8IeP3Z9McjoxCjUrPR0zyNiomCPH7s+GZ3og65P5Nob4eDc1OnXkLDHj11fLTI60QdDtshlpJy+ssePXV8tMjoxBnU3wuSpDTns8WPXJ6MTvdDpaRy5UnvKE3Cyx49dXy0yOtEHdR0+mTs6M8AeP3Z9tcjo5sQu6Qr5ydObmcMev0n1yejmBWuFfB8GPHmn0glhjx+7vlpkdKIPhljB/Z5gjx+7vlpkdGIMYsY61t0s9zCwvwr2+LHrk9GJbkQOD+qDJI2OPX7s+mKR0YkxoE9tyGGPH7s+GZ3oTG0Dycqsj9QGB+dSLNWxx49dXxQyOh5imt8ZW137ai2LuVlSNDr2+LHri0JGx0OM0c2xi0XtAsbiJuzxY9cHQEYnutNXKTOmnmeORl8He/zY9UUhoxNd6SXdiKznYUzdu8IeP3Z9UcjoxNDQt8iRwx4/dn0AZHRzgzF161NT3U3DeP5dYY8fu74otK4rD7N4MpZQl26sDs5tezpWirDHj11fFDI6FjZ2wm6QdaI/UG+iCwBPQ3w5/DxjffWuv0cjZI8fuz4AMrq50bxov7H32m12bo0WRjfi8KCMpFJX9vix62uC6ujmxT2WaITojIyOC/bJE4uMbrwH51Iye/b4seuLRkbHRb3R7QZJJ9qmDFOkkimlr+zxY9cXjYxOAEqJReLI6OYHU4lmCoNMaWA/e/zY9UUjo+Mipi8dU+lrCtNJyejY48euLxoZ3fwY4kJIyTyEuEJGNz+m6P1exRRpdEqmzB4/dn3RyOi4iJnba4iLr63RTZFGM6XuXWGPH7u+aGR082OIC4GpgUOI3pHRcREzZ9dQfekaMcHwoIzJz70P2OPHrq8pMjomNhY7g0l/9RgEpinE0Mjo5kmfFbZtj5VSXdkUsMePXV8jZHR8jN0g0dboJqvXmzCt6hP2+LHra4SMbp70eRGqIUIkj4yOj7jREbveFvtta3RT9mdLIa1ijx+7vkbI6OZL9+K9N8s59aHLSKEUyh4/dn2NkNHxMWbLawp1XULUIqPjI64vXT8m1eXJOaVJppC6ssePXV8jZHRsbCym1RUAVj3U0821RJfSeNcpYI9f7/pkdJwMX6rbuRVaXlCJTWc+OuzxY9fXBhkdJ7H1dF1KZF32nboxgL1EUgd7/Nj1NUZGx0nsIjmP2LV++j623I+BuRvd1LDHT0Z3J8SmrkAbw/J1e12e2uw3Cjvs8WPX1xgZHSexDRJAu5JZ48WqC0x+Ixycmzq96gJ7/Nj1NeYvfR5M9EaT9V3X2LklNha3j091uxpdDA8d9l0DeK7ZJrkK8wLs8WPXd4GMjpGNHbFzTfZ4BvCjwbZdL6LaJ/7KorvJXHFwDqi/EeYMe/zY9TVGqSsvTS6kp6g+df2V5uqMsvVN0IC59gEE+OPHrq8xMjpeYruYZLxFbjOHlK9JY4y4hj1+o+uT0fHSpJ4O8HV128pPd+4J/XUpGbQ0tbLomZbnCnv82PU1RkbHS5uL4bnU7HbuGXElvr4Y40Kec6trHezxY9d3hRojWNnYATt3QvNU8xk79wjgI/y9Ro8XzYjDg9qcOz3s8WPX1xaV6Lhp++RcwrdqPaP/kk/M8fqog6k797maIHv82PW1QkbHzVzrqmaX2pDBHj92fVfI6LgZoxk/I/YpPVav+aaNMXOBPX7s+loho2Mmfm66PniP3C7mRugjtak9xsH1tm7GmLDHj11fK2R0/Ixldr19z4jdB+ZodLWwx49dXxkyOn7GuajiS49JpjYjwh4/dn2tkNHx81G/SWeamGlda1hfvd5jboQ5Nkiwx49dXytkdOxs7IDhh8z0mR6P2VI81y4mt2CPH7u+UmR082DoUl32dI0xvLEG06eaurLHj11fK2R082DoBok+j9/LBbyyqPn15pi61sEeP3Z9pcjo5sDGPjBc+nqInbQzcngQ+8wZk8EeP3Z9XZDRzYeh0tcmpbmxS1Cppa/s8WPX1xoZ3XwYKn3NVy73ceH1efHWHWvOk29WwR4/dn2lyOjmgk9f+34CnsJxz3/fJqaPVWqlsD5hjx+7vtbI6OZF3+lr0+ONPRKh9qaa2ary7PFj19caGd28eEW/lcFDpMN9PvFjzjW1llf2+LHrK0VGNyc2dkJ/pbpi2hpDzOpQs0xtRoI9fuz6WiOjmx+vPR2nbLYStskuY26qOQ3sZ48fu77WyOjmhu/z1ofZlRld17S47+FBqRldHezxY9dXiYxunnStq3uP7SRcoK65f5adSUeEPX7s+lojo5sjvq7uR4cj9JX+Ds29lej6hj1+o+nTKmBzZWMf2Ll3AE8N93y9UZqrTIsjm/l7TW1WZseDc3WbzaJ7CXv82PV1RUY3Zzb2Azu3QnwT/AEbe7lxvCOAqs9T68YxNuzxY9fXCaWu8+cBcU/aQ9h2btSlN0nfoD3AHr9R9Mno5s7GTtjYN9yud/sA8BDq9toSU1cyxKSMdTfCLFJX8MePXV8nlLqmwsZeQp3dI/xTcAF/YX6EWYq7MtbqUKnCHj92fZ1wZja1hkFxzhmAvZlRp23u7451Jo6j/T7P3vBCZKhEV0NojYqu7F9Zp/SwDY+Ia3l9R4fhY6ka8Vi/L3v82PV1PYiMrsDBuRV8x8ll7t+LTeAHw2efLwr7H8PnB/gbIypttN/bLVbd4AI9tf2OjoxixLFM9ft2gCp+JbDrA3DnRhdWAl/lXlWm8XVh47Ke4h3+hsjfPEvkfviDc6fcvntMU+rrzByNmOn3ZY8fu76u3JXRHZxb4/LCLz7NT/AXa/bUjuEYXvmnVZYOrXP/rgE8Bx3ZTXEEsO8yI8Svv+E1Vuvhb24xR5ONJcXfV/SDGiNmRtfUC+ebfKzUS4jJmYXROeee4dOFJcLT1exGD//Lfb3R/Te+4/yUz5vDEmczOOKcuhSf+DGV1rH7ZKUE//+KIVk9pF7AdepVJC613n1V2nPGT/rS1tcReqNzzm0RUoICrzFmlzO6H/AVp4vwKt70a5wNI09dipP1WSt7H/AXxglnw7nedmMOGCz1KqOYehW5Tr12bgnm+Elf2vo6Qm10zjf9/xn+fDGzV+fcE4C38N5frabOKbXUVQjRHPYhYF+lDTN7Df/mJ4xk7fsjhCCCvdU1M7Ky4vIawMo5978A/iXmYM4d8l0EMoqpW/Zd+XoClOxXJKvrylNVbL+ogzBbHYO+/HdUmXhWT1l1vDrK6kXKtF9oC/rY4yd9CevrArvRZdxKT7cA/rXuAM4dshs8q3/IBzj77IRzhWu2TdUPe4u8meTrO7Lj5y+KvXOH7Pyy/lnFiyvb/oTLKdDb1NNl9XxFjZmx5o+5dO5wMludZhI/6UtUn9mqU7co9jq6rCHioo7NOfcJf2O+Avg/AP9Wc6j/KqS8Qog7Yi4lukrM7B8A/jG1Dgacc9nMJQDwboWOquHBgdiuOX0TGpeWluu7FxqXstLqR1Hz1AR9j/DaqB6Whd/7OLU+59yj2XkJzaI++BhO0mGdvUT3COAnAJidm5idc3/CF3l/TP3jMhAM5BPXKe9FfEIL9EUsxyDoe4M3DOA8CegWl+MkT/CaRx0TmTPbMrJuOF9dK8Z+UOQymAcz24d4/sR1Pe4RwHcbuRO48/09P+EfYu7G9XiCP4fRO6mzl+jyT/6VmR2cHxmwKH4+JIXvrMVs9DF9W5wvqgPO9R5vzrnjBHqKPONscoDX+gfOMd3jXD/0hvEHfz+ivgV/ndtmkhJxjmdcNtSdcO4Q/gbg2wR6slI54B9e2fWY9cfM9P0E8NvI+gAzo37BPxkMvj/dW/jXAHxOoCHqNUGM/gjfvcq995SL2yK8N7W+7AZ9zsVrFbZZ5LZbT3SNsf6+n/m45OL0lNtmmbs3ViPry753UdD7nNtmst/XzOj70QHAd5xLKU84t/R0We6vKe/gnl11CQCWSwnMp6yv8PH6OZGujEzfq5ntzfeJPMI3MmXpYNYa/LX9iOxx7qH/amYue+E8Rf1r7r2pWQCXfUrN121mJeGx45fpye6Rq2Fi4bPs+hx9iUV6ozOzk5l9g6/TeYDP8b/ZiJXW5uuMHnJ/u1uvsXTlCP2g3MW8YObrkvYA1qGeZyoyffk6m1fkUtRQr7PObz8WwXi/BT3PzrlfzlFORJnF7wO4imf+87EfypmebfgdMwP+uh7deTIKYKQqpwvGLkLO+YVQJJ9aR4muLS7Tq3Xus3xKM1Xq9Zb7/qsqB/gbItP4lWpPFMs1gF9By1suttsJNVWl1p+5bf6YKn4hZnldfxZ+z19lmsd8sTdGsME6pdErvKE9Fj8ws6Nz7gE+fR09ZQi84PYMLFnn06zVdbJqAvMNN9/CjDnP4FhlLItffuB7WadywI8JHzV+5luCH+AfDFWdjQGfXXwfU1sGdfcS0Yxc6/Ch7GLP+jXZdP3o1sB1q7Q7z9pC1Y8upGHZzDn7ou6pcc4ts3iFPpJXfScn0FQ2884B/pqcTJuMTgiRPPSNEUII0RUZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0QojkkdEJIZJHRieESB4ZnRAieWR0YhaEueGSoex8bp1jauc/NpqPTlCTW8P0AD+Z497M3sNEk9kkj9nMz6/ws9xmEzwu4Ge0XRbeR9jn0cy+lt4L6wVnM+BebG9mD7l9s/U59k0nkyw7H/g1F67OMWy/xXn25SX8olCPVd/tnPtlZt/CWqtvYb+v45VtG/6/hJ82Ppu49SW33dVnYYLNn1mMzOzBOfezuH/ZexV6r45Xsu0z/DTxL7f0ljLVPPh66RXzgp/hN7+s37bweX7dhHX+c5wXyF6X7LcNN1a23OIj/LoL67LtS3Rtw7/L8Nricq2ObFnHZd35VJ1j0JQ/n0eclzwsnk+2Zuqf4e+37LvD+4uqbXM6HnP/X936LDu/3DZP2Tnk/y2+d0PvxfFy22W/zwp+7Yltnd6yl9aMEOx8APgMT/C91U8Dv8it4LWEX5FqCWAVSkfAuaS2hzePA/yNll84+2J7y5WIQukjv1jzIuy7hV9v4gnn0tobcivIlZ1PttJ9yTmucLlkYF7fRSprvnT3vWK1t2zdhn3VtnYugWXbvtZ89pSL0Sl8xykcM4vVsuS9Kr2r/PHMr8yG8N4xfN8Lwpojt/SWoTo6QY2ZHc2nl7HLNi5xLpXlzeAYjrHHOdU9onrBoLLtM1aF9z7MryeRmd/azF7Ce4f80oll5xN7js65RTBDwBvIrXq7V/ilG7P0tZawpshPlCywU/LZB/xCRvmFj2A+5XwMOpcl71VxcbxsKcfwgHlGwSjr9BZRiU5QE57w2cI0e+fcp3NucePCztcPbXE2spPlFrcJNwngjWiLc/0YyrYvUGccp4LGr+0rzuc/APxP8RzhzXaNc6nuEd68X4GLBaOreDGzU6gnu7mCXYjH2srrxso+y5eAjwD+GdcPkGPFe2UUj5fniPO5L4Nhrqr0liGjE+y8A3jLlYqOETd4xgnn0tdjYcHnzDw+4Ovm/orzil8obl+4oQ7wqVSVEX4EzUf4urG8yVydD4D/rDjHd+fcW65UtsK5saSuFXYJ4CloOAbDW8HXZV2VjuCNZJkrTebT53XJZ6f8OQL499w5rEJKfiy+d0PvxfGymDnntrkH1xre3I7ZQyyvqRDnC9TqKmZBuMiPRrIcYv4GrPh8Ad8YUHrzlZ1P1TmGEkz+5l/AV9zfrK8M2y2GilnxHMvOuS4Ot47Xq1YZnRDNmdJ4w3eXrt0rypHRCSGS5/8B2gOCkHJP3J0AAAAASUVORK5CYII=" alt="GATA3 motif variants 8" width="60%" />
 <p class="caption">
 Figure 9: <span class="caption-title">GATA3 motif variants 8</span><br>
@@ -1656,7 +1835,11 @@ Figure 9: <span class="caption-title">GATA3 motif variants 8</span><br>
 <div id="mast-7" class="section level3" number="3.2.2">
 <h3><span class="header-section-number">3.2.2</span> MAST</h3>
 <p>First save the streme motif file as TGATAA_streme.txt in individual_meme folder.<br />
-Then use <code>MAST</code> to query this motif from all GATA3 peaks without motif 1234567 (101bp window) to find motif coodinates within peak regions.<br />
+</p>
+<pre class="bash revision"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py GATA3_without_123456_7_streme_output/streme.txt
+cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt</code></pre>
+<p>Then use <code>MAST</code> to query this motif from all GATA3 peaks without motif 1234567 (101bp window) to find motif coodinates within peak regions.<br />
 </p>
 <pre class="bash revision"><code># Mast find peaks with motif8 (Streme)
 mast -mt 0.0005 -hit_list -best individual_meme/TGATAA_streme.txt without_motifs_123456_7.fasta &gt; mast_GATA3_PSWM_in_peaks_round8.txt
@@ -1860,9 +2043,9 @@ head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NN
 <h2><span class="header-section-number">5.1</span> MEME</h2>
 <pre class="bash revision"><code>#!/bin/bash
 #SBATCH --job-name=streme8N.sh    
-#SBATCH -N 8
-#SBATCH -n 8
-#SBATCH -c 24
+#SBATCH -N 12
+#SBATCH -n 12
+#SBATCH -c 16
 #SBATCH -p general
 #SBATCH --qos=general
 #SBATCH --mem=48G
@@ -1926,7 +2109,7 @@ head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NN
 #SBATCH --job-name=streme8N_1.sh    
 #SBATCH -N 2
 #SBATCH -n 2
-#SBATCH -c 64
+#SBATCH -c 32
 #SBATCH -p himem
 #SBATCH --qos=himem
 #SBATCH --mem=48G
@@ -1940,8 +2123,61 @@ export TMPDIR=&quot;${HOME}/temp&quot;
 module load meme/5.4.1
 
 # MEME-classic
-meme -p 128 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta</code></pre>
-<p>The next big step is to figure out how to deal with the previous 8 PSWMs and the expanded regions. Run previous 8 MAST on the expanded region, but first concatenate the PSWM files (from code). The coherence check is to make sure there are no hits in the central ~100 bases.<br />
+meme -p 64 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta</code></pre>
+</div>
+</div>
+<div id="next-step" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Next step</h1>
+<p>Figure out how to deal with the previous 8 PSWMs and the expanded regions.<br />
+First concatenate previous 8 PSWMs into a single file (from code).<br />
+Then run the concatenated 8 PSWMs with <code>MAST</code> on the expanded region.<br />
+Coherence check: For the expanded region–161bp (without swapping central to N), the central (~100bp) region should have no hits for the 8 previous PSWMs.<br />
+</p>
+<div id="cancatenate-files" class="section level2" number="6.1">
+<h2><span class="header-section-number">6.1</span> Cancatenate files</h2>
+<pre class="bash revision"><code>mkdir individual_meme
+#MEME-round1 motif1
+cp ../GATA_ChIP_top10000_motif.meme_output/meme.txt individual_meme/GATAmotif1_meme.txt
+#MEME-round2 motif2
+cp ../GATA3_without_motif1_top10000_output/meme.txt individual_meme/GATAmotif2_meme.txt
+#MEME-round3 motif3
+cp ../GATA3_without_motif12_top10000_output/meme.txt individual_meme/GATAmotif3_meme.txt
+#MEME-round4 motif4
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py ../GATA3_without_motif123_top10000_output_1/meme.txt
+        # output: # AGATNDWNAGATARN_meme.txt ---motif4 (match to GATA3)
+                  # TRTTTRCTYWD_meme.txt ---FOX
+cp AGATNDWNAGATARN_meme.txt individual_meme/GATAmotif4_meme.txt
+
+#MEME-round5 motif5
+python MEME_individual_from_db_python3.py ../GATA3_without_motif1234_top10000_output/meme.txt
+        # BTTATCWGATB_meme.txt    ---motif5 (match to GATA3)
+cp BTTATCWGATB_meme.txt individual_meme/GATAmotif5_meme.txt
+
+#MEME-round6 motif6
+python MEME_individual_from_db_python3.py ../GATA3_without_motif12345_top10000_output/meme.txt
+        # WGATBDHRVAGATAA_meme.txt    ---motif6 (match to GATA3)
+cp WGATBDHRVAGATAA_meme.txt individual_meme/GATAmotif6_meme.txt
+
+
+#STREME-round1 motif7
+python MEME_individual_from_db_python3.py ../GATA3_without_123456_streme_output/streme.txt
+cp 4-AGATAAM_meme.txt individual_meme/AGATAAM_streme.txt
+#STREME-round2 motif8
+python MEME_individual_from_db_python3.py ../GATA3_without_123456_7_streme_output/streme.txt
+cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
+
+#rm *meme.txt #remove the non-used individual motifs</code></pre>
+<pre class="bash revision"><code>ls Exhaustive_MEME_MAST_round1to8/individual_meme</code></pre>
+<pre><code>## AGATAAM_streme.txt
+## GATAmotif1_meme.txt
+## GATAmotif2_meme.txt
+## GATAmotif3_meme.txt
+## GATAmotif4_meme.txt
+## GATAmotif5_meme.txt
+## GATAmotif6_meme.txt
+## TGATAA_streme.txt</code></pre>
+<p>MEME_concatenate_motifs_to_db_python3.py<br />
 </p>
 </div>
 </div>
