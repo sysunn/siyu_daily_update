@@ -29,7 +29,7 @@ def separate_motifs(filename):
                 while next_line:
                     motif_letter_freq += '\n' + next_line
                     next_line = infile.readline().strip()
-            elif line.startswith('Background letter frequencies '):
+            elif line.startswith('Background letter frequencies'):
                 background_letter_freq = line
                 next_line = infile.readline().strip()
                 while next_line:
