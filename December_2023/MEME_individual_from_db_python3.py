@@ -1,79 +1,65 @@
 #! /usr/bin/python
 import sys
-import re
+import getopt
 
-def separate_motifs(filename):
+def matrix(filename):
     with open(filename, 'r') as infile:
-        current_motif_lines = []
-        current_motif_name = None
-        meme_version = ''
-        alphabet = ''
-        strands = ''
-        motif_letter_freq = ''
-        background_letter_freq = ''
-        weight_matrix = ''
-        in_weight_matrix = False
-        
         while True:
             line = infile.readline()
             if not line:
                 break
-            line = line.strip()
-            
+            splitline = line.split()
+            count = 0
             if line.startswith('MEME version'):
-                meme_version = line
-            elif line.startswith('ALPHABET'):
-                alphabet = line
-            elif line.startswith('strands:'):
-                strands = line
-            elif line.startswith('Background letter frequencies'):
-                background_letter_freq = line
-                next_line = infile.readline().strip()
-                while next_line:
-                    background_letter_freq += '\n' + next_line
-                    next_line = infile.readline().strip()
-            elif line.startswith('letter-probability matrix'):
-                weight_matrix = line
-                in_weight_matrix = True
-                next_line = infile.readline().strip()
-                while next_line:
-                    weight_matrix += '\n' + next_line
-                    next_line = infile.readline().strip()
-            elif line.startswith('Stopped because maximum number of motifs'):
-                in_weight_matrix = False
-            
+                meme_line = line
+            if line.startswith('ALPHABET'):
+                alphabet_line = line
+            if line.startswith('strands:'):
+                strands_line = line
+            if line.startswith('Background letter frequencies'):
+                next_line = infile.readline()
+                if next_line:  # Ensure there is a next line
+                	bkg_freq = next_line.strip()          
             if line.startswith('MOTIF'):
-                if current_motif_name:
-                    write_motif_to_file(current_motif_name, current_motif_lines, meme_version, alphabet, strands, background_letter_freq, weight_matrix)
-                current_motif_name = line.split()[1]
-                current_motif_lines = [line]
-                in_weight_matrix = False
-            elif not in_weight_matrix:
-                current_motif_lines.append(line)
-        
-        # Write the last motif
-        if current_motif_name:
-            write_motif_to_file(current_motif_name, current_motif_lines, meme_version, alphabet, strands, background_letter_freq, weight_matrix)
+                if len(splitline) == 3:
+                    outfilename_prefix = splitline[2]
+                else:
+                    outfilename_prefix = splitline[1]
+                with open(outfilename_prefix + '_meme.txt', 'w') as outfile:
+                    outfile.write(meme_line + '\n')
+                    outfile.write(alphabet_line + '\n')
+                    outfile.write(strands_line + '\n')
+                    outfile.write(bkg_freq + '\n')
+                    outfile.write('\n')
+                    outfile.write('{}\t{}\n'.format(splitline[0], splitline[1]))
+            if line.startswith('letter-probability matrix:'):# or ('log-odds matrix'):
+                with open(outfilename_prefix + '_meme.txt', 'a') as outfile:
+                    outfile.write(line)
+                    while True:
+                        next_line = infile.readline()
+                        if len(next_line.split()) != 4:
+                            break
+                        outfile.write(next_line)
+                    outfile.write('\n')
 
-def write_motif_to_file(motif_name, motif_lines, meme_version, alphabet, strands, background_letter_freq, weight_matrix):
-    with open(motif_name + '_meme.txt', 'w') as outfile:
-        outfile.write(meme_version + '\n\n')
-        outfile.write(alphabet + '\n\n')
-        outfile.write(strands + '\n\n')
-        outfile.write(background_letter_freq + '\n\n')
-
-        for line in motif_lines:
-            outfile.write(line + '\n')
-
-        outfile.write('\n\n')
-        outfile.write(weight_matrix + '\n')
-
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python script.py input_filename")
-        sys.exit(1)
-    input_filename = sys.argv[1]
-    separate_motifs(input_filename)
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "hi:", ["help", "input="])
+    except getopt.GetoptError as err:
+        print(err)
+        sys.exit(2)
+    name = False
+    for opt, arg in opts:
+        if opt in ('-i', '--input'):
+            name = arg
+        elif opt in ('-h', '--help'):
+            print('python ~/MEME_individual_from_db.py -i combined_motif_db.txt')
+            sys.exit()
+    if name:
+        matrix(name)
+    else:
+        print('python ~/MEME_individual_from_db.py -i combined_motif_db.txt')
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
+
