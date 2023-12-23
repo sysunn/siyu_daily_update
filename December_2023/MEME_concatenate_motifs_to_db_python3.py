@@ -2,71 +2,69 @@
 import os
 import sys
 
-def extract_headers(file_content):
-    header_keywords = ["MEME version", "ALPHABET", "strands", "Background letter frequencies"]
-    headers = []
-    add_to_headers = False
+def process_files(directory):
+    meme_line = None
+    alphabet_line = None
+    strands_line = None
+    bkg_freq = None
+    motifs = {}
 
-    for i, line in enumerate(file_content):
-        for keyword in header_keywords:
-            if line.startswith(keyword):
-                add_to_headers = True
-                headers.append(line.strip())
-                if i < len(file_content) - 1:  # Check if there's a line below
-                    headers.append(file_content[i + 1].strip())  # Add the line below
-                break
-        if add_to_headers and line.startswith("Background letter frequencies"):
-            break
+    for filename in os.listdir(directory):
+        if filename.endswith(".txt"):
+            filepath = os.path.join(directory, filename)
+            with open(filepath, 'r') as infile:
+                while True:
+                    line = infile.readline()
+                    if not line:
+                        break
+                    splitline = line.split()
+                    if line.startswith('MEME version') and not meme_line:
+                        meme_line = line
+                    if line.startswith('ALPHABET') and not alphabet_line:
+                        alphabet_line = line
+                    if line.startswith('strands:') and not strands_line:
+                        strands_line = line
+                    if line.startswith('Background letter frequencies') and not bkg_freq:
+                        next_line = infile.readline()
+                        if next_line:  # Ensure there is a next line
+                            bkg_freq = next_line.strip()  # Set bkg_freq to the next line's content
+                    if line.startswith('MOTIF'):
+                        motif_name = "MOTIF" + " " + line.strip().split()[1]  # Assuming motif name is in the second word
+                        if motif_name not in motifs:
+                            motifs[motif_name] = []
+                        motifs[motif_name].append(motif_name)
+                        matrix_lines = []
+                        while True:
+                            if line.startswith('letter-probability matrix:'):# or ('log-odds matrix'):
+                                matrix_lines.append(line)
+                                while True:
+                                    next_line = infile.readline()
+                                    if len(next_line.split()) != 4:
+                                        break
+                                    matrix_lines.append(next_line.rstrip())  # Remove trailing newline character
+                                motifs[motif_name].extend(matrix_lines)
+                                break
+                            else:
+                                line = infile.readline()
 
-    return headers
+    # Writing to the output file
+    with open('combined_output_meme.txt', 'w') as outfile:
+        outfile.write(meme_line + '\n')
+        outfile.write(alphabet_line + '\n')
+        outfile.write(strands_line + '\n')
+        outfile.write(bkg_freq + '\n\n')
 
-def extract_motifs(file_content):
-    motifs = []
-    add_to_motifs = False
-
-    for line in file_content:
-        if line.startswith("MOTIF"):
-            add_to_motifs = True
-        if add_to_motifs:
-            if line.startswith("Time"):
-                break
-            motifs.append(line.strip())
-
-    return motifs
-
-def concatenate_files(directory):
-    final_output = []  # Define final_output in the global scope
-    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-    headers_added = False
-
-    for file_name in files:
-        with open(os.path.join(directory, file_name), 'r') as file:
-            content = file.readlines()
-            headers = extract_headers(content)
-            if not headers_added:
-                final_output.extend(headers)
-                final_output.extend(["", ""])
-                headers_added = True
-
-            motifs = extract_motifs(content)
-            final_output.extend(["*" * 80,"", "", "*" * 80])
-            final_output.extend(motifs)
-            final_output.extend(["", ""])
-
-    return final_output  # Return the final_output list
+        for motif_name, lines in motifs.items():
+    		# Join the lines while filtering out empty lines within the motif section
+    		formatted_lines = '\n'.join(line.strip() for line in lines if line.strip())
+    
+   			# Check if there are any non-empty lines before writing to the file
+    		if formatted_lines:
+        		outfile.write(formatted_lines + '\n\n')
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python script.py <directory_path> <output_file_name>")
-        sys.exit(1)
-
-    directory_path = sys.argv[1]
-    output_file_name = sys.argv[2]
-
-    final_output = concatenate_files(directory_path)
-
-    # Adding the final line of asterisks to the end of the final output
-    final_output.append("*" * 80)
-
-    with open(output_file_name, 'w') as final_file:
-        final_file.write('\n'.join(final_output))
+    if len(sys.argv) != 2:
+        print("Usage: python script_name.py directory_path")
+    else:
+        directory_path = sys.argv[1]
+        process_files(directory_path)
