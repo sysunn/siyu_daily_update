@@ -92,6 +92,13 @@ If at a point, we could not find GATA3-like motifs use STREME in central 101bp w
 
 Besides these, I also tried to use the 2-ordered Markov Background Model, and see if this could increase the chance MEME or STREME find GATA3-like de novo motifs. \
 
+## New workflow
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif analysis workflow"}
+library(knitr)
+knitr::include_graphics(".Exhaustive_MEME_MAST_round1to8/workflow_GATA3_motif_analysis.png") 
+```
+
 
 # 3-ordered Markov Background Model
 
@@ -145,7 +152,7 @@ wc -l Exhaustive_MEME_MAST_round1to8/GATA_ChIP_top10000_summit_100window.bed
 head Exhaustive_MEME_MAST_round1to8/GATA_ChIP_top10000_summit_100window.bed
 ```
 
-convert this top 10,000 peak bed file to **.fasta** file with `fastaFromBed`. \
+Convert this top 10,000 peak bed file to **.fasta** file with `fastaFromBed`. \
 ```{r, engine='bash', eval=F, echo=TRUE}
 name=${name}_top10000
 fastaFromBed -fi $genome -bed ${name}_summit_100window.bed -fo ${name}_summit_100window.fasta
@@ -165,7 +172,7 @@ meme -p 48 -oc ${name}_motif.meme_output -nmotifs 1 -objfun classic -csites 2000
 The top enriched de novo motif found in the top 10,000 GATA3 peaks match to GATA3. \
 
 ```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 1"}
-library(knitr)
+#library(knitr)
 knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA_ChIP_top10000_motif.meme_output/logo1.png") 
 ```
 
@@ -207,9 +214,9 @@ fastaFromBed -fi $genome -bed without_motifs_1.bed -fo without_motifs_1.fasta
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
 wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_1.bed
-head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_1.bed
+head -3 Exhaustive_MEME_MAST_round1to8/without_motifs_1.bed
 wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_1.fasta
-head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_1.fasta
+head -6 Exhaustive_MEME_MAST_round1to8/without_motifs_1.fasta
 ```
 
 
@@ -226,9 +233,9 @@ fastaFromBed -fi $genome -bed without_motifs_1_top10000.bed -fo without_motifs_1
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
 wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_1_top10000.bed
-head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_1_top10000.bed
+head -3 Exhaustive_MEME_MAST_round1to8/without_motifs_1_top10000.bed
 wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_1_top10000.fasta
-head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_1_top10000.fasta
+head -6 Exhaustive_MEME_MAST_round1to8/without_motifs_1_top10000.fasta
 ```
 
 Perform **MEME** to find most enriched de novo motif in top 10,000 GATA3 peaks without motif1. \
@@ -390,7 +397,7 @@ First isolate individual memes from the MEME output meme.txt file. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py ../GATA3_without_motif123_top10000_output_1/meme.txt
+python MEME_individual_from_db_python3.py -i GATA3_without_motif123_top10000_output_1/meme.txt
         # output: # AGATNDWNAGATARN_meme.txt ---motif4 (match to GATA3)
                   # TRTTTRCTYWD_meme.txt ---FOX
 
@@ -403,18 +410,21 @@ cp GATA3_without_motif1_top10000_output/meme.txt individual_meme/GATAmotif2_meme
 cp GATA3_without_motif12_top10000_output/meme.txt individual_meme/GATAmotif3_meme.txt
 #MEME-round4 motif4
 cp AGATNDWNAGATARN_meme.txt individual_meme/GATAmotif4_meme.txt
+
+rm *meme.txt
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
 cat Exhaustive_MEME_MAST_round1to8/individual_meme/GATAmotif4_meme.txt
 ```
 
+
 Use `MAST` to query this GATA3-like motif4 from GATA3 peaks without motif123. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
-mast -hit_list -best individual_meme/GATAmotif4_meme.txt without_motifs_123.fasta > mast_GATA3_PSWM_in_peaks_round4.txt
+mast -hit_list -best individual_meme/GATAmotif4_meme.txt without_motifs_123.fasta > mast_GATA3_PSWM_in_peaks_round4.txt #5668
 
-Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round4.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round4.txt #5665
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
@@ -464,15 +474,36 @@ In previous run, we have already found top enriched de novo motif match to facto
 
 Thus, we will search for more motifs (`-nmotifs`) with MEME.
 
+
 ```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme4.sh    
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o streme4.sh_%j.out
+#SBATCH -e streme4.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
 # MEME-classic
-meme -p 64 -oc GATA3_without_motif1234_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1234_top10000.fasta 
-
-#to confirm top motif won't be GATA3
-#meme -p 64 -oc GATA3_without_motif1234_top10000_output_testsingle -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1234_top10000.fasta 
-
-# for finding only one motif, we are getting FOX again. 
+meme -p 96 -oc GATA3_without_motif1234_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1234_top10000.fasta 
 ```
+
+To confirm if use `nmotif==1`, the top motif will be factor not match with GATA3, I am running this top 10,000 peaks with `-nmotif 1` here. \
+```{r, engine='bash', eval=F, echo=TRUE}
+meme -p 96 -oc GATA3_without_motif1234_top10000_output_testsingle -nmotifs 1 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_1234_top10000.fasta 
+```
+
+
+While finding only one motif with MEME, we are getting FOX again. \
 
 The third de novo motif found in top 10,000 peak (exclude the 1234 round GATA motifs) match to GATA3. \
 ```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants 5"}
@@ -486,9 +517,10 @@ First, isolate individual memes from the MEME output meme.txt file. \
 
 ```{r, engine='R', eval=F, echo=TRUE}
 #wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py ../GATA3_without_motif1234_top10000_output/meme.txt
+python MEME_individual_from_db_python3.py -i GATA3_without_motif1234_top10000_output/meme.txt
         # BTTATCWGATB_meme.txt    ---motif5 (match to GATA3)
 cp BTTATCWGATB_meme.txt individual_meme/GATAmotif5_meme.txt
+rm *meme.txt
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
@@ -500,7 +532,7 @@ Use `MAST` to query this GATA3-like motif5 from GATA3 peaks without motif 1234 (
 # Mast find peaks with motif5
 mast -hit_list -best individual_meme/GATAmotif5_meme.txt without_motifs_1234.fasta > mast_GATA3_PSWM_in_peaks_round5.txt
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round5.txt
-wc -l mast_GATA3_PSWM_in_peaks_round5.bed #3564
+wc -l mast_GATA3_PSWM_in_peaks_round5.bed #3564 
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
@@ -547,8 +579,24 @@ head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_12345_top10000.fasta
 Same reason as before, since we have found top enriched de novo motif no longer match to GATA3, we will loosen the `-nmotif` option to 3. \
 
 ```{r, engine='R', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme5.sh    
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme5.sh_%j.out
+#SBATCH -e meme5.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
 # MEME-classic
-meme -p 40 -oc GATA3_without_motif12345_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_12345_top10000.fasta
+meme -p 96 -oc GATA3_without_motif12345_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_12345_top10000.fasta
 ```
 
 The third de novo motif found in top 10,000 peak (exclude the 12345 round GATA motifs) match to GATA3. \
@@ -558,15 +606,17 @@ The third de novo motif found in top 10,000 peak (exclude the 12345 round GATA m
 knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_motif12345_top10000_output/logo3.png") 
 ```
 
+
 ### MAST 
 
 First isolate individual memes from the MEME output meme.txt file, and move the GATA3-like motif to a separate folder. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 #wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py ../GATA3_without_motif12345_top10000_output/meme.txt
+python MEME_individual_from_db_python3.py -i GATA3_without_motif12345_top10000_output/meme.txt
         # WGATBDHRVAGATAA_meme.txt    ---motif6 (match to GATA3)
 cp WGATBDHRVAGATAA_meme.txt individual_meme/GATAmotif6_meme.txt
+rm *meme.txt
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
@@ -624,10 +674,7 @@ fastaFromBed -fi $genome -bed without_motifs_123456_top10000.bed -fo without_mot
 meme -p 40 -oc GATA3_without_motif123456_top10000_output -nmotifs 3 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_top10000.fasta
 ```
 
-
-**At this point, MEME no longer reports de novo motifs that match to GATA3 in central 101bp window.** 
-
-1) further increase number of `-nmotif` we ask MEME to find in central 101bp window; \
+`MEME` **did not** find de novo motif match to GATA3. I further increase number of `-nmotif` we ask MEME to find in central 101bp window, and did not get GATA3-like motifs.  \
 
 **-nmotifs 5**
 ```{r, engine='bash', eval=F, echo=TRUE}
@@ -637,10 +684,8 @@ meme -p 40 -oc GATA3_without_motif123456_top10000_output_test -nmotifs 5 -objfun
 ```
 
 
-2) find motif at the spanned region: substitute the **central 60bp** to **50 Ns**, then increase sequence width to two ends (now we are searching for motifs at 70bp-NNN-70bp regions.) \
-
-In this part, I previously did wrong in substituting the **central 101bp** to **50Ns**, and increased width to 50bp at each end; 101bp at each end; and 200bp at each end. \
-`MEME` **did not** find de novo motif match to GATA3 at the spanned region, so I moved to next step---`STREME`. \
+**At this point, MEME no longer reports de novo motifs that match to GATA3 in central 101bp window.** so I moved to the other software---**`STREME`**. \
+ 
 
 # Exhaustive STREME -MAST for GATA3
 
@@ -666,9 +711,10 @@ knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_123456_s
 
 First, save the STREME-found GATA3-like motif file as `AGATAAM_streme.txt` in `individual_meme` folder. \
 ```{r, engine='bash', eval=F, echo=TRUE}
-#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_123456_streme_output/streme.txt
-cp 4-AGATAAM_meme.txt individual_meme/AGATAAM_streme.txt
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/STREME_individual_from_db_python3.py
+python STREME_individual_from_db_python3.py -i GATA3_without_123456_streme_output/streme.txt
+cp 4-AGATAAM_streme.txt individual_meme/AGATAAM_streme.txt
+rm *streme.txt
 ```
 
 
@@ -722,9 +768,10 @@ knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_123456_7
 ### MAST
 First save the streme motif file as TGATAA_streme.txt in individual_meme folder. \
 ```{r, engine='bash', eval=F, echo=TRUE}
-#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py GATA3_without_123456_7_streme_output/streme.txt
-cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/STREME_individual_from_db_python3.py
+python STREME_individual_from_db_python3.py -i GATA3_without_123456_7_streme_output/streme.txt
+cp 6-TGATAA_streme.txt individual_meme/TGATAA_streme.txt
+rm *streme.txt
 ```
 
 
@@ -850,7 +897,7 @@ streme --o bkgrnd_2mer_GATA3_without_123456_78_streme_output2 --nmotifs 10 --obj
 
 **the top 10 enriched motifs found by STREME do not match GATA3 motifs**. \
 
-# Increase Width
+# Increase Width-161
 
 In our previous analysis, we exhaustively conducted MEME/STREME on the central 100bp window of the peak summit to discover de novo motifs matching GATA3. Having identified 6 motifs using MEME and 2 with STREME, we encountered no further GATA-like de novo motifs. \
 
@@ -859,7 +906,6 @@ At this point, we aim to expand the width to 161 total bases, replacing the cent
 We chose to replace only 81 bases instead of the full 100bp to maintain a 10bp buffer at each end. This approach allows for potential binding sites that partially overlap the edges of the 100bp window to be accounted for.
 
 ```{r, engine='bash', eval=F, echo=TRUE}
-#cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/de_novo_motif
 module load bedtools
 sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
 genome=/home/FCAM/ssun/Genome/hg38.fa
@@ -876,7 +922,47 @@ head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78.bed
 wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow.bed
 head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow.bed
 ```
-Replace the central 81 bp sequences to 50 Ns. \
+
+## MEME on full 161 window
+
+Even though we've conducted multiple exhaustive rounds of MEME/STREME, ensuring thorough exploration for all de novo motifs matching GATA3 within the central 100bp peak region, simply widening the MEME search window might not enhance the probability of discovering potential GATA3 motifs across the extended region. This is because expanding the window could reduce MEME's sensitivity in identifying additional motifs at the edges, given the focus on the central 100bp. \
+
+To increase the chance MEME found new binding sites on edges, we could swap the central sequences to Ns (in later analysis). Still, we want to first confirm that we will not getting more GATA3-like de novo motifs at the full increased window (161bp). \
+
+Perform MEME on top 10,000 peaks (full 161bp extended window). \
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_123456_78_161bpwindow.bed | head -n 10000 > without_motifs_123456_78_161bpwindow_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_123456_78_161bpwindow_top10000.bed -fo without_motifs_123456_78_161bpwindow_top10000.fasta
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme161.sh    
+#SBATCH -N 8
+#SBATCH -n 8
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=30G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme161.sh_%j.out
+#SBATCH -e meme161.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_top10000.fasta
+```
+
+The top 5 enriched motifs do not match to GATA3 while finding in full 161bp window with MEME. \
+
+## MEME-10,000 peaks-on flanking region
+
+As we discussed earlier, we want to increase MEME's sensitivity in finding motifs at spanned region by replacing the central 81 bp sequences to 50 Ns. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 #161window flank with central 81bp substituted with 50 Ns. 
@@ -887,54 +973,7 @@ awk '!/^>/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 41) "NNNNNNNNNN
 head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow.fasta
 head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NNN.fasta
 ```
-## MEME
-```{r, engine='bash', eval=F, echo=TRUE}
-#!/bin/bash
-#SBATCH --job-name=streme8N.sh    
-#SBATCH -N 12
-#SBATCH -n 12
-#SBATCH -c 16
-#SBATCH -p general
-#SBATCH --qos=general
-#SBATCH --mem=48G
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o streme8N.sh_%j.out
-#SBATCH -e streme8N.sh_%j.err
 
-hostname
-export TMPDIR="${HOME}/temp"
-module load meme/5.4.1
-
-# MEME-classic
-meme -p 192 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN.fasta 
-```
-
-## MEME-10,000 peaks
-
-In case the above MEME takes a very long time to run, I am also subsetting top 10,000 peaks to perform MEME. \
-```{r, engine='bash', eval=F, echo=TRUE}
-# select top 10000
-sort -nrk5,5 without_motifs_123456_78_161bpwindow.bed | head -n 10000 > without_motifs_123456_78_161bpwindow_top10000.bed
-fastaFromBed -fi $genome -bed without_motifs_123456_78_161bpwindow_top10000.bed -fo without_motifs_123456_78_161bpwindow_top10000.fasta
-```
-
-```{r, engine='bash', eval=TRUE, echo=TRUE}
-wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_top10000.bed
-head -3 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_top10000.bed
-wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_top10000.fasta
-head -6 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_top10000.fasta
-```
-Replace the central 81 bp sequences to 50 Ns. \
-```{r, engine='bash', eval=F, echo=TRUE}
-#161window flank with central 81bp substituted with 50 Ns. 
-awk '!/^>/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 41) "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN" substr($0, mid + 41); } 1' without_motifs_123456_78_161bpwindow_top10000.fasta > without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
-```
-
-```{r, engine='bash', eval=TRUE, echo=TRUE}
-head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_top10000.fasta
-head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
-```
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
 #SBATCH --job-name=streme8N_1.sh    
@@ -957,65 +996,68 @@ module load meme/5.4.1
 meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta
 ```
 
-To save time and run job in parallel, I will divide this file into two files each with 5k sequences. \
+MEME did not find GATA3-like motifs in the top 10,000 peaks' flanking region as well. \
 
-```{r, engine='bash', eval=F, echo=TRUE}
-head -10000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta > without_motifs_123456_78_161bpwindow_81NNN_top10000_1.fasta
-tail -10000 without_motifs_123456_78_161bpwindow_81NNN_top10000.fasta > without_motifs_123456_78_161bpwindow_81NNN_top10000_2.fasta
-```
+## STREME---full 161 window
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
-#SBATCH --job-name=MEME8N_1.1.sh    
-#SBATCH -N 6
-#SBATCH -n 6
-#SBATCH -c 16
-#SBATCH -p general
-#SBATCH --qos=general
-#SBATCH --mem=35G
+#SBATCH --job-name=streme161.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 32
+#SBATCH -p himem
+#SBATCH --qos=himem
+#SBATCH --mem=128G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o MEME8N_1.sh_%j.out
-#SBATCH -e MEME8N_1.sh_%j.err
+#SBATCH -o streme161.sh_%j.out
+#SBATCH -e streme161.sh_%j.err
 
 hostname
 export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
-# MEME-classic
-meme -p 96 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output_1 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000_1.fasta
-```   
+streme --o GATA3_without_motifs_123456_78_161bpwindow_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 20 --p without_motifs_123456_78_161bpwindow.fasta
+```
 
+STREME did not find GATA3-like motifs using the full 161 window. \
+
+## STREME---flanking region
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
-#SBATCH --job-name=MEME8N_1.2.sh    
-#SBATCH -N 8
-#SBATCH -n 8
-#SBATCH -c 20
-#SBATCH -p general
-#SBATCH --qos=general
-#SBATCH --mem=30G
+#SBATCH --job-name=streme81N.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 32
+#SBATCH -p himem
+#SBATCH --qos=himem
+#SBATCH --mem=128G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o MEME8N_1.2.sh_%j.out
-#SBATCH -e MEME8N_1.2.sh_%j.err
+#SBATCH -o streme81N.sh_%j.out
+#SBATCH -e streme81N.sh_%j.err
 
 hostname
 export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
-# MEME-classic
-meme -p 160 -oc GATA3_without_motifs_123456_78_161bpwindow_81NNN_top10000_meme_output_2 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_161bpwindow_81NNN_top10000_2.fasta
+streme --o GATA3_without_motifs_123456_78_161bpwindow_81NNN_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 20 --p without_motifs_123456_78_161bpwindow_81NNN.fasta
 ```
 
-# Next step
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants at flanking--STREME"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_motifs_123456_78_161bpwindow_81NNN_streme_output/8-WGATDWHATCW.png") 
+```
 
-Figure out how to deal with the previous 8 PSWMs and the expanded regions. \
-First concatenate previous 8 PSWMs into a single file (from code). \
-Then run the concatenated 8 PSWMs with `MAST` on the expanded region. \
-Coherence check: For the expanded region--161bp (without swapping central to N), the central (~100bp) region should have no hits for the 8 previous PSWMs. \
+```{r  out.width = "60%", echo=F, fig.align = "center", fig.cap="GATA3 motif variants at flanking--STREME"}
+#library(knitr)
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/GATA3_without_motifs_123456_78_161bpwindow_81NNN_streme_output/9-GAGATAA.png") 
+```
 
-## Concatenate files
+While running STREME on the flanking region, we got similar motifs out on the spanned region. This indicates that the previous 100bp window is not sufficient for finding all potential binding sites. Thus, we will `MAST` on the extended 161bp window (full) for all 8 motifs we found previously and see how many peaks remains. \
+
+# Concatenate files
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 mkdir individual_meme
@@ -1026,31 +1068,33 @@ cp ../GATA3_without_motif1_top10000_output/meme.txt individual_meme/GATAmotif2_m
 #MEME-round3 motif3
 cp ../GATA3_without_motif12_top10000_output/meme.txt individual_meme/GATAmotif3_meme.txt
 #MEME-round4 motif4
-#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
-python MEME_individual_from_db_python3.py ../GATA3_without_motif123_top10000_output_1/meme.txt
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+
+python MEME_individual_from_db_python3.py -i ../GATA3_without_motif123_top10000_output_1/meme.txt
         # output: # AGATNDWNAGATARN_meme.txt ---motif4 (match to GATA3)
                   # TRTTTRCTYWD_meme.txt ---FOX
 cp AGATNDWNAGATARN_meme.txt individual_meme/GATAmotif4_meme.txt
 
 #MEME-round5 motif5
-python MEME_individual_from_db_python3.py ../GATA3_without_motif1234_top10000_output/meme.txt
+python MEME_individual_from_db_python3.py -i ../GATA3_without_motif1234_top10000_output/meme.txt
         # BTTATCWGATB_meme.txt    ---motif5 (match to GATA3)
 cp BTTATCWGATB_meme.txt individual_meme/GATAmotif5_meme.txt
 
 #MEME-round6 motif6
-python MEME_individual_from_db_python3.py ../GATA3_without_motif12345_top10000_output/meme.txt
+python MEME_individual_from_db_python3.py -i ../GATA3_without_motif12345_top10000_output/meme.txt
         # WGATBDHRVAGATAA_meme.txt    ---motif6 (match to GATA3)
 cp WGATBDHRVAGATAA_meme.txt individual_meme/GATAmotif6_meme.txt
 
 
 #STREME-round1 motif7
-python MEME_individual_from_db_python3.py ../GATA3_without_123456_streme_output/streme.txt
-cp 4-AGATAAM_meme.txt individual_meme/AGATAAM_streme.txt
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/STREME_individual_from_db_python3.py
+python STREME_individual_from_db_python3.py -i ../GATA3_without_123456_streme_output/streme.txt
+cp 4-AGATAAM_streme.txt individual_meme/AGATAAM_streme.txt
 #STREME-round2 motif8
-python MEME_individual_from_db_python3.py ../GATA3_without_123456_7_streme_output/streme.txt
-cp 6-TGATAA_meme.txt individual_meme/TGATAA_streme.txt
+python STREME_individual_from_db_python3.py -i ../GATA3_without_123456_7_streme_output/streme.txt
+cp 6-TGATAA_streme.txt individual_meme/TGATAA_streme.txt
 
-#rm *meme.txt #remove the non-used individual motifs
+rm *.txt #remove the non-used individual motifs
 ```
 
 
@@ -1062,11 +1106,137 @@ This python script will concatenate all files in your directory, with common hea
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_concatenate_motifs_to_db_python3.py
-python MEME_concatenate_motifs_to_db_python3.py individual_meme/ cat_8_motifs.txt
+python MEME_concatenate_motifs_to_db_python3.py individual_meme/ 
 ```
 
 ```{r, engine='bash', eval=TRUE, echo=TRUE}
-head -20 Exhaustive_MEME_MAST_round1to8/cat_8_motifs.txt
+head -20 Exhaustive_MEME_MAST_round1to8/combined_output_meme.txt
+```
+
+## MAST--161bp window
+
+```{r, engine='bash', eval=F, echo=TRUE}
+mast -hit_list -best combined_output_meme.txt without_motifs_123456_78_161bpwindow.fasta > mast_GATA3_PSWM_in_peaks_round9.txt 
+
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/parse_multi_mast_to_coordinates.R
+Rscript parse_multi_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round9.txt 8
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.txt 
+head -5 Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.txt 
+wc -l Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed #6002
+head -5 Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed
+tail -5 Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed
+awk '{print $7}' Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed | sort | uniq
+```
+
+Use `intersectBed` with `-v` option to find peaks (161bp window) without motif 12345678. \
+
+And convert to fasta. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+# From peaks (without motif1, 2, 3, 4, 5, 6, 7, 8) (101bp window), exclude peaks with any of the motifs found in 161bp window
+intersectBed -v -a without_motifs_123456_78_161bpwindow.bed -b mast_GATA3_PSWM_in_peaks_round9.bed > without_motifs_123456_78_161bp_mast.bed #37308 
+fastaFromBed -fi $genome -bed without_motifs_123456_78_161bp_mast.bed -fo without_motifs_123456_78_161bp_mast.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bp_mast.bed
+head -3 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bp_mast.bed
+wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bp_mast.fasta
+head -6 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_161bp_mast.fasta
+```
+
+# Increase Width-181
+
+In the previous analysis, we exhaustively ran MEME/STREME in a 101 bp window and found no GATA3-like motifs. We then extended the window from 101 bp to 161 bp and discovered similar motifs in the flanking region. This indicates that the previous 101 bp window was not large enough to find all possible binding sites of GATA3. \
+
+Now, after using `MAST` on all MEME/STREME found motifs in the 161 bp window, we are extending the width to 181 bp. Our aim is to perform a similar analysis to see if increasing the width to a 181 bp window will enable MEME/STREME to discover more possible binding sites. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+slopBed -b 10 -i without_motifs_123456_78_161bp_mast.bed -g $sizes  | sort -k1,1 -k2,2n > without_motifs_123456_78_181bpwindow.bed
+
+fastaFromBed -fi $genome -bed without_motifs_123456_78_181bpwindow.bed -fo without_motifs_123456_78_181bpwindow.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow.bed
+head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow.bed
+
+wc -l Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow.fasta
+head -5 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow.fasta
+```
+
+## MEME-10,000 peaks on full 181 window
+
+Perform MEME on top 10,000 peaks (full 181bp extended window). \
+```{r, engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_123456_78_181bpwindow.bed | head -n 10000 > without_motifs_123456_78_181bpwindow_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_123456_78_181bpwindow_top10000.bed -fo without_motifs_123456_78_181bpwindow_top10000.fasta
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme181.sh    
+#SBATCH -N 12
+#SBATCH -n 12
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme181.sh_%j.out
+#SBATCH -e meme181.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 144 -oc GATA3_without_motifs_123456_78_181bpwindow_top10000_meme_output -nmotifs 10 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_181bpwindow_top10000.fasta
 ```
 
 
+
+## MEME-10,000 peaks-on flanking region
+
+As we discussed earlier, we want to increase MEME's sensitivity in finding motifs at spanned region by replacing the central 141 bp sequences to 50 Ns. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#181window flank with central 141bp substituted with 50 Ns. 
+awk '!/^>/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 71) "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN" substr($0, mid + 71); } 1' without_motifs_123456_78_181bpwindow_top10000.fasta > without_motifs_123456_78_181bpwindow_top10000_141NNN.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow_top10000.fasta
+head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow_top10000_141NNN.fasta
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme181_N.sh    
+#SBATCH -N 12
+#SBATCH -n 12
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme181_N.sh_%j.out
+#SBATCH -e meme181_N.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+# MEME-classic
+meme -p 144 -oc GATA3_without_motifs_123456_78_181bpwindow_141NNN_top10000_meme_output -nmotifs 10 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_181bpwindow_top10000_141NNN.fasta
+```
