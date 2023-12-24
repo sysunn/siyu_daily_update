@@ -96,7 +96,7 @@ Besides these, I also tried to use the 2-ordered Markov Background Model, and se
 
 ```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif analysis workflow"}
 library(knitr)
-knitr::include_graphics(".Exhaustive_MEME_MAST_round1to8/workflow_GATA3_motif_analysis.png") 
+knitr::include_graphics("./Exhaustive_MEME_MAST_round1to8/workflow_GATA3_motif_analysis.png") 
 ```
 
 
