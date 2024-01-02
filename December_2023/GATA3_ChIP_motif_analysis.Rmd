@@ -1183,24 +1183,24 @@ fastaFromBed -fi $genome -bed without_motifs_123456_78_181bpwindow_top10000.bed 
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
-#SBATCH --job-name=meme181.sh    
-#SBATCH -N 12
-#SBATCH -n 12
-#SBATCH -c 12
+#SBATCH --job-name=meme181_1.sh    
+#SBATCH -N 8
+#SBATCH -n 8
+#SBATCH -c 25
 #SBATCH -p general
 #SBATCH --qos=general
-#SBATCH --mem=40G
+#SBATCH --mem=50G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o meme181.sh_%j.out
-#SBATCH -e meme181.sh_%j.err
+#SBATCH -o meme181_1.sh_%j.out
+#SBATCH -e meme181_1.sh_%j.err
 
 hostname
 export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 # MEME-classic
-meme -p 144 -oc GATA3_without_motifs_123456_78_181bpwindow_top10000_meme_output -nmotifs 10 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_181bpwindow_top10000.fasta
+meme -p 200 -oc GATA3_without_motifs_123456_78_181bpwindow_top10000_meme_output1 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_181bpwindow_top10000.fasta
 ```
 
 
@@ -1221,22 +1221,90 @@ head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow_top1
 
 ```{r, engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
-#SBATCH --job-name=meme181_N.sh    
-#SBATCH -N 12
-#SBATCH -n 12
-#SBATCH -c 12
+#SBATCH --job-name=meme181_N1.sh    
+#SBATCH -N 8
+#SBATCH -n 8
+#SBATCH -c 20
 #SBATCH -p general
 #SBATCH --qos=general
 #SBATCH --mem=40G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o meme181_N.sh_%j.out
-#SBATCH -e meme181_N.sh_%j.err
+#SBATCH -o meme181_N1.sh_%j.out
+#SBATCH -e meme181_N1.sh_%j.err
 
 hostname
 export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 # MEME-classic
-meme -p 144 -oc GATA3_without_motifs_123456_78_181bpwindow_141NNN_top10000_meme_output -nmotifs 10 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_181bpwindow_top10000_141NNN.fasta
+meme -p 160 -oc GATA3_without_motifs_123456_78_181bpwindow_141NNN_top10000_meme_output1 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 100000000 without_motifs_123456_78_181bpwindow_top10000_141NNN.fasta
 ```
+
+No GATA3-like motifs found. \
+
+*While trying to search for `nmotifs 10` with parallel running, sbatch job failure: "Fatal error in PMPI_Allreduce". But use `nmotifs 5` is fine. \
+
+## STREME---full 181bp
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=streme181.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 32
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o streme181.sh_%j.out
+#SBATCH -e streme181.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+streme --o GATA3_without_motifs_123456_78_181bpwindow_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 20 --p without_motifs_123456_78_181bpwindow.fasta
+```
+
+## STREME---flanking
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#181window flank with central 141bp substituted with 50 Ns. 
+awk '!/^>/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 71) "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN" substr($0, mid + 71); } 1' without_motifs_123456_78_181bpwindow.fasta > without_motifs_123456_78_181bpwindow_141NNN.fasta
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow.fasta
+head -8 Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_181bpwindow_141NNN.fasta
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=streme181_N.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 32
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o streme181_N.sh_%j.out
+#SBATCH -e streme181_N.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+streme --o GATA3_without_motifs_123456_78_181bpwindow_141NNN_streme_output --nmotifs 10 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 20 --p without_motifs_123456_78_181bpwindow_141NNN.fasta
+```
+
+
+STREME for the full 181 window and flanking region (central 141bp swapped to N) both found a motif with a "GAT" in it. I am not sure if we should consider it as a possible GATA3 binding site. \
+
+
+<span class="highlighted">If we think this is a potential binding site for GATA3, then the next step would be to further extend the width to 200bp and search for de novo binding sites.</span> \
+<span class="highlighted">If we do not think this is a potential binding site, then we can conclude that: GATA3 can bind **within 161bp** window around peak summit. Among the 96868 peaks called by MACS3, we have **~38.5%** GATA3 peaks do not contain MEME/STREME found GATA3 motifs.</span> \
+<span class="highlighted">Then we can perform the kmer analysis to these 38.5% peaks and see if we can find specific GATA3 binding elements.</span> \
