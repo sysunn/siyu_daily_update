@@ -1302,9 +1302,7 @@ streme --o GATA3_without_motifs_123456_78_181bpwindow_141NNN_streme_output --nmo
 ```
 
 
-STREME for the full 181 window and flanking region (central 141bp swapped to N) both found a motif with a "GAT" in it. I am not sure if we should consider it as a possible GATA3 binding site. \
+STREME for the full 181 window and flanking region (central 141bp swapped to N) both found a motif with a "GAT" in it. But we do not think this is a potential binding site. \
 
-
-<span class="highlighted">If we think this is a potential binding site for GATA3, then the next step would be to further extend the width to 200bp and search for de novo binding sites.</span> \
-<span class="highlighted">If we do not think this is a potential binding site, then we can conclude that: GATA3 can bind **within 161bp** window around peak summit. Among the 96868 peaks called by MACS3, we have **~38.5%** GATA3 peaks do not contain MEME/STREME found GATA3 motifs.</span> \
-<span class="highlighted">Then we can perform the kmer analysis to these 38.5% peaks and see if we can find specific GATA3 binding elements.</span> \
+<span class="highlighted2">At this point, we can conclude that: GATA3 can bind **within 161bp** window around peak summit. Among the 96868 peaks called by MACS3, we have **~38.5%** GATA3 peaks do not contain MEME/STREME found GATA3 motifs.</span> \
+<span class="highlighted2">Then we can perform the kmer analysis to these 38.5% peaks and see if we can find specific GATA3 binding elements.</span> \
