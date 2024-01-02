@@ -101,7 +101,7 @@ Functional check: \
 ## peak with/without motifs intensity
 
 bar plot \
-
+bar plot \
 ## Goal: 
 
 <span class="highlighted2">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT----ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. --This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span> \
