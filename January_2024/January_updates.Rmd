@@ -1,0 +1,126 @@
+---
+title: \sf January_updates
+header-includes:
+- \usepackage{color}
+- \usepackage{float}
+- \DeclareUnicodeCharacter{2212}{-}
+date: "January 02, 2024"
+output:
+  bookdown::html_document2:
+    toc: true
+fontsize: 14pt
+geometry: margin=1in
+---
+
+```{css, echo=FALSE}
+body .main-container {
+  max-width: 1200px !important;
+  width: 1200px !important;
+}
+body {
+  max-width: 1200px !important;
+}
+
+pre {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightcyan;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.revision {
+  background-color: #FFF4F2;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.highlighted
+{
+   color:red;
+}
+
+.highlighted2
+{
+   color:blue;
+}
+```
+
+```{r engine='R', eval=TRUE, echo=F}
+knitr::opts_chunk$set(class.source = "watch-out")
+```
+
+
+# Install required packages
+Install `bigWig` and `latticeExtra` package \
+```{r engine='R', eval=TRUE, echo=T}
+install.packages("devtools", quiet = TRUE)
+library(devtools)
+devtools::install_github('andrelmartins/bigWig',
+              subdir='bigWig')
+library(bigWig)
+
+install.packages("latticeExtra", quiet = TRUE)
+install.packages("DESeq2", quiet = TRUE)
+```
+
+Install `bedtools` \
+```{r engine='bash', eval=F, echo=T}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install bedtools
+```
+
+# Jan 2nd
+
+## follow-up
+
+MACS3 called peaks: \
+-       Is IgG read depth comparable to GATA3 read depth? –YES \
+-       Saturation curve (reads vs. number of peaks) — randomized 90% peaks, 80% peaks, 70% peaks… 10 points, then fit to a regression curve. \
+-       Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?  \
+\
+-       Homology of two GATA3 zinc fingers \
+-       What are the characteristics of the two activation domains? \
+-       What are the characteristics of GATA3 zinc fingers? \
+-       N-zinc sequence, C-zinc sequences, align them. \
+
+Software to search for variable spacing motifs. \
+
+Functional check: \
+-       Given purified zinc fingers and a DNA template, can we observe different spacing/orientations of binding patterns? (cryoEM or in silicon alphafold to find protein-DNA binding) \
+
+## peak with/without motifs intensity
+
+bar plot \
+
+## Goal: 
+
+<span class="highlighted2">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT----ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. --This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span> \
+
+<span class="highlighted2">With this analysis pipeline in hand, the real question we want to ask is:</span> \
+
+<span class="highlighted2">**1) Is our GATA3 ChIP-seq library has predominant enrichment of such 3mer-3mer (GAT-GAT or GAT-ATC) structure compared to any other library that are not ChIPed by GATA3?**</span> \
+
+<span class="highlighted2">**2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?**</span> \
+
+
+
+## GATA3 ChIP peak without MEME/STREME found GATA3 motif
+
+**Background**: we have GATA3 peak that have exhaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~38.5% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have ~20% peaks that MEME/STREME cannot find a GATA3-like motif. \
+
+Generally, we would expect to find binding sequences within the peak region, so that the ChIPed transcription factor (in our case, GATA3) can bind to. This is even more true for peaks with relatively high intensity. \
+
+Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs? \
+
+
+
