@@ -81,27 +81,205 @@ brew install bedtools
 
 # Jan 2nd
 
-## follow-up
+## Summary of Exhaustive MEME/STREM/MAST analysis: 
 
-MACS3 called peaks: \
--       Is IgG read depth comparable to GATA3 read depth? –YES \
--       Saturation curve (reads vs. number of peaks) — randomized 90% peaks, 80% peaks, 70% peaks… 10 points, then fit to a regression curve. \
--       Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?  \
+We begin by using a 101bp window centered around the peak summit and employ MEME/STREME software to identify potential GATA3 binding sites. MEME (classic) identified six GATA3 motifs within the GATA3 ChIP peak set. Subsequent MEME analysis revealed no additional GATA3-matched motifs in peaks without the initial 6 motifs discovered by MEME. \
+On the other hand, STREME detected two GATA3 motifs in peaks where the 6 MEME-found motifs were absent. \
 \
--       Homology of two GATA3 zinc fingers \
--       What are the characteristics of the two activation domains? \
--       What are the characteristics of GATA3 zinc fingers? \
--       N-zinc sequence, C-zinc sequences, align them. \
+We then expanded the search window from 101bp to 161bp and used MEME and STREME to identify potential binding sites within the full 161bp window and the spanned region only (with the central 81bp swapped to N). \
 
-Software to search for variable spacing motifs. \
+With STREME, we discovered two motifs within the spanned region. These motifs resembled the previously found motifs within the 101bp window. As a result, we concluded that the 101bp window was insufficient for capturing all potential GATA3 binding sites. \
 
-Functional check: \
--       Given purified zinc fingers and a DNA template, can we observe different spacing/orientations of binding patterns? (cryoEM or in silicon alphafold to find protein-DNA binding) \
+Subsequently, we employed MAST to locate peaks containing the previous 8 motifs within the 161bp window. For peaks that didn’t overlap with any motif coordinates, we increased their width from 161bp to 181bp and conducted the same MEME/STREME analysis. However, this time, no GATA3-like motifs were found. \
 
-## peak with/without motifs intensity
+In my GATA3 peak set, GATA3 appears to preferentially bind to the central 161bp window. Despite this, MEME/STREME failed to identify GATA3 binding elements in 38.5% of the peaks. \
 
-bar plot \
-bar plot \
+## Motif Occurence in GATA peaks 
+
+**stack bar plot** \
+a bar plot showing peaks contain GATA-like motifs, and other peaks
+```{r, engine='bash', eval=F, echo=TRUE}
+wc -l  *round*.bed
+# 11427 mast_GATA3_PSWM_in_peaks_round1.bed
+#  10460 mast_GATA3_PSWM_in_peaks_round2.bed
+#   5202 mast_GATA3_PSWM_in_peaks_round3.bed
+#   5665 mast_GATA3_PSWM_in_peaks_round4.bed
+#   3564 mast_GATA3_PSWM_in_peaks_round5.bed
+#   4510 mast_GATA3_PSWM_in_peaks_round6.bed
+#   8733 mast_GATA3_PSWM_in_peaks_round7.bed
+#   4452 mast_GATA3_PSWM_in_peaks_round8.bed
+#   6002 mast_GATA3_PSWM_in_peaks_round9.bed --161bp window
+#  60015 total
+
+   
+counts=$(wc -l without_motifs_123456_78_161bp_mast.bed | awk -F"without" '{print $1}')  #37308
+label1='others'
+echo $counts "" $label1 >> bar.csv
+total_counts=$(wc -l /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/GATA_ChIP_summit_100window.bed | awk -F"/" '{print $1}')  #96868
+counts2=$(echo "$total_counts - $counts" | bc)
+label2='GATA3-like'
+echo $counts2 "" $label2 >> bar.csv
+```
+
+```{r, engine='R', eval=F, echo=TRUE}
+module load R/4.1.2 
+R 
+
+library("lattice") 
+bar=read.csv('bar.csv', sep = "", header=F)
+colnames(bar)=c("peak_numbers", "enriched_motifs")
+bar$dum.x="peak number"
+bar$enriched_motif<- factor(bar$enriched_motif, levels = c("GATA3-like","others"))
+
+pdf('240103_peak_number_with_or_without_GATA3_motif_variant.pdf', width=5,height=6)
+my.settings <- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c("red","pink"))(6),colorRampPalette(c("blue","light blue"))(3), "light grey"), border="transparent"),
+  superpose.polygon=list(col=c("red","light grey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(peak_numbers ~ dum.x,         
+         data = bar,
+         groups = enriched_motif,
+         stack = TRUE,
+         auto.key=list(space="right"),
+         #scales = list(x = list(rot = 45)),
+         ylab = "peak set within intensity quantile",
+         xlab = "number of peaks with/without GATA3 motif variant",
+         par.settings = my.settings)
+)
+dev.off()
+
+png('240103_peak_number_with_or_without_GATA3_motif_variant.png')
+my.settings <- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c("red","pink"))(6),colorRampPalette(c("blue","light blue"))(3), "light grey"), border="transparent"),
+  superpose.polygon=list(col=c("red","light grey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(peak_numbers ~ dum.x,         
+         data = bar,
+         groups = enriched_motif,
+         stack = TRUE,
+         auto.key=list(space="right"),
+         #scales = list(x = list(rot = 45)),
+         ylab = "peak set within intensity quantile",
+         xlab = "number of peaks with/without GATA3 motif variant",
+         par.settings = my.settings)
+)
+dev.off()
+```
+
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="percent peaks with or without GATA3 motif variants"}
+library(knitr)
+knitr::include_graphics("./240103_peak_number_with_or_without_GATA3_motif_variant.png") 
+```
+
+**bar plot (group by peak intensity)** \
+The fraction of peaks with MEME-found-motif 123456, as well as STREME-found motif78, in each quantile: \
+```{r, engine='R' ,eval=F, echo=TRUE}
+# quantile file is 1bp summit file, expanded to 161window
+module load R/4.1.2 
+R
+library(bigWig)
+
+for (chip.peak in Sys.glob(file.path("/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/quantile*summits.bed")))  {
+    print(chip.peak)
+    quantile.name = strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], '_summits.bed')[[1]][1]
+    print(quantile.name)
+    chip.peaks=read.table(chip.peak, header=FALSE)
+    chip.peak.161win=center.bed(chip.peaks, upstreamWindow=80, downstreamWindow=80)
+    write.table(chip.peak.161win,file= paste0(quantile.name, '_summits_161window.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+    }
+```
+
+
+```{r, engine='bash' ,eval=F, echo=TRUE}
+module load bedtools
+dir="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/"
+
+# quantile peaks with individual motif
+for i in ${dir}*quantile*161window.bed
+do
+  nm=$(echo $i | awk -F $dir '{print $2}' | awk -F "_summits_161window.bed" '{print $1}')
+  intersectBed -wa -a $i -b ../without_motifs_123456_78_161bp_mast.bed | sort -k1,1 -k2,2n | uniq >${nm}_without_motifs_123456_78_161bp_mast.bed
+done
+
+
+touch quantile.240103.sum.161window.txt
+for i in *quantile*_without_motifs*.bed
+do
+ nm=$(echo $i | awk -F"_without_motifs_123456_78_161bp_mast.bed" '{print $1}')
+ p=$(wc -l $i | awk '{OFS="\t";} {print $1}')
+ totalp=$(wc -l ${dir}${nm}_summits.bed | awk '{OFS="\t";} {print $1}')
+ withoutMotif=$(bc <<< "scale=4 ; $p / $totalp")
+ withMotif=$(bc <<< "scale=4 ; ($totalp- $p) / $totalp")
+ echo $nm "" $withoutMotif "" $withMotif>> quantile.240103.sum.161window.txt
+done
+```
+
+```{r, engine='R' ,eval=F, echo=TRUE}
+module load R/4.1.2 
+R 
+
+library("lattice") 
+library("reshape2")
+
+
+df_sum=read.table('quantile.240103.sum.161window.txt', sep = "", header=FALSE)
+colnames(df_sum)=c("quantile","without_Motif","with_Motif")
+df_sum_long <- df_sum
+
+df_sum_long <- melt(df_sum_long, id = "quantile")
+df_sum_long$variable<- factor(df_sum_long$variable, levels = c("with_Motif", "without_Motif"))
+
+pdf('240103_percent_peaks_withorwithout_GATA3_motif_variant.pdf',width=8,height=5)
+my.settings <- list(
+  superpose.polygon=list(col=c("black", "grey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(value ~ quantile,         
+         data = df_sum_long,
+         groups = variable,
+         stack = TRUE,
+         auto.key=list(space="right"),
+         scales = list(x = list(rot = 45)),
+         ylab = "peak set within intensity quantile",
+         xlab = "fraction of peaks with/without GATA3 motif variant",
+         par.settings = my.settings)
+)
+dev.off()
+
+png('240103_percent_peaks_withorwithout_GATA3_motif_variant.png')
+my.settings <- list(
+  superpose.polygon=list(col=c("black", "grey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(value ~ quantile,         
+         data = df_sum_long,
+         groups = variable,
+         stack = TRUE,
+         auto.key=list(space="right"),
+         scales = list(x = list(rot = 45)),
+         ylab = "peak set within intensity quantile",
+         xlab = "fraction of peaks with/without GATA3 motif variant",
+         par.settings = my.settings)
+)
+dev.off()
+```
+
+
+percent peaks with or without GATA3 motif (variant 1,2,3,4,5,6,7,8,9): \
+```{r  out.width = "100%", out.height="50%", echo=F, fig.align = "center", fig.cap="percent peaks with or without GATA3 motif variants"}
+#library(knitr)
+knitr::include_graphics("./240103_percent_peaks_withorwithout_GATA3_motif_variant.png") 
+```
+
+For peaks in the top quantile intensity (top 5% highest intensity), we have ~16% peaks MEME/STREME are not able to find GATA3 binding elements. \
+
 ## Goal: 
 
 <span class="highlighted2">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT----ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. --This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span> \
@@ -116,11 +294,150 @@ bar plot \
 
 ## GATA3 ChIP peak without MEME/STREME found GATA3 motif
 
-**Background**: we have GATA3 peak that have exhaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~38.5% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have ~20% peaks that MEME/STREME cannot find a GATA3-like motif. \
+**Background**: we have GATA3 peak that have exhaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~38.5% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have ~16% peaks that MEME/STREME cannot find a GATA3-like motif. \
 
 Generally, we would expect to find binding sequences within the peak region, so that the ChIPed transcription factor (in our case, GATA3) can bind to. This is even more true for peaks with relatively high intensity. \
 
 Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs? \
 
+```{r, engine='bash' ,eval=F, echo=TRUE}
+
+```
 
 
+
+# follow-up
+
+## MACS3 called peaks: \
+-       Is IgG read depth comparable to GATA3 read depth? –YES \
+-       Saturation curve (reads vs. number of peaks) — randomized 90% peaks, 80% peaks, 70% peaks… 10 points, then fit to a regression curve. \
+
+
+```{r engine='bash', eval=F, echo=TRUE}
+#! /bin/sh
+#SBATCH --job-name=saturation_curve.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o saturation_curve.sh_%j.out
+#SBATCH -e saturation_curve.sh_%j.err
+hostname
+mkdir temp_macs
+
+module load macs3
+module load samtools/1.12
+
+directory=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+
+# Define subsampling percentages
+subsample_percents=$(seq 10 10 100)
+
+for subsample_percent in $subsample_percents
+do
+    subsample_val=$(echo "scale=2; $subsample_percent / 100" | bc)
+    
+    # Sub-sample treatment BAM files
+    for treatment_file in ${directory}*_GATA_CC*sorted.bam
+    do
+        nm=$(echo $treatment_file | awk -F"/" '{print $NF}' | awk -F"MCF7_dTAGGATA522_" '{print $2}')
+        samtools view -s $subsample_val -b $treatment_file > subsampled_${subsample_val}_${nm}
+    done
+    
+    # Sub-sample control BAM files
+    for control_file in ${directory}*IgG*sorted.bam
+    do
+        name=$(echo $control_file | awk -F"/" '{print $NF}' | awk -F"MCF7_dTAGGATA522_" '{print $2}')
+        samtools view -s $subsample_val -b $control_file > subsampled_${subsample_val}_${name}
+    done
+    
+    # Call peaks using MACS3 with all subsampled treatment and control BAM files
+    treatment_files=$(ls subsampled_${subsample_val}_GATA*.bam | tr '\n' ' ')
+    control_files=$(ls subsampled_${subsample_val}_IgG*.bam | tr '\n' ' ')
+
+    macs3 callpeak --call-summits -t $treatment_files -c $control_files -n GATA_ChIP_subsample_${subsample_val} -g hs -q 0.01 --keep-dup all -f BAMPE --nomodel --tempdir temp_macs
+
+    # Clean up intermediate subsampled files if needed
+    rm subsampled_${subsample_val}_*.bam
+done
+```
+
+```{r engine='R', eval=F, echo=TRUE}
+
+```
+
+
+<!--
+```{r engine='bash', eval=F, echo=TRUE}
+wget https://github.com/samtools/samtools/releases/download/1.12/samtools-1.12.tar.bz2
+tar xvjf samtools-1.12.tar.bz2 
+./configure --prefix=/home/FCAM/ssun/packages/samtools-1.12
+make
+make install
+```
+
+
+```{r engine='R', eval=F, echo=TRUE}
+# saturation_curve.R
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+#! /bin/sh
+#SBATCH --job-name=saturation_curve.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o saturation_curve.sh_%j.out
+#SBATCH -e saturation_curve.sh_%j.err
+
+hostname
+mkdir temp_macs
+
+module load R/4.1.2
+module load macs3
+module load samtools/1.12
+
+directory=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+# GATA_CC against IgG
+Rscript saturation_curve.R ${directory}MCF7_dTAGGATA522_GATA_CC_rep1.sorted.bam, ${directory}MCF7_dTAGGATA522_GATA_CC_rep2.sorted.bam, ${directory}MCF7_dTAGGATA522_GATA_CC_rep3.sorted.bam ${directory}MCF7_dTAGGATA522_IgG_CC_rep1.sorted.bam, ${directory}MCF7_dTAGGATA522_IgG_CC_rep4.sorted.bam, ${directory}MCF7_dTAGGATA522_IgG_CE_rep2.sorted.bam, ${directory}MCF7_dTAGGATA522_IgG_dE_rep3.sorted.bam output_file.txt
+```
+
+plot the saturation curve: \
+```{r engine='R', eval=F, echo=TRUE}
+library(lattice)
+data <- read.table("output_file.txt", header = TRUE, sep = "\t")
+
+# Plot the saturation curve using lattice
+xyplot(peak_count ~ read_depth, data = data,
+       type = c("p", "l"), col = "blue",
+       xlab = "Read Depth", ylab = "Number of Peaks",
+       main = "Saturation Curve for ChIP-seq Data")
+```
+
+-->
+
+
+
+-       Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?  \
+\
+
+## GATA3 structure
+-       Homology of two GATA3 zinc fingers \
+
+-       What are the characteristics of the two activation domains? \
+-       What are the characteristics of GATA3 zinc fingers? \
+-       N-zinc sequence, C-zinc sequences, align them. \
+
+## Software to search for variable spacing motifs. \
+
+## Functional check: \
+-       Given purified zinc fingers and a DNA template, can we observe different spacing/orientations of binding patterns? (cryoEM or in silicon alphafold to find protein-DNA binding) \
