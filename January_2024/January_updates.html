@@ -711,9 +711,20 @@ function toggle_visibility(id1) {
 <li><a href="#install-required-packages" id="toc-install-required-packages"><span class="toc-section-number">1</span> Install required packages</a></li>
 <li><a href="#jan-2nd" id="toc-jan-2nd"><span class="toc-section-number">2</span> Jan 2nd</a>
 <ul>
-<li><a href="#follow-up" id="toc-follow-up"><span class="toc-section-number">2.1</span> follow-up</a></li>
-<li><a href="#peak-withwithout-motifs-intensity" id="toc-peak-withwithout-motifs-intensity"><span class="toc-section-number">2.2</span> peak with/without motifs intensity</a></li>
-<li><a href="#gata3-chip-peak-without-memestreme-found-gata3-motif" id="toc-gata3-chip-peak-without-memestreme-found-gata3-motif"><span class="toc-section-number">2.3</span> GATA3 ChIP peak without MEME/STREME found GATA3 motif</a></li>
+<li><a href="#summary-of-exhaustive-memestremmast-analysis" id="toc-summary-of-exhaustive-memestremmast-analysis"><span class="toc-section-number">2.1</span> Summary of Exhaustive MEME/STREM/MAST analysis:</a></li>
+<li><a href="#motif-occurence-in-gata-peaks" id="toc-motif-occurence-in-gata-peaks"><span class="toc-section-number">2.2</span> Motif Occurence in GATA peaks</a></li>
+<li><a href="#goal" id="toc-goal"><span class="toc-section-number">2.3</span> Goal:</a></li>
+<li><a href="#gata3-chip-peak-without-memestreme-found-gata3-motif" id="toc-gata3-chip-peak-without-memestreme-found-gata3-motif"><span class="toc-section-number">2.4</span> GATA3 ChIP peak without MEME/STREME found GATA3 motif</a></li>
+</ul></li>
+<li><a href="#follow-up" id="toc-follow-up"><span class="toc-section-number">3</span> follow-up</a>
+<ul>
+<li><a href="#macs3-called-peaks" id="toc-macs3-called-peaks"><span class="toc-section-number">3.1</span> MACS3 called peaks:<br />
+</a></li>
+<li><a href="#gata3-structure" id="toc-gata3-structure"><span class="toc-section-number">3.2</span> GATA3 structure</a></li>
+<li><a href="#software-to-search-for-variable-spacing-motifs." id="toc-software-to-search-for-variable-spacing-motifs."><span class="toc-section-number">3.3</span> Software to search for variable spacing motifs.<br />
+</a></li>
+<li><a href="#functional-check" id="toc-functional-check"><span class="toc-section-number">3.4</span> Functional check:<br />
+</a></li>
 </ul></li>
 </ul>
 </div>
@@ -766,7 +777,7 @@ color:blue;
               subdir=&#39;bigWig&#39;)</code></pre>
 <pre><code>## Downloading GitHub repo andrelmartins/bigWig@HEAD</code></pre>
 <pre><code>## ── R CMD build ─────────────────────────────────────────────────────────────────
-## * checking for file ‘/private/tmp/RtmpVZShFX/remotes7392b68db4f/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
+## * checking for file ‘/private/tmp/Rtmp1bYFIA/remotes1664663d8e18/andrelmartins-bigWig-beac5a7/bigWig/DESCRIPTION’ ... OK
 ## * preparing ‘bigWig’:
 ## * checking DESCRIPTION meta-information ... OK
 ## * cleaning src
@@ -790,29 +801,195 @@ brew install bedtools</code></pre>
 </div>
 <div id="jan-2nd" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> Jan 2nd</h1>
-<div id="follow-up" class="section level2" number="2.1">
-<h2><span class="header-section-number">2.1</span> follow-up</h2>
-<p>MACS3 called peaks:<br />
-- Is IgG read depth comparable to GATA3 read depth? –YES<br />
-- Saturation curve (reads vs. number of peaks) — randomized 90% peaks, 80% peaks, 70% peaks… 10 points, then fit to a regression curve.<br />
-- Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?<br />
+<div id="summary-of-exhaustive-memestremmast-analysis" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Summary of Exhaustive MEME/STREM/MAST analysis:</h2>
+<p>We begin by using a 101bp window centered around the peak summit and employ MEME/STREME software to identify potential GATA3 binding sites. MEME (classic) identified six GATA3 motifs within the GATA3 ChIP peak set. Subsequent MEME analysis revealed no additional GATA3-matched motifs in peaks without the initial 6 motifs discovered by MEME.<br />
+On the other hand, STREME detected two GATA3 motifs in peaks where the 6 MEME-found motifs were absent.<br />
 <br />
-- Homology of two GATA3 zinc fingers<br />
-- What are the characteristics of the two activation domains?<br />
-- What are the characteristics of GATA3 zinc fingers?<br />
-- N-zinc sequence, C-zinc sequences, align them.<br />
+We then expanded the search window from 101bp to 161bp and used MEME and STREME to identify potential binding sites within the full 161bp window and the spanned region only (with the central 81bp swapped to N).<br />
 </p>
-<p>Software to search for variable spacing motifs.<br />
+<p>With STREME, we discovered two motifs within the spanned region. These motifs resembled the previously found motifs within the 101bp window. As a result, we concluded that the 101bp window was insufficient for capturing all potential GATA3 binding sites.<br />
 </p>
-<p>Functional check:<br />
-- Given purified zinc fingers and a DNA template, can we observe different spacing/orientations of binding patterns? (cryoEM or in silicon alphafold to find protein-DNA binding)<br />
+<p>Subsequently, we employed MAST to locate peaks containing the previous 8 motifs within the 161bp window. For peaks that didn’t overlap with any motif coordinates, we increased their width from 161bp to 181bp and conducted the same MEME/STREME analysis. However, this time, no GATA3-like motifs were found.<br />
+</p>
+<p>In my GATA3 peak set, GATA3 appears to preferentially bind to the central 161bp window. Despite this, MEME/STREME failed to identify GATA3 binding elements in 38.5% of the peaks.<br />
 </p>
 </div>
-<div id="peak-withwithout-motifs-intensity" class="section level2" number="2.2">
-<h2><span class="header-section-number">2.2</span> peak with/without motifs intensity</h2>
-<p>bar plot<br />
-bar plot<br />
-## Goal:</p>
+<div id="motif-occurence-in-gata-peaks" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Motif Occurence in GATA peaks</h2>
+<p><strong>stack bar plot</strong><br />
+a bar plot showing peaks contain GATA-like motifs, and other peaks</p>
+<pre class="bash watch-out"><code>wc -l  *round*.bed
+# 11427 mast_GATA3_PSWM_in_peaks_round1.bed
+#  10460 mast_GATA3_PSWM_in_peaks_round2.bed
+#   5202 mast_GATA3_PSWM_in_peaks_round3.bed
+#   5665 mast_GATA3_PSWM_in_peaks_round4.bed
+#   3564 mast_GATA3_PSWM_in_peaks_round5.bed
+#   4510 mast_GATA3_PSWM_in_peaks_round6.bed
+#   8733 mast_GATA3_PSWM_in_peaks_round7.bed
+#   4452 mast_GATA3_PSWM_in_peaks_round8.bed
+#   6002 mast_GATA3_PSWM_in_peaks_round9.bed --161bp window
+#  60015 total
+
+   
+counts=$(wc -l without_motifs_123456_78_161bp_mast.bed | awk -F&quot;without&quot; &#39;{print $1}&#39;)  #37308
+label1=&#39;others&#39;
+echo $counts &quot;&quot; $label1 &gt;&gt; bar.csv
+total_counts=$(wc -l /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/GATA_ChIP_summit_100window.bed | awk -F&quot;/&quot; &#39;{print $1}&#39;)  #96868
+counts2=$(echo &quot;$total_counts - $counts&quot; | bc)
+label2=&#39;GATA3-like&#39;
+echo $counts2 &quot;&quot; $label2 &gt;&gt; bar.csv</code></pre>
+<pre class="r watch-out"><code>module load R/4.1.2 
+R 
+
+library(&quot;lattice&quot;) 
+bar=read.csv(&#39;bar.csv&#39;, sep = &quot;&quot;, header=F)
+colnames(bar)=c(&quot;peak_numbers&quot;, &quot;enriched_motifs&quot;)
+bar$dum.x=&quot;peak number&quot;
+bar$enriched_motif&lt;- factor(bar$enriched_motif, levels = c(&quot;GATA3-like&quot;,&quot;others&quot;))
+
+pdf(&#39;240103_peak_number_with_or_without_GATA3_motif_variant.pdf&#39;, width=5,height=6)
+my.settings &lt;- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c(&quot;red&quot;,&quot;pink&quot;))(6),colorRampPalette(c(&quot;blue&quot;,&quot;light blue&quot;))(3), &quot;light grey&quot;), border=&quot;transparent&quot;),
+  superpose.polygon=list(col=c(&quot;red&quot;,&quot;light grey&quot;), border=&quot;transparent&quot;),
+  strip.background=list(col=&quot;grey80&quot;, cex = 0.6),
+  strip.border=list(col=&quot;black&quot;)
+)
+print(barchart(peak_numbers ~ dum.x,         
+         data = bar,
+         groups = enriched_motif,
+         stack = TRUE,
+         auto.key=list(space=&quot;right&quot;),
+         #scales = list(x = list(rot = 45)),
+         ylab = &quot;peak set within intensity quantile&quot;,
+         xlab = &quot;number of peaks with/without GATA3 motif variant&quot;,
+         par.settings = my.settings)
+)
+dev.off()
+
+png(&#39;240103_peak_number_with_or_without_GATA3_motif_variant.png&#39;)
+my.settings &lt;- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c(&quot;red&quot;,&quot;pink&quot;))(6),colorRampPalette(c(&quot;blue&quot;,&quot;light blue&quot;))(3), &quot;light grey&quot;), border=&quot;transparent&quot;),
+  superpose.polygon=list(col=c(&quot;red&quot;,&quot;light grey&quot;), border=&quot;transparent&quot;),
+  strip.background=list(col=&quot;grey80&quot;, cex = 0.6),
+  strip.border=list(col=&quot;black&quot;)
+)
+print(barchart(peak_numbers ~ dum.x,         
+         data = bar,
+         groups = enriched_motif,
+         stack = TRUE,
+         auto.key=list(space=&quot;right&quot;),
+         #scales = list(x = list(rot = 45)),
+         ylab = &quot;peak set within intensity quantile&quot;,
+         xlab = &quot;number of peaks with/without GATA3 motif variant&quot;,
+         par.settings = my.settings)
+)
+dev.off()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-8"></span>
+<img src="data:image/png;base64,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" alt="percent peaks with or without GATA3 motif variants" width="80%" height="80%" />
+<p class="caption">
+Figure 1: <span class="caption-title">percent peaks with or without GATA3 motif variants</span><br>
+</p>
+</div>
+<p><strong>bar plot (group by peak intensity)</strong><br />
+The fraction of peaks with MEME-found-motif 123456, as well as STREME-found motif78, in each quantile:<br />
+</p>
+<pre class="r watch-out"><code># quantile file is 1bp summit file, expanded to 161window
+module load R/4.1.2 
+R
+library(bigWig)
+
+for (chip.peak in Sys.glob(file.path(&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/quantile*summits.bed&quot;)))  {
+    print(chip.peak)
+    quantile.name = strsplit(strsplit(chip.peak, &quot;/&quot;)[[1]][length(strsplit(chip.peak, &quot;/&quot;)[[1]])], &#39;_summits.bed&#39;)[[1]][1]
+    print(quantile.name)
+    chip.peaks=read.table(chip.peak, header=FALSE)
+    chip.peak.161win=center.bed(chip.peaks, upstreamWindow=80, downstreamWindow=80)
+    write.table(chip.peak.161win,file= paste0(quantile.name, &#39;_summits_161window.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+    }</code></pre>
+<pre class="bash watch-out"><code>module load bedtools
+dir=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/&quot;
+
+# quantile peaks with individual motif
+for i in ${dir}*quantile*161window.bed
+do
+  nm=$(echo $i | awk -F $dir &#39;{print $2}&#39; | awk -F &quot;_summits_161window.bed&quot; &#39;{print $1}&#39;)
+  intersectBed -wa -a $i -b ../without_motifs_123456_78_161bp_mast.bed | sort -k1,1 -k2,2n | uniq &gt;${nm}_without_motifs_123456_78_161bp_mast.bed
+done
+
+
+touch quantile.240103.sum.161window.txt
+for i in *quantile*_without_motifs*.bed
+do
+ nm=$(echo $i | awk -F&quot;_without_motifs_123456_78_161bp_mast.bed&quot; &#39;{print $1}&#39;)
+ p=$(wc -l $i | awk &#39;{OFS=&quot;\t&quot;;} {print $1}&#39;)
+ totalp=$(wc -l ${dir}${nm}_summits.bed | awk &#39;{OFS=&quot;\t&quot;;} {print $1}&#39;)
+ withoutMotif=$(bc &lt;&lt;&lt; &quot;scale=4 ; $p / $totalp&quot;)
+ withMotif=$(bc &lt;&lt;&lt; &quot;scale=4 ; ($totalp- $p) / $totalp&quot;)
+ echo $nm &quot;&quot; $withoutMotif &quot;&quot; $withMotif&gt;&gt; quantile.240103.sum.161window.txt
+done</code></pre>
+<pre class="r watch-out"><code>module load R/4.1.2 
+R 
+
+library(&quot;lattice&quot;) 
+library(&quot;reshape2&quot;)
+
+
+df_sum=read.table(&#39;quantile.240103.sum.161window.txt&#39;, sep = &quot;&quot;, header=FALSE)
+colnames(df_sum)=c(&quot;quantile&quot;,&quot;without_Motif&quot;,&quot;with_Motif&quot;)
+df_sum_long &lt;- df_sum
+
+df_sum_long &lt;- melt(df_sum_long, id = &quot;quantile&quot;)
+df_sum_long$variable&lt;- factor(df_sum_long$variable, levels = c(&quot;with_Motif&quot;, &quot;without_Motif&quot;))
+
+pdf(&#39;240103_percent_peaks_withorwithout_GATA3_motif_variant.pdf&#39;,width=8,height=5)
+my.settings &lt;- list(
+  superpose.polygon=list(col=c(&quot;black&quot;, &quot;grey&quot;), border=&quot;transparent&quot;),
+  strip.background=list(col=&quot;grey80&quot;, cex = 0.6),
+  strip.border=list(col=&quot;black&quot;)
+)
+print(barchart(value ~ quantile,         
+         data = df_sum_long,
+         groups = variable,
+         stack = TRUE,
+         auto.key=list(space=&quot;right&quot;),
+         scales = list(x = list(rot = 45)),
+         ylab = &quot;peak set within intensity quantile&quot;,
+         xlab = &quot;fraction of peaks with/without GATA3 motif variant&quot;,
+         par.settings = my.settings)
+)
+dev.off()
+
+png(&#39;240103_percent_peaks_withorwithout_GATA3_motif_variant.png&#39;)
+my.settings &lt;- list(
+  superpose.polygon=list(col=c(&quot;black&quot;, &quot;grey&quot;), border=&quot;transparent&quot;),
+  strip.background=list(col=&quot;grey80&quot;, cex = 0.6),
+  strip.border=list(col=&quot;black&quot;)
+)
+print(barchart(value ~ quantile,         
+         data = df_sum_long,
+         groups = variable,
+         stack = TRUE,
+         auto.key=list(space=&quot;right&quot;),
+         scales = list(x = list(rot = 45)),
+         ylab = &quot;peak set within intensity quantile&quot;,
+         xlab = &quot;fraction of peaks with/without GATA3 motif variant&quot;,
+         par.settings = my.settings)
+)
+dev.off()</code></pre>
+percent peaks with or without GATA3 motif (variant 1,2,3,4,5,6,7,8,9):<br />
+
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-12"></span>
+<img src="data:image/png;base64,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" alt="percent peaks with or without GATA3 motif variants" width="100%" height="50%" />
+<p class="caption">
+Figure 2: <span class="caption-title">percent peaks with or without GATA3 motif variants</span><br>
+</p>
+</div>
+<p>For peaks in the top quantile intensity (top 5% highest intensity), we have ~16% peaks MEME/STREME are not able to find GATA3 binding elements.<br />
+</p>
+</div>
+<div id="goal" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Goal:</h2>
 <p><span class="highlighted2">In previous analysis, we have showed that using a subset of GATA3-peak with known enriched GATA3 motif (GAT—-ATC), we can successfully generate a composite profile with expected GAT to ATC 3mer distribution. –This is answering if we could build a pipeline to successfully demonstrate a known 3mer-3mer structure (two 3mer sites with fixed number of spacing in between).</span><br />
 </p>
 <p><span class="highlighted2">With this analysis pipeline in hand, the real question we want to ask is:</span><br />
@@ -822,14 +999,158 @@ bar plot<br />
 <p><span class="highlighted2"><strong>2) Is this GAT-GAT or GAT-ATC structure more common to be observed than any other 3mer combinations?</strong></span><br />
 </p>
 </div>
-<div id="gata3-chip-peak-without-memestreme-found-gata3-motif" class="section level2" number="2.3">
-<h2><span class="header-section-number">2.3</span> GATA3 ChIP peak without MEME/STREME found GATA3 motif</h2>
-<p><strong>Background</strong>: we have GATA3 peak that have exhaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~38.5% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have ~20% peaks that MEME/STREME cannot find a GATA3-like motif.<br />
+<div id="gata3-chip-peak-without-memestreme-found-gata3-motif" class="section level2" number="2.4">
+<h2><span class="header-section-number">2.4</span> GATA3 ChIP peak without MEME/STREME found GATA3 motif</h2>
+<p><strong>Background</strong>: we have GATA3 peak that have exhaustively searched for GATA3-like motif with MEME/STREME software. However, there are ~38.5% peak failed in finding a GATA3-like motif. Even for peak subset that have relatively high peak intensity (top5%), we still have ~16% peaks that MEME/STREME cannot find a GATA3-like motif.<br />
 </p>
 <p>Generally, we would expect to find binding sequences within the peak region, so that the ChIPed transcription factor (in our case, GATA3) can bind to. This is even more true for peaks with relatively high intensity.<br />
 </p>
 <p>Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs?<br />
 </p>
+<pre class="bash watch-out"><code></code></pre>
+</div>
+</div>
+<div id="follow-up" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> follow-up</h1>
+<div id="macs3-called-peaks" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> MACS3 called peaks:<br />
+</h2>
+<ul>
+<li><pre><code>  Is IgG read depth comparable to GATA3 read depth? –YES \</code></pre></li>
+<li><pre><code>  Saturation curve (reads vs. number of peaks) — randomized 90% peaks, 80% peaks, 70% peaks… 10 points, then fit to a regression curve. \</code></pre></li>
+</ul>
+<pre class="bash watch-out"><code>#! /bin/sh
+#SBATCH --job-name=saturation_curve.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o saturation_curve.sh_%j.out
+#SBATCH -e saturation_curve.sh_%j.err
+hostname
+mkdir temp_macs
+
+module load macs3
+module load samtools/1.12
+
+directory=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+
+# Define subsampling percentages
+subsample_percents=$(seq 10 10 100)
+
+for subsample_percent in $subsample_percents
+do
+    subsample_val=$(echo &quot;scale=2; $subsample_percent / 100&quot; | bc)
+    
+    # Sub-sample treatment BAM files
+    for treatment_file in ${directory}*_GATA_CC*sorted.bam
+    do
+        nm=$(echo $treatment_file | awk -F&quot;/&quot; &#39;{print $NF}&#39; | awk -F&quot;MCF7_dTAGGATA522_&quot; &#39;{print $2}&#39;)
+        samtools view -s $subsample_val -b $treatment_file &gt; subsampled_${subsample_val}_${nm}
+    done
+    
+    # Sub-sample control BAM files
+    for control_file in ${directory}*IgG*sorted.bam
+    do
+        name=$(echo $control_file | awk -F&quot;/&quot; &#39;{print $NF}&#39; | awk -F&quot;MCF7_dTAGGATA522_&quot; &#39;{print $2}&#39;)
+        samtools view -s $subsample_val -b $control_file &gt; subsampled_${subsample_val}_${name}
+    done
+    
+    # Call peaks using MACS3 with all subsampled treatment and control BAM files
+    treatment_files=$(ls subsampled_${subsample_val}_GATA*.bam | tr &#39;\n&#39; &#39; &#39;)
+    control_files=$(ls subsampled_${subsample_val}_IgG*.bam | tr &#39;\n&#39; &#39; &#39;)
+
+    macs3 callpeak --call-summits -t $treatment_files -c $control_files -n GATA_ChIP_subsample_${subsample_val} -g hs -q 0.01 --keep-dup all -f BAMPE --nomodel --tempdir temp_macs
+
+    # Clean up intermediate subsampled files if needed
+    rm subsampled_${subsample_val}_*.bam
+done</code></pre>
+<!--
+
+```{.bash .watch-out}
+wget https://github.com/samtools/samtools/releases/download/1.12/samtools-1.12.tar.bz2
+tar xvjf samtools-1.12.tar.bz2 
+./configure --prefix=/home/FCAM/ssun/packages/samtools-1.12
+make
+make install
+```
+
+
+
+```{.r .watch-out}
+# saturation_curve.R
+```
+
+
+```{.bash .watch-out}
+#! /bin/sh
+#SBATCH --job-name=saturation_curve.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o saturation_curve.sh_%j.out
+#SBATCH -e saturation_curve.sh_%j.err
+
+hostname
+mkdir temp_macs
+
+module load R/4.1.2
+module load macs3
+module load samtools/1.12
+
+directory=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+# GATA_CC against IgG
+Rscript saturation_curve.R ${directory}MCF7_dTAGGATA522_GATA_CC_rep1.sorted.bam, ${directory}MCF7_dTAGGATA522_GATA_CC_rep2.sorted.bam, ${directory}MCF7_dTAGGATA522_GATA_CC_rep3.sorted.bam ${directory}MCF7_dTAGGATA522_IgG_CC_rep1.sorted.bam, ${directory}MCF7_dTAGGATA522_IgG_CC_rep4.sorted.bam, ${directory}MCF7_dTAGGATA522_IgG_CE_rep2.sorted.bam, ${directory}MCF7_dTAGGATA522_IgG_dE_rep3.sorted.bam output_file.txt
+```
+
+plot the saturation curve: \
+
+```{.r .watch-out}
+library(lattice)
+data <- read.table("output_file.txt", header = TRUE, sep = "\t")
+
+# Plot the saturation curve using lattice
+xyplot(peak_count ~ read_depth, data = data,
+       type = c("p", "l"), col = "blue",
+       xlab = "Read Depth", ylab = "Number of Peaks",
+       main = "Saturation Curve for ChIP-seq Data")
+```
+
+-->
+<ul>
+<li><pre><code>  Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?  \</code></pre>
+<br />
+</li>
+</ul>
+</div>
+<div id="gata3-structure" class="section level2" number="3.2">
+<h2><span class="header-section-number">3.2</span> GATA3 structure</h2>
+<ul>
+<li><pre><code>  Homology of two GATA3 zinc fingers \</code></pre></li>
+<li><pre><code>  What are the characteristics of the two activation domains? \</code></pre></li>
+<li><pre><code>  What are the characteristics of GATA3 zinc fingers? \</code></pre></li>
+<li><pre><code>  N-zinc sequence, C-zinc sequences, align them. \</code></pre></li>
+</ul>
+</div>
+<div id="software-to-search-for-variable-spacing-motifs." class="section level2" number="3.3">
+<h2><span class="header-section-number">3.3</span> Software to search for variable spacing motifs.<br />
+</h2>
+</div>
+<div id="functional-check" class="section level2" number="3.4">
+<h2><span class="header-section-number">3.4</span> Functional check:<br />
+</h2>
+<ul>
+<li><pre><code>  Given purified zinc fingers and a DNA template, can we observe different spacing/orientations of binding patterns? (cryoEM or in silicon alphafold to find protein-DNA binding) \</code></pre></li>
+</ul>
 </div>
 </div>
 
