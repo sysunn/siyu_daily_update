@@ -367,9 +367,78 @@ done
 ```
 
 ```{r engine='R', eval=F, echo=TRUE}
+module load R/4.1.2 
+R 
+count_peaks <- function(file_path) {
+  peak_count <- system(paste("wc -l", file_path), intern = TRUE)
+  return(as.numeric(strsplit(peak_count, " ")[[1]][1]))
+}
 
+# Find all summit.bed files
+file_paths <- Sys.glob("/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Saturation_curve/*summits*.bed")
+
+# Initialize an empty data frame
+data <- data.frame(Read_Depth = numeric(0), Peak_Number = numeric(0))
+
+# Read data and count peaks for each file
+for (i in seq_along(file_paths)) {
+  peak_number <- count_peaks(file_paths[i])
+  data <- rbind(data, data.frame(Read_Depth = c(100, seq(10, 90, 10))[i], Peak_Number = peak_number))
+}
+
+# Plot the saturation curve with lattice
+library(lattice)
+pdf('240103_saturation_curve.pdf',width=8,height=5)
+print(xyplot(Peak_Number ~ Read_Depth, data = data, type = c("p", "smooth"), col = "blue"))
+dev.off()
+
+
+# Fit asymptotic regression
+asymptotic_model <- nls(Peak_Number ~ asymptotic_formula(Read_Depth, a, b, c), 
+                        data = data, 
+                        start = list(a = mean(data$Peak_Number), b = 0.1, c = 10))
+# Define the asymptotic formula (replace this with the formula you want to fit)
+asymptotic_formula <- function(x, a, b, c) {
+  a * (1 - exp(-b * x)) + c
+}
+
+# Plot the saturation curve with lattice and add fitted curve
+pdf('240103_saturation_curve2.pdf',width=8,height=5)
+print(xyplot(Peak_Number ~ Read_Depth, 
+             data = data, 
+             type = c("p", "smooth"), 
+             col = "blue",
+             xlim=c(0, 300),
+             ylim=c(0, 150000),
+             xlab="percent read depth (%)",
+            panel = function(x, y, ...) {
+              panel.xyplot(x, y, ...)
+              panel.curve(asymptotic_formula(x, coef(asymptotic_model)["a"], coef(asymptotic_model)["b"], coef(asymptotic_model)["c"]), col = "red", add = TRUE)
+                         })
+)
+dev.off()
+
+
+png('240103_saturation_curve2.png')
+print(xyplot(Peak_Number ~ Read_Depth, 
+             data = data, 
+             type = c("p", "smooth"), 
+             col = "blue",
+             xlim=c(0, 300),
+             ylim=c(0, 150000),
+             xlab="percent read depth (%)",
+            panel = function(x, y, ...) {
+              panel.xyplot(x, y, ...)
+              panel.curve(asymptotic_formula(x, coef(asymptotic_model)["a"], coef(asymptotic_model)["b"], coef(asymptotic_model)["c"]), col = "red", add = TRUE)
+                         })
+)
+dev.off()
 ```
 
+```{r  out.width = "100%", out.height="50%", echo=F, fig.align = "center", fig.cap="saturation curve for GATA3 ChIP-seq peaks"}
+#library(knitr)
+knitr::include_graphics("./240103_saturation_curve2.png") 
+```
 
 <!--
 ```{r engine='bash', eval=F, echo=TRUE}
@@ -432,6 +501,16 @@ xyplot(peak_count ~ read_depth, data = data,
 
 ## GATA3 structure
 -       Homology of two GATA3 zinc fingers \
+Sequence Retrieval from Uniprot P23771 · GATA3_HUMAN \
+zinc finger 1: 263-287: CVNCGATSTPLWRRDGTGHYLCNAC ; zinc finger 2: 317-341: CANCQTTTTTLWRRNANGDPVCNAC \
+NCBI BLAST Alignment: \
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="NCBI blast for the two zinc finger"}
+#library(knitr)
+knitr::include_graphics("./NCBI_Blast.png") 
+```
+
+
 
 -       What are the characteristics of the two activation domains? \
 -       What are the characteristics of GATA3 zinc fingers? \
