@@ -510,7 +510,7 @@ NCBI BLAST Alignment: \
 knitr::include_graphics("./NCBI_Blast.png") 
 ```
 
-
+The two zinc finger of GATA3 have 60% identity. \
 
 -       What are the characteristics of the two activation domains? \
 -       What are the characteristics of GATA3 zinc fingers? \
