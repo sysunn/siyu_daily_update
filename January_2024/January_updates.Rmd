@@ -310,8 +310,57 @@ Our question now became, is MEME/STREME limited in finding binding sequences pat
 
 ## MACS3 called peaks: \
 -       Is IgG read depth comparable to GATA3 read depth? –YES \
--       Saturation curve (reads vs. number of peaks) — randomized 90% peaks, 80% peaks, 70% peaks… 10 points, then fit to a regression curve. \
+```{r engine='bash', eval=F, echo=TRUE}
+#cd GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/read_depth/
+module load R/4.1.2
+R 
+library("lattice") 
+df_GATA=read.csv('GATA_sorted_bam_reads.csv')
+df_IgG=read.csv('IgG_sorted_bam_reads.csv')
 
+df_sum=rbind(df_GATA[1:3,], df_IgG)
+df_sum$supp=c(rep("GATA",3), rep("IgG", 4))
+df_sum$rep=c(rep(c(1,2,3),2 ),4)
+df_sum$supp2=as.factor(paste(df_sum$treatment,df_sum$rep, sep = "_"))
+
+pdf('barplot_sorted_bam_GATA_IgG_reads1.pdf',width=6,height=8)
+print(barchart(aligned_reads~ supp,
+         group=treatment,
+         stack=T,
+         data = df_sum,
+         #auto.key=list(space="right"),
+         scales = list(x = list(rot = 45)),
+         xlab = "libraries",
+         ylab = "post-alignment reads (sorted_bam)",
+))
+dev.off()
+
+pdf('barplot_sorted_bam_GATA_IgG_reads.pdf',width=10,height=8)
+print(barchart(aligned_reads~ supp2|supp,
+         group=treatment,
+         stack=T,
+         data = df_sum,
+         #auto.key=list(space="right"),
+         scales = list(x = list(rot = 45)),
+         xlab = "libraries",
+         ylab = "post-alignment reads (sorted_bam)",
+))
+dev.off()
+```
+
+```{r  out.width = "80%", out.height="50%", echo=F, fig.align = "center", fig.cap="stacked bar plot of GATA3 libraries and IgG libraries"}
+#library(knitr)
+knitr::include_graphics("./barplot_sorted_bam_GATA_IgG_reads1.png") 
+```
+
+The read depth in most libraries between GATA3 and IgG is comparable. However, IgG CC_rep2 exhibits higher read depth due to its sequencing in the second pool, which contains fewer samples. \
+
+-       Saturation curve (reads vs. number of peaks) \
+1) Randomly subset the GATA3 ChIP-seq data from 10% to 100%, with three replicates for each percentage. \
+2) Randomly subset the control IgG ChIP-seq data from 10% to 100%, with four replicates for each percentage. \
+3) Utilize MACS3 with the same parameters used for calling GATA3 peaks previously to detect peaks for each subsetted percentage. \
+4) Count the number of peaks. \
+5) Construct a saturation curve and fit it to an asymptotic regression model. \
 
 ```{r engine='bash', eval=F, echo=TRUE}
 #! /bin/sh
