@@ -300,10 +300,23 @@ Generally, we would expect to find binding sequences within the peak region, so 
 
 Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs? \
 
-```{r, engine='bash' ,eval=F, echo=TRUE}
+## ENCODE DHS in MCF7 cells
 
-```
+Stam_MCF-7_1: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM736581 \
+Stam_MCF-7_2: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM736588 \
 
+GSE29692: "Cells were grown according to the approved ENCODE cell culture protocols. Digital DNaseI was performed by DNaseI digestion of intact nuclei, isolating DNaseI 'double-hit' fragments as described in Sabo et al. (2006), and direct sequencing of fragment ends (which correspond to in vivo DNaseI cleavage sites) using the Solexa platform (36 bp reads). Uniquely mapping high-quality reads were mapped to the genome. DNaseI sensitivity is directly reflected in raw tag density (Raw Signal), which is shown in the track as density of tags mapping within a 150 bp sliding window (at a 20 bp step across the genome). DNaseI sensitive zones (HotSpots) were identified using the HotSpot algorithm described in Sabo et al. (2004). 1.0% false discovery rate thresholds (FDR 0.01) were computed for each cell type by applying the HotSpot algorithm to an equivalent number of random uniquely mapping 36mers. DNaseI hypersensitive sites (DHSs or Peaks) were identified as signal peaks within FDR 1.0% hypersensitive zones using a peak-finding algorithm." \
+
+
+**IMPORTANT** \
+1) Notice that these data are using hg19 genome, we need to use UCSC liftover to convert data to hg38. \
+2) While processing the negative control (DHS regions), we want to remove the 8 motifs first, use same window (161bp) and same mast p value. \
+
+## positive control
+There are 9 GATA3 peak sets each with 1 known enriched GATA3-like motif found by MEME/STREME. \
+
+## local control
+add 200bp to the original peak summit, use this new locus as "control summit" to look for 1st and 2nd closest GAT. \
 
 
 # follow-up
@@ -546,10 +559,10 @@ xyplot(peak_count ~ read_depth, data = data,
 
 
 -       Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?  \
-\
+
 
 ## GATA3 structure
--       Homology of two GATA3 zinc fingers \
+-       Homology of two GATA3 zinc fingers -N-zinc sequence, C-zinc sequences, align them. \
 Sequence Retrieval from Uniprot P23771 · GATA3_HUMAN \
 zinc finger 1: 263-287: CVNCGATSTPLWRRDGTGHYLCNAC ; zinc finger 2: 317-341: CANCQTTTTTLWRRNANGDPVCNAC \
 NCBI BLAST Alignment: \
@@ -563,7 +576,6 @@ The two zinc finger of GATA3 have 60% identity. \
 
 -       What are the characteristics of the two activation domains? \
 -       What are the characteristics of GATA3 zinc fingers? \
--       N-zinc sequence, C-zinc sequences, align them. \
 
 ## Software to search for variable spacing motifs. \
 
