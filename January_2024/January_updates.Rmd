@@ -595,6 +595,206 @@ mast -hit_list -best combined_output_meme.txt MCF7DHS_Rep2_161bp_without_motifs_
 Mast the concatenated file against the remaining regions do not give overlapped regions. \
 
 
+
+## Independent control -- remove GATA3 peak regions from the DHS regions
+
+To make an independent control, we can remove all overlapped GATA3 ChIP-seq peak regions from the DHS regions. Then we will MAST against the remaining DHS regions, and see what is the random odds we could get GATA3 bindin region. \
+```{r, engine='bash' ,eval=F, echo=TRUE}
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/
+
+slopBed -b 80 -i ${dir}GATA_ChIP_summits_final.bed -g $sizes  | sort -k1,1 -k2,2n > GATA_ChIP_summit_161window.bed
+
+#remove overlapped GATA3 peak regions from DHS regions
+intersectBed -v -a MCF7_hg38_Encode_DHS_Rep1_161bp_peak.bed -b GATA_ChIP_summit_161window.bed > MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.bed
+intersectBed -v -a MCF7_hg38_Encode_DHS_Rep2_161bp_peak.bed -b GATA_ChIP_summit_161window.bed > MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.bed
+```
+
+```{r, engine='bash' ,eval=F, echo=TRUE}
+wc -l MCF7_hg38_Encode_DHS_Rep1_161bp_peak.bed #126690
+wc -l MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.bed #84362
+wc -l MCF7_hg38_Encode_DHS_Rep2_161bp_peak.bed #173226
+wc -l MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.bed #131896
+```
+
+convert to fasta. \
+```{r, engine='bash' ,eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+fastaFromBed -fi $genome -bed MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.bed -fo MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.fasta
+fastaFromBed -fi $genome -bed MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.bed -fo MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.fasta
+```
+
+```{r engine='bash', eval=T, echo=TRUE}
+head -3 MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.bed
+head -6 MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.fasta
+head -3 MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.bed
+head -6 MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.fasta
+```
+
+MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.fasta \
+
+MEME (`mast` uses default p-value: 0.0001) \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/individual_meme/
+
+#round1
+mast -hit_list -best ${dir}GATAmotif1_meme.txt MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round1.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round1.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round1.bed #1739
+intersectBed -v -a MCF7_hg38_Encode_DHS_Rep1_161bp_noGATA_peak.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round1.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_1.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_1.bed #82623
+
+#round2
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_1.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_1.fasta
+mast -hit_list -best ${dir}GATAmotif2_meme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_1.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round2.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round2.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round2.bed #1517
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_1.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round2.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_12.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_12.bed #81106
+
+#round3
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_12.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_12.fasta
+mast -hit_list -best ${dir}GATAmotif3_meme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_12.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round3.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round3.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round3.bed #802
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_12.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round3.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_123.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_123.bed #80304
+
+#round4
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_123.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_123.fasta
+mast -hit_list -best ${dir}GATAmotif4_meme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_123.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round4.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round4.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round4.bed #1479
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_123.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round4.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_1234.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_1234.bed #78825
+
+#round5
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_1234.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_1234.fasta
+mast -hit_list -best ${dir}GATAmotif5_meme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_1234.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round5.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round5.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round5.bed #1219
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_1234.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round5.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_12345.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_12345.bed #77606
+
+
+#round6
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_12345.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_12345.fasta
+mast -hit_list -best ${dir}GATAmotif6_meme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_12345.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round6.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round6.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round6.bed #1239
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_12345.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round6.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456.bed #76367
+```
+
+STREME (`mast` uses p-value of 0.0005) \
+```{r engine='bash', eval=F, echo=TRUE}
+#round7
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456.fasta
+mast -mt 0.0005 -hit_list -best ${dir}AGATAAM_streme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round7.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round7.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round7.bed #4663
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round7.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_7.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_7.bed #71704
+
+
+#round8
+fastaFromBed -fi $genome -bed MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_7.bed -fo MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_7.fasta
+mast -mt 0.0005 -hit_list -best ${dir}TGATAA_streme.txt MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_7.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round8.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round8.txt 
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round8.bed #2585
+intersectBed -v -a MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep1_noGATA_round8.bed > MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed
+wc -l MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed  #69119
+
+```
+
+
+MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.fasta \
+
+MEME (`mast` uses default p-value: 0.0001) \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/individual_meme/
+
+#round1
+mast -hit_list -best ${dir}GATAmotif1_meme.txt MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round1.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round1.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round1.bed #1976
+intersectBed -v -a MCF7_hg38_Encode_DHS_Rep2_161bp_noGATA_peak.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round1.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_1.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_1.bed #129920
+
+#round2
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_1.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_1.fasta
+mast -hit_list -best ${dir}GATAmotif2_meme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_1.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round2.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round2.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round2.bed #1556
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_1.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round2.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_12.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_12.bed #128364
+
+#round3
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_12.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_12.fasta
+mast -hit_list -best ${dir}GATAmotif3_meme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_12.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round3.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round3.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round3.bed #818
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_12.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round3.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_123.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_123.bed #127546
+
+#round4
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_123.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_123.fasta
+mast -hit_list -best ${dir}GATAmotif4_meme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_123.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round4.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round4.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round4.bed #1688
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_123.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round4.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_1234.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_1234.bed #125858
+
+#round5
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_1234.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_1234.fasta
+mast -hit_list -best ${dir}GATAmotif5_meme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_1234.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round5.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round5.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round5.bed #1385
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_1234.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round5.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_12345.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_12345.bed #124473
+
+
+#round6
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_12345.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_12345.fasta
+mast -hit_list -best ${dir}GATAmotif6_meme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_12345.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round6.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round6.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round6.bed #1443
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_12345.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round6.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456.bed #123030
+```
+
+STREME (`mast` uses p-value of 0.0005) \
+```{r engine='bash', eval=F, echo=TRUE}
+#round7
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456.fasta
+mast -mt 0.0005 -hit_list -best ${dir}AGATAAM_streme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round7.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round7.txt
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round7.bed #5859
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round7.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_7.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_7.bed #117171
+
+
+#round8
+fastaFromBed -fi $genome -bed MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_7.bed -fo MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_7.fasta
+mast -mt 0.0005 -hit_list -best ${dir}TGATAA_streme.txt MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_7.fasta > mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round8.txt 
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round8.txt 
+wc -l mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round8.bed #3397
+intersectBed -v -a MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_MCF7_DHS_Rep2_noGATA_round8.bed > MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed
+wc -l MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed  #113774
+
+```
+
 ### bar plot
 
 **bar plot (group by peak intensity)** \
@@ -622,17 +822,18 @@ done
 ```
 
 ```{r, engine='bash' ,eval=F, echo=TRUE}
-#MCF7_hg38_Encode_DHS_Rep1_161bp_peak.bed
-#MCF7_hg38_Encode_DHS_Rep2_161bp_peak.bed
+#MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed
+#MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed
 
-for i in MCF7*_161bp_peak.bed
+for i in MCF7*_161bp_noGATA_without_motifs_123456_78.bed
 do
- nm=$(echo $i | awk -F"_161bp_peak.bed" '{print $1}')
+ nm=$(echo $i | awk -F"_161bp_noGATA_without_motifs_123456_78.bed" '{print $1}')
+ rep=$(echo $i | awk -F"_161bp_noGATA_without_motifs_123456_78.bed" '{print $1}' | awk -F"MCF7DHS_" '{print $2}')
  p=$(wc -l $i | awk '{OFS="\t";} {print $1}')
- totalp=$(wc -l $i | awk '{OFS="\t";} {print $1}')
+ totalp=$(wc -l MCF7_hg38_Encode_DHS_${rep}_161bp_noGATA_peak.bed | awk '{OFS="\t";} {print $1}')
  withoutMotif=$(bc <<< "scale=4 ; $p / $totalp")
  withMotif=$(bc <<< "scale=4 ; ($totalp- $p) / $totalp")
- echo "${nm}_GATA3_removed" "" $withoutMotif "" $withMotif>> quantile.240103.sum.161window.txt
+ echo "${nm}_noGATA" "" $withoutMotif "" $withMotif>> quantile.240103.sum.161window.txt
 done
 ```
 
@@ -673,7 +874,7 @@ dev.off()
 ```
 
 
-percent peaks with or without GATA3 motif (variant 1,2,3,4,5,6,7,8,9): \
+percent peaks with or without GATA3 motif (variant 1,2,3,4,5,6,7,8): \
 ```{r  out.width = "100%", out.height="50%", echo=F, fig.align = "center", fig.cap="percent peaks with or without GATA3 motif variants"}
 #library(knitr)
 knitr::include_graphics("./240105_percent_peaks_withorwithout_GATA3_motif_variant.png") 
@@ -681,8 +882,24 @@ knitr::include_graphics("./240105_percent_peaks_withorwithout_GATA3_motif_varian
 
 For peaks in the top quantile intensity (top 5% highest intensity), we have ~16% peaks MEME/STREME are not able to find GATA3 binding elements. \
 
-The MCF7 DHS regions show a 27% overlap with GATA3 motifs in the first replicate and a 19% overlap in the second replicate. Among the GATA3 peaks in the lowest intensity quantile, over 45% of the peaks contain GATA3 binding elements as identified by MEME/STREME. Consequently, we can infer that even within the GATA3 peaks falling within the lowest quantile, there are significant and meaningful binding sites for GATA3. \
+We have added full DHS control and an independent DHS control. \
 
+**Analysis steps**: \
+1) Retrieved MCF7 DHS data (rep1 & rep2) from GSE29692 and used UCSC liftover to convert the data from hg19 to hg38. \
+2) Modified the DHS regions to 161bp windows. \
+3) Full DHS control: Applied the same MAST stringency to eliminate regions that overlapped with the 8 MEME/STREME de novo GATA3-like motifs previously identified in GATA3 ChIP peaks. \
+4) DHS regions removed GATA3 peak regions: use intersectBed to remove overlapped GATA3 ChIP-seq peak regions from the DHS regions, then applied the same MAST stringency to eliminate regions that overlapped with the 8 MEME/STREME de novo GATA3-like motifs previously identified in GATA3 ChIP peaks.  \
+5) Coherence check: Employed MAST on the concatenated motif database against the regions with removed GATA3 motifs —no further regions were found. \
+6) Counted the regions with and without GATA3 motifs and added them to the bar plot.
+
+**Conclusion**: \
+The left four bars are the MCF7 DHS controls. From left to right, they are full rep1 DHS regions, rep1 DHS regions that removed overlapped GATA3 ChIP peak regions, full rep2 DHS regions and rep2 DHS regions that removed overlapped GATA3 ChIPpeak regions. \
+Among the GATA3 peaks in the lowest intensity quantile (quantile 0.05), over 45% of the peaks contain GATA3 binding elements as identified by MEME/STREME. \
+The full DHS regions show a 27% overlap with GATA3 motifs in the 1st replicate and a 19% overlap in the 2nd replicate. \
+The DHS regions removed overlapped GATA3 peak regions has 18% (rep1) and 13.7% (rep2) peaks with GATA3 motifs.  \
+
+This indicates that randomly we would expect a 14~18% regions has GATA3 motifs found. And GATA3 binding is more specific to regions within the genome (represented by GATA3 ChIP-seq peaks) rather than being uniformly distributed across all accessible DNA regions (represented by the DHS regions).   \
+Consequently, we can infer that even within the GATA3 peaks falling within the lowest quantile, there are significant and meaningful binding sites for GATA3. \
 
 
 ## GATA3 ChIP peak without MEME/STREME found GATA3 motif
@@ -704,6 +921,7 @@ Since now we know that GATA3 is likely to bind in an 161bp window around summit,
 1) get all peaks without the 8 MEME/STREME motifs. Parse the peaks to 4 quantile based on peak intensity (use deseq2). \
 2) for each quantile, as well as the two negative control (MCF7 DHS rep1, rep2), get the closest GAT to peak summit. \
 3) find the second closest GAT. \
+Make sure that the we want to use the relative distance between the two zinc fingers. \
 
 
 ## positive control
