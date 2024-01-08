@@ -2185,7 +2185,7 @@ We decided to not use the CTCF ChIP peak as the negative control because it will
 
 -->
 
-# goals and plans
+# Goals and plans
 
 **Goals**: \
 
@@ -2342,7 +2342,7 @@ write.table(localctrl.200.distance.quantile0.2,file= 'localctrl.200.distance.qua
 save.image('231218_GATA3_ChIP_clsestbed.Rdata') 
 ```
 
-### preopare data
+### prepare data
 
 **negative control 1** \
 In previous analysis, we have used union DHS regions as negative control, and have saved the 1st closest GAT information in file "ctrl.distance.bed". \
