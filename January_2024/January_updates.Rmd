@@ -911,21 +911,777 @@ Generally, we would expect to find binding sequences within the peak region, so 
 Our question now became, is MEME/STREME limited in finding binding sequences patterned like GATA3 (that has fixed spacings between two 3mer)? Can we find the 3mer-3mer sequences in GATA3 peaks that do not contain the MEME/STREME found GATA3-like motifs? \
 
 
-## negative control
+## Process the negative control
 ### MCF7 DHS
+There are four DHS negative controls: two reps of full MCF7 DHS regions (refer as "full DHS control"), two reps of MCF7 DHS regions without GATA3 ChIP peak regions (From here, I will refer this sets of control as "independent DHS control"). \
+All DHS negative controls are removed of the 8 GATA3-like motifs, because we want to compare them to the GATA3 peaks that MEME/STREME failed to find GATA3-like de novo motifs.  \
 
+- "full DHS control" \
+```{r, engine='bash' ,eval=F, echo=TRUE}
+MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed  #92388
+MCF7DHS_Rep2_161bp_without_motifs_123456_78.bed  #139899
+```
+
+
+- "independent DHS control"
+```{r, engine='bash' ,eval=F, echo=TRUE}
+MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed  #69119
+MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed  #113774
+```
+
+<!--
 ### local control
 
 Since now we know that GATA3 is likely to bind in an 161bp window around summit, we can add 250~300bp to the original peak summit, use this new locus as "control summit" to look for 1st and 2nd closest GAT. \
+-->
 
-1) get all peaks without the 8 MEME/STREME motifs. Parse the peaks to 4 quantile based on peak intensity (use deseq2). \
+## Process the positive control
+There are 8 GATA3-like motifs found by MEME/STREME. Among them, 5 of them have GATA3 binding motifs that are formed by two GAT (or ATC) 3mer and various spacings. \
+
+I will utilize `MAST` against the 161bp window peaks for all 8 motifs (the concatenated database file) to identify motif coordinates corresponding to each motif. Subsequently, I'll employ `intersectBed` to isolate the peak sets containing the best motif within the 161bp window. The peak sets characterized by the presence of the specific motif structures that we are insterested in will serve as positive controls. \
+
+```{r, engine='bash' , class.source = "revision", eval=F, echo=TRUE}
+#GATA_ChIP_summit_161window.bed #the 161bp window around peak summit from the full GATA3 peak
+module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/
+dir2=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/
+
+fastaFromBed -fi $genome -bed ${dir}GATA_ChIP_summit_161window.bed -fo GATA_ChIP_summit_161window.fasta
+
+
+mast -hit_list -best ${dir2}combined_output_meme.txt GATA_ChIP_summit_161window.fasta > mast_GATA3_PSWM_in_peaks_161win.txt 
+
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/parse_multi_mast_to_coordinates.R
+Rscript parse_multi_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_161win.txt  8
+```
+
+```{r, engine='bash' , class.source = "revision", eval=TRUE, echo=TRUE}
+wc -l mast_GATA3_PSWM_in_peaks_161win.bed
+head -3 mast_GATA3_PSWM_in_peaks_161win.bed
+tail -3 mast_GATA3_PSWM_in_peaks_161win.bed
+awk '{print > ("mast_GATA3_PSWM_in_peak_161win_motif_" $7 ".bed")}' mast_GATA3_PSWM_in_peaks_161win.bed
+ls mast_GATA3_PSWM_in_peak_161win_motif*.bed
+```
+
+
+
+- round1 motif: GAT---ATC \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+intersectBed -wa -a ${dir}GATA_ChIP_summit_161window.bed -b mast_GATA3_PSWM_in_peak_161win_motif_1.bed | sort -k1,1 -k2,2n | uniq > GATA3_peak_161win_with_motif_1.bed
+wc -l GATA3_peak_161win_with_motif_1.bed # 7431 
+head -5 GATA3_peak_161win_with_motif_1.bed
+#chr1	1504941	1505102	GATA_ChIP_peak_56	16.8938
+#chr1	1883513	1883674	GATA_ChIP_peak_76	36.5894
+#chr1	5603376	5603537	GATA_ChIP_peak_106	2.64066
+#chr1	6795832	6795993	GATA_ChIP_peak_132	646.195
+#chr1	7549498	7549659	GATA_ChIP_peak_153	33.955
+```
+
+- round2 motif: GAT----ATC \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+intersectBed -wa -a ${dir}GATA_ChIP_summit_161window.bed -b mast_GATA3_PSWM_in_peak_161win_motif_2.bed | sort -k1,1 -k2,2n | uniq > GATA3_peak_161win_with_motif_2.bed
+wc -l GATA3_peak_161win_with_motif_2.bed #9352 
+head -5 GATA3_peak_161win_with_motif_2.bed
+#chr1	917454	917615	GATA_ChIP_peak_32	75.0238
+#chr1	6719989	6720150	GATA_ChIP_peak_129	10.6294
+#chr1	6800848	6801009	GATA_ChIP_peak_133	261.961
+#chr1	6959568	6959729	GATA_ChIP_peak_137	253.515
+#chr1	7266109	7266270	GATA_ChIP_peak_145	33.955
+```
+- round4 motif: GAT-----GAT \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+intersectBed -wa -a ${dir}GATA_ChIP_summit_161window.bed -b mast_GATA3_PSWM_in_peak_161win_motif_4.bed | sort -k1,1 -k2,2n | uniq > GATA3_peak_161win_with_motif_4.bed
+wc -l GATA3_peak_161win_with_motif_4.bed # 4815
+head -5 GATA3_peak_161win_with_motif_4.bed
+#chr1	869417	869578	GATA_ChIP_peak_30	3.78065
+#chr1	3186480	3186641	GATA_ChIP_peak_86	15.1046
+#chr1	3717401	3717562	GATA_ChIP_peak_94	21.5896
+#chr1	8626522	8626683	GATA_ChIP_peak_206	126.582
+#chr1	8897599	8897760	GATA_ChIP_peak_229	33.955
+```
+- round5 motif: ATC-GAT \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+intersectBed -wa -a ${dir}GATA_ChIP_summit_161window.bed -b mast_GATA3_PSWM_in_peak_161win_motif_5.bed | sort -k1,1 -k2,2n | uniq > GATA3_peak_161win_with_motif_5.bed
+wc -l GATA3_peak_161win_with_motif_5.bed # 9180
+head -5 GATA3_peak_161win_with_motif_5.bed
+#chr1	869417	869578	GATA_ChIP_peak_30	3.78065
+#chr1	917454	917615	GATA_ChIP_peak_32	75.0238
+#chr1	1859356	1859517	GATA_ChIP_peak_75b	62.1909
+#chr1	3926997	3927158	GATA_ChIP_peak_98	14.2308
+#chr1	4659185	4659346	GATA_ChIP_peak_102	54.7665
+```
+
+GATA3_peak_161win_with_motif_1.bed \
+GATA3_peak_161win_with_motif_2.bed \
+GATA3_peak_161win_with_motif_4.bed \
+GATA3_peak_161win_with_motif_5.bed \
+
+
+# GAT-GAT/ATC 3mer analaysis
+
+1) get all peaks (161bp window) without the 8 MEME/STREME motifs. Parse the peaks to 4 quantile based on peak intensity (use deseq2). \
+
 2) for each quantile, as well as the two negative control (MCF7 DHS rep1, rep2), get the closest GAT to peak summit. \
 3) find the second closest GAT. \
 Make sure that the we want to use the relative distance between the two zinc fingers. \
+and orientation. \
 
 
-## positive control
-There are 9 GATA3 peak sets each with 1 known enriched GATA3-like motif found by MEME/STREME. \
+## Parse peak based on Intensity
+
+**peaks (161bp window) without 8 GATA3-motif** (that found by MEME/STREME) \
+
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8
+wc -l without_motifs_123456_78_161bp_mast.bed #37308 
+head -5 without_motifs_123456_78_161bp_mast.bed
+#chr1	827300	827461	GATA_ChIP_peak_28	9.30478
+#chr1	916689	916850	GATA_ChIP_peak_31	7.79887
+#chr1	924773	924934	GATA_ChIP_peak_33	3.78065
+#chr1	966573	966734	GATA_ChIP_peak_34	3.78065
+#chr1	999428	999589	GATA_ChIP_peak_36	2.11515
+```
+
+### Peak Intensity - bigWig and DEseq2
+In the above file, the last column is the peak intensity reported by MACS3. \
+Notice that a peak with high MACS3-intensity is not necessarily a intense peak. There are two things we need to consider regarding peak intensities. The first is **peak region**; the second is **dynamic range**. Imaging a peak that is very intense but within a narrow range, the other peak is not so intense but can span its signals across a very long distance. We need to consider this region differences while calling any peak to be intense or not. \
+
+First use `Sam Flag 0x3`(reads paired and mapped in proper pair) to calculate the **read depth** for each GATA library. \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+# calculate the size factors 
+module load samtools/1.12
+
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+for i in GATA
+do
+  echo $i
+  > ${i}_header.txt
+  > ${i}_reads.txt
+  for j in ${dir}MCF7_dTAGGATA522*_${i}_*.sorted.bam
+  do
+    echo $j
+    name=$(echo $j | awk -F $dir '{print $2}' | awk -F".sorted.bam" '{print $1}')
+    echo $name | paste ${i}_header.txt - > ${i}_tmp.txt 
+    mv ${i}_tmp.txt ${i}_header.txt
+    reads=`samtools view -c -f 0x3 $j` #count the reads paired and mapped in proper pair
+    echo $reads | paste ${i}_reads.txt - > ${i}_tmp.txt 
+    mv ${i}_tmp.txt ${i}_reads.txt
+  done  
+  cat ${i}_header.txt ${i}_reads.txt > ${i}_tmp.txt
+  mv ${i}_tmp.txt ${i}_reads.txt
+  rm ${i}_header.txt
+done 
+```
+
+```{r, engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+cat GATA_reads.txt
+```
+**bargraph** \
+```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+df=as.data.frame(t(read.table("GATA_reads.txt", header=F)))
+colnames(df)=c("library", "aligned_reads")
+df$libraey=as.factor(df$library)
+df$aligned_reads=as.numeric((df$aligned_reads))
+
+barchart(aligned_reads ~ library, 
+         data = df,
+         ylim=c(0, max(df$aligned_reads)*1.04),
+         col = "skyblue",
+         scales = list(x = list(rot = 45)),
+         xlab = "GATA3 ChIP library", 
+         ylab = "concordantly aligned reads"
+         )
+```
+
+This bar graph represents the read depth in each GATA3 ChIP-seq library. In the downstream analysis, we will need to use `DESeq2` to normalize the counts in each library with **size factor** to account for this **read depth difference**. \ 
+
+**Get peak intensity within 400bp window with`Deseq2`** for peaks without MEME/STREME found motifs 12345678. \
+
+load peaks without motif 12345678. \
+```{r, engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+#module load R/4.1.2
+#R
+a =  read.table('without_motifs_123456_78_161bp_mast.bed', sep = "\t", header=FALSE) 
+nrow(a) #37308
+head(a)
+```
+Increase the width to 400bp window. \
+```{r, engine='R',class.source = "revision", eval=TRUE, echo=TRUE}
+library(bigWig)
+peak.region.400win=center.bed(a, upstreamWindow = 200, downstreamWindow = 200)
+nrow(peak.region.400win)
+head(peak.region.400win)
+```
+
+
+In the below chunk, we define a function to get raw counts from each sample/reps. This function uses `bed.region.bpQuery.bigWig` from `bigWig` package. It requires a bed region file that has the peak region that we want to analysis (right now we want to analyse peak without motifs 123456789); it also requires non-normalized, raw bigWig files (generated directly from `seqOutbias`) to allow `bed.region.bpQuery.bigWig` to query the counts information from. The output from this function will be: rows will be the same as bed file, columns will be each bigWig library, entries will be the raw counts. \
+
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+#functions on github
+source('https://raw.githubusercontent.com/mjg54/znf143_pro_seq_analysis/master/docs/ZNF143_functions.R')
+
+#function
+get.counts.interval <- function(df, path.to.bigWig, file.prefix = 'H') {
+    vec.names = c()
+    inten.df=data.frame(matrix(ncol = 0, nrow = nrow(df)))
+    
+    for (mod.bigWig in Sys.glob(file.path(path.to.bigWig, paste(file.prefix, "*.bigWig", sep ='')))) {
+        factor.name = strsplit(strsplit(mod.bigWig, "/")[[1]][length(strsplit(mod.bigWig, "/")[[1]])], '.bigWig')[[1]][1]
+        print(factor.name)
+        vec.names = c(vec.names, factor.name)
+        loaded.bw = load.bigWig(mod.bigWig)
+        print(mod.bigWig)
+        mod.inten = bed.region.bpQuery.bigWig(loaded.bw, df, abs.value = TRUE)
+        inten.df = cbind(inten.df, mod.inten)
+    }
+    colnames(inten.df) = vec.names
+    r.names = paste(df[,1], ':', df[,2], '-', df[,3], sep='')
+    row.names(inten.df) = r.names
+    return(inten.df)
+}
+```
+
+We will first use the defined function to query raw counts from each non-normalized bigWig files of GATA ChIP-seq use peak region info loaded before (data frame "peak.region.400win"). \
+```{r, engine='R',class.source = "revision", eval=F, echo=TRUE}
+library(bigWig)
+#non-normalized counts
+GATA.counts.df= get.counts.interval(peak.region.400win, "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/bigWigs/Seqoutbias_bw","MCF") #25 libraries
+#nrow(peak.region.400win)
+#[1] 37308
+#nrow(GATA.counts.df)
+#[1] 37308
+#head(GATA.counts.df)
+#colnames(GATA.counts.df)
+
+
+GATA.analysis.regions=GATA.counts.df[,grepl("_GATA_",colnames(GATA.counts.df))] # get non-normalized counts from "GATA" libraries
+#colnames(GATA.analysis.regions)
+#[1] "MCF7_dTAGGATA522_GATA_CC_rep1" "MCF7_dTAGGATA522_GATA_CC_rep2"
+#[3] "MCF7_dTAGGATA522_GATA_CC_rep3" "MCF7_dTAGGATA522_GATA_CE_rep1"
+#[5] "MCF7_dTAGGATA522_GATA_CE_rep2" "MCF7_dTAGGATA522_GATA_CE_rep3"
+#[7] "MCF7_dTAGGATA522_GATA_dE_rep1" "MCF7_dTAGGATA522_GATA_dE_rep2"
+#[9] "MCF7_dTAGGATA522_GATA_dE_rep3"
+identical(rownames(GATA.analysis.regions),rownames(GATA.counts.df)) # [1] TRUE
+```
+
+Then we use the `DESeq2` package to make a counts matrix (`DESeqDataSetFromMatrix`) and calculate size factors for each library (`estimateSizeFactorsForMatrix`) use the previously calculated read depth for each library ("GATA_reads.txt"); We use this size factor to normalize the counts (`sizeFactors`). \
+Then we use `rowMeans` to average the normalized counts for the three GATA_CC reps, and save it as "peak.intensities"; this normalized counts now can be use to determine if a peak is intense or not. \
+
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+library(DESeq2)
+sample.conditions = factor(sapply(strsplit(colnames(GATA.analysis.regions), '_rep'), '[', 1))
+#[1] MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC
+#[4] MCF7_dTAGGATA522_GATA_CE MCF7_dTAGGATA522_GATA_CE MCF7_dTAGGATA522_GATA_CE
+#[7] MCF7_dTAGGATA522_GATA_dE MCF7_dTAGGATA522_GATA_dE MCF7_dTAGGATA522_GATA_dE
+#3 Levels: MCF7_dTAGGATA522_GATA_CC ... MCF7_dTAGGATA522_GATA_dE
+deseq.counts.table = DESeqDataSetFromMatrix(countData = GATA.analysis.regions, # DESeqDataSet needs countData to be non-negative integers; non-normalized counts are integer, normalized signals has decimals.
+                colData = as.data.frame(sample.conditions),
+                design = ~ sample.conditions)
+
+
+GATA.SF <- read.table("GATA_reads.txt", sep = '\t', header = TRUE)[,-1] # GATA size factors from read depth
+#MCF7_dTAGGATA522_GATA_CC_rep1 MCF7_dTAGGATA522_GATA_CC_rep2
+#                      33948616                      32585396
+#  MCF7_dTAGGATA522_GATA_CC_rep3 MCF7_dTAGGATA522_GATA_CE_rep1
+#                      34475586                      51112588
+#  MCF7_dTAGGATA522_GATA_CE_rep2 MCF7_dTAGGATA522_GATA_CE_rep3
+#                     147834968                     136838760
+#  MCF7_dTAGGATA522_GATA_dE_rep1 MCF7_dTAGGATA522_GATA_dE_rep2
+#                      34136142                     136271358
+#  MCF7_dTAGGATA522_GATA_dE_rep3
+#                      85665512
+GATA.size.factors = estimateSizeFactorsForMatrix(GATA.SF) # read depth transformed to size factor 
+#MCF7_dTAGGATA522_GATA_CC_rep1 MCF7_dTAGGATA522_GATA_CC_rep2 
+#                    0.5385594                     0.5169334 
+#MCF7_dTAGGATA522_GATA_CC_rep3 MCF7_dTAGGATA522_GATA_CE_rep1 
+#                    0.5469193                     0.8108480 
+#MCF7_dTAGGATA522_GATA_CE_rep2 MCF7_dTAGGATA522_GATA_CE_rep3 
+#                    2.3452478                     2.1708044 
+#MCF7_dTAGGATA522_GATA_dE_rep1 MCF7_dTAGGATA522_GATA_dE_rep2 
+#                    0.5415343                     2.1618032 
+#MCF7_dTAGGATA522_GATA_dE_rep3 
+#                    1.3589941
+
+
+                                       
+sizeFactors(deseq.counts.table) <- GATA.size.factors # assign to each column of the count matrix (deseq.counts.table) the size factor to bring each column to a common scale
+dds <- DESeq(deseq.counts.table)
+normalized.counts.GATA3 = counts(dds, normalized=TRUE)
+head(normalized.counts.GATA3)
+peak.intensities = rowMeans(normalized.counts.GATA3[,1:3]) # we want to get the average read counts for CC groups
+names(peak.intensities) = rownames(normalized.counts.GATA3)
+save.image('240108_GATA3_ChIP_deseq.Rdata') 
+```
+
+
+
+
+**Subset peaks without the 8 GATA3-motifs, each with 20% intensity quantile** \
+
+We can load the saved Rdata and look at each dataframe. \
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+module load R/4.1.2 
+R 
+load('240108_GATA3_ChIP_deseq.Rdata')
+```
+
+Read this .bed file into R, and use `DeSeq2` to count read size and parse into different quantile
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+head(peak.intensities)
+#chr1:827180-827581   chr1:916569-916970   chr1:924653-925054 
+#            45.32469             36.69993             30.44684 
+#  chr1:966453-966854   chr1:999308-999709 chr1:1000336-1000737 
+#            26.87016             21.22455             24.34263 
+quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))
+# 20%        40%        60%        80%       100% 
+#  31.78709   40.05304   51.95512   80.03307 6270.21535 
+```
+
+
+**violin plot** \
+
+This violin plot is showing the distribution of peak intensity (log10). \
+
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+library(lattice)
+log10quantiles <- quantile(log(abs(peak.intensities), base = 10), probs = seq(.20, 1.00, by = .20))
+
+png('violinplot_GATA3_ChIP_peak_normalized_intensity.png')
+print(bwplot(log(abs(peak.intensities), base = 10) ~ factor("1"), 
+       main = "Violin-Like Plot",
+       panel = function(x, ...) {
+         panel.violin(x, ...)
+         panel.abline(h = log10quantiles, col = "red", lty = 2)
+       },
+       xlab = "", ylab = "log10 normalized Intensity")
+)
+dev.off()
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="normalized GATA3 ChIP peak intensity"}
+library(knitr)
+knitr::include_graphics("./violinplot_GATA3_ChIP_peak_normalized_intensity.png") 
+```
+
+This violin plot represents the distribution and probability density of **(log10) normalized peak intensity** (for peak without motif 1~8). Each red dotted line indicates the quantile cutoff of 20%, which can help us to visualize the peak intensity distribution **across different quantile**. \ 
+
+
+Parse peaks into 5 intensity quantile by 20%. \
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+chr = sapply(strsplit(names(peak.intensities), ":"), "[", 1)
+rnge = sapply(strsplit(names(peak.intensities), ":"), "[", 2)
+start = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 200
+end = as.numeric(sapply(strsplit(rnge, "-"), "[", 2)) - 200
+
+quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))
+
+
+
+# 1bp summit quantile file
+j =0 
+q=seq(.20, 1.00, by = .20)
+count=0
+for (i in quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))){
+count = count +1
+
+write.table(file = paste0('quantile', as.character(q[count]), '_summits.bed'), data.frame(chr[peak.intensities > j & peak.intensities <= i], start[peak.intensities > j & peak.intensities <= i], end[peak.intensities > j & peak.intensities <= i], peak.intensities[peak.intensities > j & peak.intensities <= i]), sep = '\t', quote=FALSE, col.names=FALSE, row.names=FALSE )
+j = i
+}
+```
+
+```{r, engine='bash', class.source = "revision", eval=TRUE, echo=TRUE}
+for i in quantile*.bed
+do
+wc -l $i
+done
+```
+
+
+### Coherence check
+See if the number of input samples will change the normalized reads. \
+I am loading fewer samples (only two condition, GATA_CC and GATA_dE) \
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+GATA.analysis.regions2=GATA.analysis.regions[,c(1,2,3,7,8,9)]
+colnames(GATA.analysis.regions2)
+#[1] "MCF7_dTAGGATA522_GATA_CC_rep1" "MCF7_dTAGGATA522_GATA_CC_rep2"
+#[3] "MCF7_dTAGGATA522_GATA_CC_rep3" "MCF7_dTAGGATA522_GATA_dE_rep1"
+#[5] "MCF7_dTAGGATA522_GATA_dE_rep2" "MCF7_dTAGGATA522_GATA_dE_rep3"
+library(DESeq2)
+sample.conditions2 = factor(sapply(strsplit(colnames(GATA.analysis.regions2), '_rep'), '[', 1))
+sample.conditions2
+#[1] MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_CC
+#[4] MCF7_dTAGGATA522_GATA_dE MCF7_dTAGGATA522_GATA_dE MCF7_dTAGGATA522_GATA_dE
+#Levels: MCF7_dTAGGATA522_GATA_CC MCF7_dTAGGATA522_GATA_dE
+
+deseq.counts.table2 = DESeqDataSetFromMatrix(countData = GATA.analysis.regions2, # DESeqDataSet needs countData to be non-negative integers; non-normalized counts are integer, normalized signals has decimals.
+                colData = as.data.frame(sample.conditions2),
+                design = ~ sample.conditions2)
+
+
+GATA.SF2 <- read.table("GATA_reads.txt", sep = '\t', header = TRUE)[,-1][,c(1,2,3,7,8,9)]
+#MCF7_dTAGGATA522_GATA_CC_rep1 MCF7_dTAGGATA522_GATA_CC_rep2
+#                      33948616                      32585396
+#  MCF7_dTAGGATA522_GATA_CC_rep3 MCF7_dTAGGATA522_GATA_dE_rep1
+#                      34475586                      34136142
+#  MCF7_dTAGGATA522_GATA_dE_rep2 MCF7_dTAGGATA522_GATA_dE_rep3
+#                     136271358                      85665512
+GATA.size.factors2 = estimateSizeFactorsForMatrix(GATA.SF2)
+#MCF7_dTAGGATA522_GATA_CC_rep1 MCF7_dTAGGATA522_GATA_CC_rep2 
+#                    0.6821163                     0.6547257 
+#MCF7_dTAGGATA522_GATA_CC_rep3 MCF7_dTAGGATA522_GATA_dE_rep1 
+#                    0.6927045                     0.6858842 
+#MCF7_dTAGGATA522_GATA_dE_rep2 MCF7_dTAGGATA522_GATA_dE_rep3 
+#                    2.7380474                     1.7212438 
+
+sizeFactors(deseq.counts.table2) <- GATA.size.factors2 # assign to each column of the count matrix (deseq.counts.table) the size factor to bring each column to a common scale
+dds <- DESeq(deseq.counts.table2)
+normalized.counts.GATA3.2 = counts(dds, normalized=TRUE)
+head(normalized.counts.GATA3.2)
+peak.intensities2 = rowMeans(normalized.counts.GATA3.2[,1:3])
+
+head(peak.intensities)
+#  chr1:827180-827581   chr1:916569-916970   chr1:924653-925054 
+#            45.32469             36.69993             30.44684 
+#  chr1:966453-966854   chr1:999308-999709 chr1:1000336-1000737 
+#            26.87016             21.22455             24.34263 
+head(peak.intensities2)
+#  chr1:827180-827581   chr1:916569-916970   chr1:924653-925054 
+#            35.78574             28.97613             24.03906 
+#  chr1:966453-966854   chr1:999308-999709 chr1:1000336-1000737 
+#            21.21512             16.75767             19.21953 
+
+save.image('240108_GATA3_ChIP_deseq_test.Rdata') 
+```
+
+The alteration in input samples affected the size factor determined by DESeq2's `estimateSizeFactorsForMatrix` function, consequently impacting the normalized intensity of reads for each sample. However, I don't believe it is altering the relative differences within each sample—such as which peak exhibits the highest intensity and which exhibits less. \
+
+**Coherence check-follow up:** \
+
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+module load R/4.1.2 
+R 
+load('240108_GATA3_ChIP_deseq_test.Rdata')
+chr = sapply(strsplit(names(peak.intensities2), ":"), "[", 1)
+rnge = sapply(strsplit(names(peak.intensities2), ":"), "[", 2)
+start = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 200
+end = as.numeric(sapply(strsplit(rnge, "-"), "[", 2)) - 200
+
+quantile(peak.intensities2, probs = seq(.20, 1.00, by = .20))
+
+
+
+# 1bp summit quantile file
+j =0 
+q=seq(.20, 1.00, by = .20)
+count=0
+for (i in quantile(peak.intensities2, probs = seq(.20, 1.00, by = .20))){
+count = count +1
+
+write.table(file = paste0('test_quantile', as.character(q[count]), '_summits.bed'), data.frame(chr[peak.intensities2 > j & peak.intensities2 <= i], start[peak.intensities2 > j & peak.intensities2 <= i], end[peak.intensities2 > j & peak.intensities2 <= i], peak.intensities2[peak.intensities2 > j & peak.intensities2 <= i]), sep = '\t', quote=FALSE, col.names=FALSE, row.names=FALSE )
+j = i
+}
+```
+
+See besides the normalized intensity, if peak coordinates assigned to each quantile is the same. \
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+for i in test_quantile*.bed
+do
+wc -l $i
+done
+#7269 test_quantile0.2_summits.bed
+#7461 test_quantile0.4_summits.bed
+#7462 test_quantile0.6_summits.bed
+#7461 test_quantile0.8_summits.bed
+#7462 test_quantile1_summits.bed
+
+awk '{OFS="\t"} {print $1, $2, $3}' quantile1_summits.bed > test1.bed
+awk '{OFS="\t"} {print $1, $2, $3}' test_quantile1_summits.bed > test2.bed
+diff test1.bed test2.bed 
+```
+
+No difference between the peak regions assigned to each quantile files, despite the difference in the normalized counts. \
+
+## Closest GAT to peak summit
+In this section, we use `bedtools closestBed` (refer to: https://bedtools.readthedocs.io/en/latest/content/tools/closest.html) to find the closest GAT to each provided peak summit. \
+Input: \
+**Input2 -a** is the sorted peak summit file (centered 1bp); \
+**Input2 -b** is the sorted, and concatenated GAT coordinates file (both plus and minus); \
+
+### GAT coordinates file
+GAT coordinates on full hg38 use **read size==1000**. \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+head ${dir}hg38.3.3.3minus.14_GAT.bed  
+head ${dir}hg38.3.3.3plus.36_GAT.bed
+
+head ${dir}hg38.3.3.3minus.36_ATC.bed  
+head ${dir}hg38.3.3.3plus.14_ATC.bed
+```
+
+we will concatanate the plus and minus 3mer file together. \
+```{r engine='bash', class.source = "revision", eval=F, echo=TRUE}
+cat ${dir}hg38.3.3.3minus.14_GAT.bed ${dir}hg38.3.3.3plus.36_GAT.bed > hg38.3.3.3.30_plus_minus_GAT.bed
+cat ${dir}hg38.3.3.3minus.36_ATC.bed ${dir}hg38.3.3.3plus.14_ATC.bed > hg38.3.3.3.30_plus_minus_ATC.bed
+
+wc -l ${dir}hg38.3.3.3minus.14_GAT.bed #38717592
+wc -l ${dir}hg38.3.3.3plus.36_GAT.bed #39090736
+wc -l hg38.3.3.3.30_plus_minus_GAT.bed #77808328
+#38717592+39090736
+#[1] 77808328
+
+wc -l ${dir}hg38.3.3.3minus.36_ATC.bed #39086237
+wc -l ${dir}hg38.3.3.3plus.14_ATC.bed #38725373
+wc -l hg38.3.3.3.30_plus_minus_ATC.bed #77811610
+
+#39086237+38725373
+#[1] 77811610
+```
+
+
+```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+wc -l hg38.3.3.3.30_plus_minus_GAT.bed #77808328
+head -5 hg38.3.3.3.30_plus_minus_GAT.bed
+#chr1	10545	10548	14	14	-	GAT
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	11597	11600	14	14	-	GAT
+```
+
+load files contains 3mer coordinates info \
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+#concatenate the plus and minus file together
+all.GAT.file=read.table(file = "hg38.3.3.3.30_plus_minus_GAT.bed", sep="\t", header=FALSE)
+head(all.GAT.file)
+#    V1    V2    V3 V4 V5 V6  V7
+#
+tail(all.GAT.file)
+#                             V1    V2    V3 V4 V5 V6  V7
+#
+
+nrow(all.GAT.file)
+#[1] 
+```
+
+
+### 20% quantile peaks without motifs 12345678
+
+load files contains selected ChIP peak summit info \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+chip.peak.summit.quantile1=read.table("quantile1_summits.bed", header=FALSE)
+nrow(chip.peak.summit.quantile1)
+head(chip.peak.summit.quantile1)
+
+chip.peak.summit.quantile0.8=read.table("quantile0.8_summits.bed", header=FALSE)
+chip.peak.summit.quantile0.6=read.table("quantile0.6_summits.bed", header=FALSE)
+chip.peak.summit.quantile0.4=read.table("quantile0.4_summits.bed", header=FALSE)
+chip.peak.summit.quantile0.2=read.table("quantile0.2_summits.bed", header=FALSE)
+nrow(chip.peak.summit.quantile0.8)
+head(chip.peak.summit.quantile0.8)
+summary(chip.peak.summit.quantile0.8$V4)
+nrow(chip.peak.summit.quantile0.6)
+head(chip.peak.summit.quantile0.6)
+summary(chip.peak.summit.quantile0.6$V4)
+nrow(chip.peak.summit.quantile0.4)
+head(chip.peak.summit.quantile0.4)
+summary(chip.peak.summit.quantile0.4$V4)
+nrow(chip.peak.summit.quantile0.2)
+head(chip.peak.summit.quantile0.2)
+summary(chip.peak.summit.quantile0.2$V4)
+```
+
+
+**bedtools closestBed** \
+The below function will sort input bed1 and bed2 first, then run `bedtools closestBed` between bed1 and bed2. \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+# define function 
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+```
+
+Parameter `-d` will report the distance from the closest GAT to the peak summit. \
+Parameter `-t last` or `-t first` will only report either the last or the first entry in bed2 file if tied distance occurred. \
+Here we choose to use `-t first` to report the first coordinates when tie occurred. \
+
+Find the closest GAT to peak summit regardless of GAT strandedness \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+closest.1stGAT.to.GATA.peak.quantile1=bedTools.closest(bed1 = chip.peak.summit.quantile1[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.GATA.peak.quantile0.8=bedTools.closest(bed1 = chip.peak.summit.quantile0.8[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.GATA.peak.quantile0.6=bedTools.closest(bed1 = chip.peak.summit.quantile0.6[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.GATA.peak.quantile0.4=bedTools.closest(bed1 = chip.peak.summit.quantile0.4[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.GATA.peak.quantile0.2=bedTools.closest(bed1 = chip.peak.summit.quantile0.2[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+
+
+write.table(closest.1stGAT.to.GATA.peak.quantile1,file= 'closest.1stGAT.to.GATA.peak.quantile1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.GATA.peak.quantile0.8,file= 'closest.1stGAT.to.GATA.peak.quantile0.8.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.GATA.peak.quantile0.6,file= 'closest.1stGAT.to.GATA.peak.quantile0.6.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.GATA.peak.quantile0.4,file= 'closest.1stGAT.to.GATA.peak.quantile0.4.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.GATA.peak.quantile0.2,file= 'closest.1stGAT.to.GATA.peak.quantile0.2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('240108_GATA3_ChIP_clsestbed.Rdata') 
+```
+
+
+### DHS negative controls
+
+load files contains the 4 MCF7 DHS negative controls. \
+
+- **"full DHS control"** \
+
+MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed  #92388 \
+MCF7DHS_Rep2_161bp_without_motifs_123456_78.bed  #139899 \
+
+
+- **"independent DHS control"** \
+
+MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed  #69119 \
+MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed  #113774 \
+
+
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+full.DHS.control.rep1=read.table("MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed", header=FALSE)
+nrow(full.DHS.control.rep1)
+head(full.DHS.control.rep1)
+
+full.DHS.control.rep2=read.table("MCF7DHS_Rep2_161bp_without_motifs_123456_78.bed", header=FALSE)
+nrow(full.DHS.control.rep2)
+head(full.DHS.control.rep2)
+
+indep.DHS.control.rep1=read.table("MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed", header=FALSE)
+nrow(indep.DHS.control.rep1)
+head(indep.DHS.control.rep1)
+
+indep.DHS.control.rep2=read.table("MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed", header=FALSE)
+nrow(indep.DHS.control.rep2)
+head(indep.DHS.control.rep2)
+```
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+closest.1stGAT.to.full.DHS.control.rep1=bedTools.closest(bed1 = full.DHS.control.rep1[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.full.DHS.control.rep2=bedTools.closest(bed1 = full.DHS.control.rep2[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.indep.DHS.control.rep1=bedTools.closest(bed1 = indep.DHS.control.rep1[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.indep.DHS.control.rep2=bedTools.closest(bed1 = indep.DHS.control.rep2[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+
+
+write.table(closest.1stGAT.to.full.DHS.control.rep1,file= 'closest.1stGAT.to.full.DHS.control.rep1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.full.DHS.control.rep2,file= 'closest.1stGAT.to.full.DHS.control.rep2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.indep.DHS.control.rep1,file= 'closest.1stGAT.to.indep.DHS.control.rep1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.indep.DHS.control.rep2,file= 'closest.1stGAT.to.indep.DHS.control.rep2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('240108_GATA3_ChIP_clsestbed2.Rdata') 
+```
+
+
+### positive controls
+
+load files contains the 4 positive controls (GATA3 peak set with enriched GATA3-like motif of known structures). \
+
+GATA3_peak_161win_with_motif_1.bed \
+GATA3_peak_161win_with_motif_2.bed \
+GATA3_peak_161win_with_motif_4.bed \
+GATA3_peak_161win_with_motif_5.bed \
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+pos.control.peak.with1=read.table("GATA3_peak_161win_with_motif_1.bed", header=FALSE)
+nrow(pos.control.peak.with1)
+head(pos.control.peak.with1)
+
+pos.control.peak.with2=read.table("GATA3_peak_161win_with_motif_2.bed", header=FALSE)
+nrow(pos.control.peak.with2)
+head(pos.control.peak.with2)
+
+pos.control.peak.with4=read.table("GATA3_peak_161win_with_motif_4.bed", header=FALSE)
+nrow(pos.control.peak.with4)
+head(pos.control.peak.with4)
+
+pos.control.peak.with5=read.table("GATA3_peak_161win_with_motif_5.bed", header=FALSE)
+nrow(pos.control.peak.with5)
+head(pos.control.peak.with5)
+```
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+closest.1stGAT.to.pos.control.motif1=bedTools.closest(bed1 = pos.control.peak.with1[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.pos.control.motif2=bedTools.closest(bed1 = pos.control.peak.with2[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.pos.control.motif4=bedTools.closest(bed1 = pos.control.peak.with4[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+closest.1stGAT.to.pos.control.motif5=bedTools.closest(bed1 = pos.control.peak.with5[,1:3], bed2 = all.GAT.file, opt.string = '-d -t first')
+
+
+write.table(closest.1stGAT.to.pos.control.motif1,file= 'closest.1stGAT.to.pos.control.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.pos.control.motif2,file= 'closest.1stGAT.to.pos.control.motif2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.pos.control.motif4,file= 'closest.1stGAT.to.pos.control.motif4.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1stGAT.to.pos.control.motif5,file= 'closest.1stGAT.to.pos.control.motif5.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('240108_GATA3_ChIP_clsestbed3.Rdata') 
+```
+
+
+### CDFs
+
+We are generating a cumulative distribution function to assess the proximity of a 3mer GAT to the summit of GATA3 ChIP peaks, potentially utilizing 3mer GAT as a binding sequence, across five quantile files. This evaluation aims to determine if the 3mer GAT sequences are closer to the summit of GATA3 ChIP peaks than they are to the summit of the MCF7 DHS regions, which consist of four files. Additionally, we possess four positive control peaks containing GATA3 motifs with known structures. \
+
+
+#### prepare plotting data frame
+
+
+
+#### empirically determine binding distance for each quantile
+
+We can empirically determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
+
+
+#### CDF plot
+
+
+
+## find the second closest GAT
+
+**In this section, we need to consider two things**: \
+One is to define spacing/distance as the relative position of two zinc finger; \
+the other is to separate the cases with different strand orientation. \
+
+
+
+
+
+
 
 # follow-up
 
@@ -1171,8 +1927,10 @@ xyplot(peak_count ~ read_depth, data = data,
 
 ## GATA3 structure
 -       Homology of two GATA3 zinc fingers -N-zinc sequence, C-zinc sequences, align them. \
+
+make sure the full structure of zinc finger; and the specificity of each zinc finger binding to the specific sequences. \
 Sequence Retrieval from Uniprot P23771 · GATA3_HUMAN \
-zinc finger 1: 263-287: CVNCGATSTPLWRRDGTGHYLCNAC ; zinc finger 2: 317-341: CANCQTTTTTLWRRNANGDPVCNAC \
+zinc finger 1: 263-287: CVNCGATSTPLWRRDGTGHYLCNAC[GLY] ; zinc finger 2: 317-341: CANCQTTTTTLWRRNANGDPVCNAC[GLY] \
 NCBI BLAST Alignment: \
 
 ```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="NCBI blast for the two zinc finger"}
