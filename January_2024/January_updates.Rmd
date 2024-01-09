@@ -122,8 +122,8 @@ echo $counts2 "" $label2 >> bar.csv
 ```
 
 ```{r, engine='R', eval=F, echo=TRUE}
-module load R/4.1.2 
-R 
+#module load R/4.1.2 
+#R 
 
 library("lattice") 
 bar=read.csv('bar.csv', sep = "", header=F)
@@ -180,8 +180,8 @@ knitr::include_graphics("./240103_peak_number_with_or_without_GATA3_motif_varian
 The fraction of peaks with MEME-found-motif 123456, as well as STREME-found motif78, in each quantile: \
 ```{r, engine='R' ,eval=F, echo=TRUE}
 # quantile file is 1bp summit file, expanded to 161window
-module load R/4.1.2 
-R
+#module load R/4.1.2 
+#R
 library(bigWig)
 
 for (chip.peak in Sys.glob(file.path("/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/quantile*summits.bed")))  {
@@ -220,8 +220,8 @@ done
 ```
 
 ```{r, engine='R' ,eval=F, echo=TRUE}
-module load R/4.1.2 
-R 
+#module load R/4.1.2 
+#R 
 
 library("lattice") 
 library("reshape2")
@@ -1689,8 +1689,8 @@ the other is to separate the cases with different strand orientation. \
 -       Is IgG read depth comparable to GATA3 read depth? –YES \
 ```{r engine='bash', eval=F, echo=TRUE}
 #cd GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/read_depth/
-module load R/4.1.2
-R 
+#module load R/4.1.2
+#R 
 library("lattice") 
 df_GATA=read.csv('GATA_sorted_bam_reads.csv')
 df_IgG=read.csv('IgG_sorted_bam_reads.csv')
@@ -1793,8 +1793,8 @@ done
 ```
 
 ```{r engine='R', eval=F, echo=TRUE}
-module load R/4.1.2 
-R 
+#module load R/4.1.2 
+#R 
 count_peaks <- function(file_path) {
   peak_count <- system(paste("wc -l", file_path), intern = TRUE)
   return(as.numeric(strsplit(peak_count, " ")[[1]][1]))
