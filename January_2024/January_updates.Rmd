@@ -1979,6 +1979,173 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.neg,
 The blue traces are the two reps from full MCF7 DHS regions, the grey traces are the two reps from MCF7 HDS regions without overlapped GATA3 peak regions. \
 Four negative traces looks very similar to each other. \
 
+Since the independent DHS control is the one we removed all overlapped GATA3 ChIP peak regions, we expect that this two sets, compared to its complete version, more towards right (in other word, has less GAT 3mer close to its summit). let's check: \
+
+**rep1** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df.neg.rep1=rbind(df.neg[df.neg$status=="full.DHS.control.rep1",], df.neg[df.neg$status=="indep.DHS.control.rep1",])
+
+df.neg.rep1$status = factor(df.neg.rep1$status, levels = c("full.DHS.control.rep1", "indep.DHS.control.rep1"))
+
+ecdfplot(~abs(dis), groups = status, data = df.neg.rep1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("blue4","grey60"),
+         aspect = 1,
+         #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0, 500),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("blue4","grey60"), lwd=3), strip.background=list(col="grey85"))
+         )
+    
+```
+The two traces are mostly overlapped. By eye, grey trace (indep) is a little towards right than blue trace (full). \
+Further validate if these traces converge/parallel to each other. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.neg.rep1
+match = ecdf(abs(df.neg.rep1$dis)[df.neg.rep1$status == 'indep.DHS.control.rep1'])
+rep = ecdf(abs(df.neg.rep1$dis)[df.neg.rep1$status == 'full.DHS.control.rep1'])
+match.y = seq(0, 1600, by=1) # creating indices
+rep.y = seq(0, 1600, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'indep.DHS.control.rep1 CDF - full.DHS.control.rep1 CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'indep.DHS.control.rep1 CDF - full.DHS.control.rep1 CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+**rep2** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df.neg.rep2=rbind(df.neg[df.neg$status=="full.DHS.control.rep2",], df.neg[df.neg$status=="indep.DHS.control.rep2",])
+
+df.neg.rep2$status = factor(df.neg.rep2$status, levels = c("full.DHS.control.rep2", "indep.DHS.control.rep2"))
+
+ecdfplot(~abs(dis), groups = status, data = df.neg.rep2,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("blue","grey30"),
+         aspect = 1,
+         #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0, 500),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("blue","grey30"), lwd=3), strip.background=list(col="grey85"))
+         )
+    
+```
+The two traces are mostly overlapped. \
+
+Further validate if these traces converge/parallel to each other. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.neg.rep2
+match = ecdf(abs(df.neg.rep2$dis)[df.neg.rep2$status == 'indep.DHS.control.rep2'])
+rep = ecdf(abs(df.neg.rep2$dis)[df.neg.rep2$status == 'full.DHS.control.rep2'])
+match.y = seq(0, 1600, by=1) # creating indices
+rep.y = seq(0, 1600, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'indep.DHS.control.rep2 CDF - full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'indep.DHS.control.rep2 CDF - full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+Comparing between rep1 and rep2. \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories 
+match = ecdf(abs(df.neg$dis)[df.neg$status == 'full.DHS.control.rep2'])
+rep = ecdf(abs(df.neg$dis)[df.neg$status == 'full.DHS.control.rep1'])
+match.y = seq(0, 2300, by=1) # creating indices
+rep.y = seq(0, 2300, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'full.DHS.control.rep2 CDF - full.DHS.control.rep1 CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'full.DHS.control.rep2 CDF - full.DHS.control.rep1 CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+In summary, within each replicate, the independent controls predominantly overlap with the full control. Notably, the full control exhibits a slight leftward shift compared to the independent control. This aligns with expectations, considering that the independent control omits the overlapped GATA3 peak regions, resulting in reduced bias toward GAT 3mer in proximity to the summit. Additionally, the fluctuations observed in the differences between the independent trace CDF and the full trace CDF imply minimal discrepancies. \
+
+On the other hand, when comparing the negative controls between replicate 2 and replicate 1, it's discernible that GAT is closer to the summit of replicate 1 than that of replicate 2. \
+
+
+
 **all in one plot** \
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
 library(lattice)
@@ -2383,11 +2550,11 @@ rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
 #match
 #Empirical CDF 
 #Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#x[1:1535] =      0,      1,      2,  ..., 7.1132e+05, 7.3298e+05
 #rep
 #Empirical CDF 
 #Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
+#x[1:243] =      0,      1,      2,  ...,    337,    403
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2465,14 +2632,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2550,14 +2709,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2636,14 +2787,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2722,14 +2865,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2807,14 +2942,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2893,14 +3020,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -2977,14 +3096,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3065,14 +3176,7 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
+
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3150,14 +3254,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3238,14 +3334,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3325,14 +3413,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3412,14 +3492,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3497,14 +3569,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3583,14 +3647,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
@@ -3668,14 +3724,6 @@ frac1-frac2
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
-#match
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
-# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
-#rep
-#Empirical CDF 
-#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
-# x[1:187] =      0,      1,      2,  ...,    359,    425
 match.y = seq(0, 2000, by=1) # creating indices
 rep.y = seq(0, 2000, by=1)
 
