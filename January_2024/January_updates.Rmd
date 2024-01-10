@@ -1020,6 +1020,157 @@ GATA3_peak_161win_with_motif_4.bed \
 GATA3_peak_161win_with_motif_5.bed \
 
 
+### barchart
+When using `mast` to assess all 8 motifs concurrently, the `-best` option selectively assigns each peak region with only the most significant motif hit from the list of motif sites. \
+
+Previously, MEME identified a set of peaks (n=4510) containing motif6, which are now being associated with motifs other than motif6. Illustrating the fraction of peaks assigned with alternative motifs in this peak set via a bar chart would offer a visual representation of this transition. \
+
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+module load bedtools
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/
+
+intersectBed -wa -a ${dir}without_motifs_12345.bed -b ${dir}mast_GATA3_PSWM_in_peaks_round6.bed > peak_101win_with_motif6.bed #4510
+head peak
+#chr1	6800878	6800979	GATA_ChIP_peak_133	261.961
+#chr1	6959598	6959699	GATA_ChIP_peak_137	253.515
+#chr1	8015116	8015217	GATA_ChIP_peak_161	378.26
+#chr1	8312136	8312237	GATA_ChIP_peak_191	21.5896
+#chr1	8421170	8421271	GATA_ChIP_peak_197	10.8826
+
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+slopBed -b 30 -i peak_101win_with_motif6.bed -g $sizes  | sort -k1,1 -k2,2n > peak_161win_with_motif6.bed #4510
+```
+
+The fourth column in the BED file represents peak indexes, with a total of 4510 peaks that were previously identified to contain motif6. Our current objective is to examine the specific weight matrices assigned to these peaks when subjected to a `mast` analysis involving 8 different motifs. \
+
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/
+intersectBed -wa -wb -a ${dir}GATA_ChIP_summit_161window.bed -b mast_GATA3_PSWM_in_peaks_161win.bed | sort -k1,1 -k2,2n | uniq | awk '{OFS="\t"} {print $1, $2, $3, $4, $12}' | uniq  > GATA3_peak_161win_with_all_mast_motif.bed #63127
+
+# 63127 is larger than peak sets with motif 12345678 (59560), there might be peaks repeated because it has been assigned with more than 1 motif. 
+# coherence check:
+head -5 GATA3_peak_161win_with_all_mast_motif.bed
+#chr1	869417	869578	GATA_ChIP_peak_30	4
+#chr1	869417	869578	GATA_ChIP_peak_30	5
+#chr1	917454	917615	GATA_ChIP_peak_32	5
+#chr1	917454	917615	GATA_ChIP_peak_32	2
+#chr1	996069	996230	GATA_ChIP_peak_35	8
+
+awk '{OFS="\t"} {print $4}' GATA3_peak_161win_with_all_mast_motif.bed | uniq | wc -l #51122
+# 51122 is less than 59560, which is expected, because we have used different mast stringency 
+```
+
+Two way to extract peak and motif information: one is use `intersectBed` to get overlapped peaks between peak sets previously found to contain motif 6 and peak sets that we `mast` against use the concatanated motif database (that we no longer see peak with motif6). Notice that if we use this method, we need to make sure that we use the 161win peak region (peak_161win_with_motif6.bed). \
+
+The other way is to use the peak index and `awk` to filter the rows in `GATA3_peak_161win_with_all_mast_motif.bed` based on whether their peak index (in the fourth column) is present in `peak_101win_with_motif6.bed` (peaks that previously found to contain motif6). \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#method1
+#intersectBed -wa -wb -a peak_101win_with_motif6.bed -b mast_GATA3_PSWM_in_peaks_161win.bed | sort -k1,1 -k2,2n | uniq | wc -l #4871
+intersectBed -wa -wb -a peak_161win_with_motif6.bed -b mast_GATA3_PSWM_in_peaks_161win.bed | sort -k1,1 -k2,2n | uniq | wc -l #5323
+
+#method2
+awk 'FNR==NR{peaks[$4]; next} $4 in peaks' peak_101win_with_motif6.bed GATA3_peak_161win_with_all_mast_motif.bed > filtered_GATA3_peak_161win_with_all_mast_motif.bed #5323
+head filtered_GATA3_peak_161win_with_all_mast_motif.bed
+#chr1	6800848	6801009	GATA_ChIP_peak_133	2
+#chr1	6959568	6959729	GATA_ChIP_peak_137	2
+#chr1	8015086	8015247	GATA_ChIP_peak_161	2
+#chr1	8312106	8312267	GATA_ChIP_peak_191	2
+#chr1	8421140	8421301	GATA_ChIP_peak_197	2
+
+#coherence check
+#there are peaks assigned with more than 1 motif
+awk '{OFS="\t"} {print $4}' filtered_GATA3_peak_161win_with_all_mast_motif.bed | uniq | wc -l #4510
+```
+
+Count numbers of peaks with different motifs and append to a txt summary file for plotting. \
+We will isolate peaks to different files based on whether they have the same motif (index, 5th column) assigned by `mast`. \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+awk '{print > ("filtered_GATA3_peak_161win_with_all_mast_motif_" $5 ".bed")}' filtered_GATA3_peak_161win_with_all_mast_motif.bed
+for i in filtered_GATA3_peak_161win_with_all_mast_motif_*.bed
+do
+ wc -l $i
+done
+
+#197 filtered_GATA3_peak_161win_with_all_mast_motif_1.bed
+#4420 filtered_GATA3_peak_161win_with_all_mast_motif_2.bed
+#85 filtered_GATA3_peak_161win_with_all_mast_motif_3.bed
+#220 filtered_GATA3_peak_161win_with_all_mast_motif_4.bed
+#133 filtered_GATA3_peak_161win_with_all_mast_motif_5.bed
+#121 filtered_GATA3_peak_161win_with_all_mast_motif_7.bed
+#147 filtered_GATA3_peak_161win_with_all_mast_motif_8.bed
+```
+
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+# Read the BED file
+bed_data <- read.table("filtered_GATA3_peak_161win_with_all_mast_motif.bed", sep="\t", header=FALSE, stringsAsFactors=FALSE)
+
+# Aggregate motif indices for each peak
+aggregated_motifs <- aggregate(bed_data$V5, by = list(bed_data$V4), FUN = function(x) paste(unique(x), collapse = ","))
+
+aggregated_motifs$nmotif <- sapply(aggregated_motifs$x, function(x) length(unlist(strsplit(x, ","))))
+colnames(aggregated_motifs)=c("peak", "motif_indices", "nmotif")
+
+head(aggregated_motifs)
+#                   peak motif_indices nmotif
+#1  GATA_ChIP_peak_10022             2      1
+#2 GATA_ChIP_peak_10030b             2      1
+#3  GATA_ChIP_peak_10031             2      1
+#4   GATA_ChIP_peak_1004             2      1
+#5 GATA_ChIP_peak_10041a           2,7      2
+#6  GATA_ChIP_peak_10062             2      1
+nrow(aggregated_motifs)
+#[1] 4510
+length(unique(aggregated_motifs$peak))
+#[1] 4510
+str(aggregated_motifs)
+#'data.frame':	4510 obs. of  3 variables:
+# $ peak         : chr  "GATA_ChIP_peak_10022" "GATA_ChIP_peak_10030b" "GATA_ChIP_peak_10031" "GATA_ChIP_peak_1004" ...
+# $ motif_indices: chr  "2" "2" "2" "2" ...
+# $ nmotif       : int  1 1 1 1 2 1 1 1 1 1 ...
+```
+
+```{r, engine='R', class.source = "revision", eval=F, echo=TRUE}
+library(lattice)
+
+
+group_counts <- as.data.frame(table(aggregated_motifs$motif_indices))
+names(group_counts) <- c('Group', 'Count')
+
+summary(group_counts$Count)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#   1.00    1.00    1.00   67.31    7.50 3680.00 
+
+group_counts$Group=factor(group_counts$Group, levels=c( "1", "2", "3", "4", "5",  "7", "8", "1,2", "1,4", "1,7", "1,8",  "2,1", "2,3",    
+"2,4", "2,5", "2,7", "2,8", "3,1", "3,2",  "4,1", "4,5", "4,2", "5,2", "5,4", "5,7", "5,8", "7,1", "7,2", "8,2",  "8,5",  "8,7", "1,2,3",   "1,2,4",  " 1,2,5",  "1,2,7", "1,4,2", "1,4,3", "2,1,3", "2,1,4", "2,1,5", "2,1,8", "2,4,3", "2,4,5", "2,4,8", "2,7,4", "2,8,1",  "2,8,3", "3,2,5",   "3,2,8",   "3,4,2", "4,2,1",   "4,2,5",   "4,2,7",   "4,2,8", "4,8,2",  "5,2,1",   "5,2,3",   "5,2,7",  "7,2,3", "7,2,5", "7,2,8",   "7,4,1" , "8,1,2", "8,2,1", "8,2,5",   "8,4,2",  "4,1,2,7"))
+
+# Create the bar plot
+pdf('240110_peaks_with_GATA3_motif_variant.pdf',width=15,height=10)
+#custom_labels <- seq(1, 4000, by = 20)
+print(barchart(Count ~ Group,
+         data= group_counts, 
+         col = "skyblue", 
+         ylim=c(0, 4000),
+         xlab = "motif_indices", 
+         ylab = "Number of Peaks",
+         main = "Number of Peaks contain the motif",
+         scales = list(x = list(rot = 45)), #y = list(at = custom_labels)
+         horizontal = FALSE)
+      )
+dev.off()
+```
+
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="peak_with_motif6 assigned with new motifs when mast with database"}
+#library(knitr)
+knitr::include_graphics("./240110_peaks_with_GATA3_motif_variant.png") 
+```
+
+The peak sets that used to defined as containing motif6 when `mast` single motif (motif6) against peaks without motif12345, are now assigned with other motifs when `mast` against entire GATA3 peak sets with all 8 motifs. \
+
+This suggest that GATA3 can bind to its binding element of different/various compositions. \
+
 # GAT-GAT/ATC 3mer analaysis
 
 1) get all peaks (161bp window) without the 8 MEME/STREME motifs. Parse the peaks to 4 quantile based on peak intensity (use deseq2). \
@@ -1236,6 +1387,8 @@ head(peak.intensities)
 #            45.32469             36.69993             30.44684 
 #  chr1:966453-966854   chr1:999308-999709 chr1:1000336-1000737 
 #            26.87016             21.22455             24.34263 
+length(peak.intensities)
+#[1] 37308
 quantile(peak.intensities, probs = seq(.20, 1.00, by = .20))
 # 20%        40%        60%        80%       100% 
 #  31.78709   40.05304   51.95512   80.03307 6270.21535 
@@ -1575,19 +1728,21 @@ MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed  #113774 \
 
 
 ```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
-full.DHS.control.rep1=read.table("MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed", header=FALSE)
+# DHS negative ctrl (convert to 1bp summit at center)
+library(bigWig)
+full.DHS.control.rep1=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(full.DHS.control.rep1)
 head(full.DHS.control.rep1)
 
-full.DHS.control.rep2=read.table("MCF7DHS_Rep2_161bp_without_motifs_123456_78.bed", header=FALSE)
+full.DHS.control.rep2=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_Rep2_161bp_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(full.DHS.control.rep2)
 head(full.DHS.control.rep2)
 
-indep.DHS.control.rep1=read.table("MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed", header=FALSE)
+indep.DHS.control.rep1=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_Rep1_161bp_noGATA_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(indep.DHS.control.rep1)
 head(indep.DHS.control.rep1)
 
-indep.DHS.control.rep2=read.table("MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed", header=FALSE)
+indep.DHS.control.rep2=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_Rep2_161bp_noGATA_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(indep.DHS.control.rep2)
 head(indep.DHS.control.rep2)
 ```
@@ -1619,19 +1774,21 @@ GATA3_peak_161win_with_motif_4.bed \
 GATA3_peak_161win_with_motif_5.bed \
 
 ```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
-pos.control.peak.with1=read.table("GATA3_peak_161win_with_motif_1.bed", header=FALSE)
+# positive control
+library(bigWig)
+pos.control.peak.with1=center.bed(read.table("../MAST_positive_control/GATA3_peak_161win_with_motif_1.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(pos.control.peak.with1)
 head(pos.control.peak.with1)
 
-pos.control.peak.with2=read.table("GATA3_peak_161win_with_motif_2.bed", header=FALSE)
+pos.control.peak.with2=center.bed(read.table("../MAST_positive_control/GATA3_peak_161win_with_motif_2.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(pos.control.peak.with2)
 head(pos.control.peak.with2)
 
-pos.control.peak.with4=read.table("GATA3_peak_161win_with_motif_4.bed", header=FALSE)
+pos.control.peak.with4=center.bed(read.table("../MAST_positive_control/GATA3_peak_161win_with_motif_4.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(pos.control.peak.with4)
 head(pos.control.peak.with4)
 
-pos.control.peak.with5=read.table("GATA3_peak_161win_with_motif_5.bed", header=FALSE)
+pos.control.peak.with5=center.bed(read.table("../MAST_positive_control/GATA3_peak_161win_with_motif_5.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(pos.control.peak.with5)
 head(pos.control.peak.with5)
 ```
@@ -1660,16 +1817,604 @@ We are generating a cumulative distribution function to assess the proximity of 
 
 #### prepare plotting data frame
 
+In previous analysis, we have used `closestBed` to find the closest GAT to peak summit (5 quantile peak sets, 4 MCF7 DHS negative control, and 4 positive controls). \
+
+**GATA3 peaks** \
+closest.1stGAT.to.GATA.peak.quantile0.2.bed \
+closest.1stGAT.to.GATA.peak.quantile0.4.bed \
+closest.1stGAT.to.GATA.peak.quantile0.6.bed \
+closest.1stGAT.to.GATA.peak.quantile0.8.bed \
+closest.1stGAT.to.GATA.peak.quantile1.bed \
+
+These files saved info of 1st closest GAT to GATA3 peak summits. These GATA3 peaks are peaks without MEME/MOTIF found motifs and have ranked by peak intensity. \
+
+Notice that V1 to V3 are peak summit coordinates, V4 to V9 are `closestBed` reported **closest motif** to each peak summit. The last column (V11) is the distance from closest motif to peak summit. \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+closest.1stGAT.to.GATA.peak.quantile1=read.table('closest.1stGAT.to.GATA.peak.quantile1.bed',header=F, comment.char='')
+head(closest.1stGAT.to.GATA.peak.quantile1)
+closest.1stGAT.to.GATA.peak.quantile0.8=read.table('closest.1stGAT.to.GATA.peak.quantile0.8.bed',header=F, comment.char='')
+head(closest.1stGAT.to.GATA.peak.quantile1)
+closest.1stGAT.to.GATA.peak.quantile0.6=read.table('closest.1stGAT.to.GATA.peak.quantile0.6.bed',header=F, comment.char='')
+head(closest.1stGAT.to.GATA.peak.quantile1)
+closest.1stGAT.to.GATA.peak.quantile0.4=read.table('closest.1stGAT.to.GATA.peak.quantile0.4.bed',header=F, comment.char='')
+head(closest.1stGAT.to.GATA.peak.quantile1)
+closest.1stGAT.to.GATA.peak.quantile0.2=read.table('closest.1stGAT.to.GATA.peak.quantile0.2.bed',header=F, comment.char='')
+head(closest.1stGAT.to.GATA.peak.quantile1)
+```
+
+**negative control** \
+closest.1stGAT.to.full.DHS.control.rep1.bed \
+closest.1stGAT.to.indep.DHS.control.rep1.bed \
+closest.1stGAT.to.full.DHS.control.rep2.bed \
+closest.1stGAT.to.indep.DHS.control.rep2.bed \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+closest.1stGAT.to.full.DHS.control.rep1=read.table('closest.1stGAT.to.full.DHS.control.rep1.bed',header=F, comment.char='')
+closest.1stGAT.to.full.DHS.control.rep2=read.table('closest.1stGAT.to.full.DHS.control.rep2.bed',header=F, comment.char='')
 
 
-#### empirically determine binding distance for each quantile
+closest.1stGAT.to.indep.DHS.control.rep1=read.table('closest.1stGAT.to.indep.DHS.control.rep1.bed',header=F, comment.char='')
+closest.1stGAT.to.indep.DHS.control.rep2=read.table('closest.1stGAT.to.indep.DHS.control.rep2.bed',header=F, comment.char='')
 
-We can empirically determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
 
+head(closest.1stGAT.to.full.DHS.control.rep1)
+nrow(closest.1stGAT.to.full.DHS.control.rep1)
+nrow(closest.1stGAT.to.full.DHS.control.rep1[closest.1stGAT.to.full.DHS.control.rep1$V9=="+",])
+nrow(closest.1stGAT.to.full.DHS.control.rep1[closest.1stGAT.to.full.DHS.control.rep1$V9=="-",])
+```
+
+**positive control** \
+closest.1stGAT.to.pos.control.motif1.bed \
+closest.1stGAT.to.pos.control.motif2.bed \
+closest.1stGAT.to.pos.control.motif4.bed \
+closest.1stGAT.to.pos.control.motif5.bed \
+
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+closest.1stGAT.to.pos.control.motif1=read.table('closest.1stGAT.to.pos.control.motif1.bed',header=F, comment.char='')
+closest.1stGAT.to.pos.control.motif2=read.table('closest.1stGAT.to.pos.control.motif2.bed',header=F, comment.char='')
+closest.1stGAT.to.pos.control.motif4=read.table('closest.1stGAT.to.pos.control.motif4.bed',header=F, comment.char='')
+closest.1stGAT.to.pos.control.motif5=read.table('closest.1stGAT.to.pos.control.motif5.bed',header=F, comment.char='')
+
+head(closest.1stGAT.to.pos.control.motif1)
+nrow(closest.1stGAT.to.pos.control.motif1)
+nrow(closest.1stGAT.to.pos.control.motif1[closest.1stGAT.to.pos.control.motif1$V9=="+",])
+nrow(closest.1stGAT.to.pos.control.motif1[closest.1stGAT.to.pos.control.motif1$V9=="-",])
+```
+
+
+**combine data** \
+
+GATA3 peak info + distance + status. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.chip = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.chip) = c("V1","V2","v3", "dis", "status")
+for (chip.peak in Sys.glob(file.path("./closest.1stGAT.to.GATA.peak.quantile*.bed"))) {
+    print(chip.peak)
+    quantile.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'closest.1stGAT.to.GATA.peak.')[[1]][2]), ".bed")[[1]][1]
+    print(quantile.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 11)], quantile.name)
+    df.chip = rbind(df.chip, all.distance)
+}
+str(df.chip)
+unique(df.chip$quantile.name)
+colnames(df.chip) = c("V1","V2","V3", "dis", "status")
+head(df.chip)
+```
+
+negative control (MCF7 DHS regions) info + distance +status. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.neg = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.neg) = c("V1","V2","v3", "dis", "status")
+for (chip.peak in Sys.glob(file.path("./*DHS.control.rep*.bed"))) {
+    print(chip.peak)
+    rep.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'closest.1stGAT.to.')[[1]][2]), ".bed")[[1]][1]
+    print(rep.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 11)],  rep.name) 
+    df.neg = rbind(df.neg, all.distance)
+}
+str(df.neg)
+colnames(df.neg) = c("V1","V2","V3", "dis", "status")
+unique(df.neg$status)
+head(df.neg)
+```
+positive control info + distance +status. \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+df.pos = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.pos) = c("V1","V2","v3", "dis", "status")
+for (chip.peak in Sys.glob(file.path("./closest.1stGAT.to.pos.control*.bed"))) {
+    print(chip.peak)
+    rep.name =strsplit((strsplit(strsplit(chip.peak, "/")[[1]][length(strsplit(chip.peak, "/")[[1]])], 'closest.1stGAT.to.')[[1]][2]), ".bed")[[1]][1]
+    print(rep.name)
+    all.distance = cbind(read.table(chip.peak,header=F, comment.char='')[,c(1:3, 11)],  rep.name) 
+    df.pos = rbind(df.pos, all.distance)
+}
+str(df.pos)
+colnames(df.pos) = c("V1","V2","V3", "dis", "status")
+unique(df.pos$status)
+head(df.pos)
+```
+
+merge files. \
+```{r engine='R', eval=TRUE, class.source = "revision", echo=TRUE}
+df.all=rbind(df.chip, df.neg, df.pos)
+unique(df.all$status)
+df.all$status = factor(df.all$status, levels = c("quantile0.2", "quantile0.4", "quantile0.6", "quantile0.8", "quantile1", "full.DHS.control.rep1", "full.DHS.control.rep2", "indep.DHS.control.rep1", "indep.DHS.control.rep2", "pos.control.motif1", "pos.control.motif2", "pos.control.motif4", "pos.control.motif5"))
+head(df.all)
+nrow(df.all)
+```
 
 #### CDF plot
 
+**negative control comparison** \
+First, we want to ask if the MCF7 DHS controls comparable to each other. \
 
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df.neg$status = factor(df.neg$status, levels = c("full.DHS.control.rep1", "full.DHS.control.rep2", "indep.DHS.control.rep1", "indep.DHS.control.rep2"))
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.neg,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("blue4","blue"))(2), colorRampPalette(c("grey60","grey30"))(2)),
+         aspect = 1,
+         #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("blue4","blue"))(2), colorRampPalette(c("grey60","grey30"))(2)), lwd=3), strip.background=list(col="grey85"))
+         )
+    
+```
+The blue traces are the two reps from full MCF7 DHS regions, the grey traces are the two reps from MCF7 HDS regions without overlapped GATA3 peak regions. \
+Four negative traces looks very similar to each other. \
+
+**all in one plot** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", colorRampPalette(c("grey85","grey30"))(4), colorRampPalette(c("green","darkgreen"))(4)),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e", colorRampPalette(c("grey85","grey30"))(4), colorRampPalette(c("green","darkgreen"))(4)), lwd=3), strip.background=list(col="grey85"))
+         #panel = function(...) {
+         #    panel.abline(v= 1.255, lty =2) #log10(17)=1.23 #log10(17)=1.255
+         #    panel.ecdfplot(...)
+         #}
+)
+    
+```
+
+The above cumulative distribution function (PDF) plot is showing the distance between 3mer-GAT to the summit of GATA3 ChIP peak (red), or summit of the ctrl peak set (grey: MCF7 DHS regions; green: positive control). \
+
+#### empirically determine binding distance for each quantile--quantile1
+
+We can empirically determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+unique(df.all$status)
+```
+
+Comparing between MCF7 DHS regions (neg control) and GATA3 peak in quantile1 to determined the converging/parallel distance cutoff at ~13bp. \
+
+There are 4 negative control, we need to determine one by one: \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+levels(df.neg$status)
+```
+
+**1) quantile1 vs. "full.DHS.control.rep1"** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
+# x[1:1535] =      0,      1,      2,  ..., 7.1132e+05, 7.3298e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile1"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 17; 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+By plotting the difference between the CDFs of GATA3 peaks (quantile 1) and the negative control (full.DHS.control.rep1), we can pinpoint the point where these two CDF curves converge or reach a similar trajectory. \
+
+When comparing GATA3 peaks within quantile 1 to the full.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 17 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile1",], df.neg[df.neg$status=="full.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile1", "full.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue4"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue4"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 17, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 1 compared with the negative control. At the marked red dotted line positioned at distance 17, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (17%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+#df.chip[df.chip$status=="quantile1",]
+#df.neg[df.neg$status=="full.DHS.control.rep1",]
+
+frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis <= 17) / length(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
+
+**2) quantile1 vs. "full.DHS.control.rep2"** \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
+# x[1:2283] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile1"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 18; 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+When comparing GATA3 peaks within quantile 1 to the full.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 18 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile1",], df.neg[df.neg$status=="full.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile1", "full.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 18, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 1 compared with the negative control. At the marked red dotted line positioned at distance 18, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (19.8%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+#df.chip[df.chip$status=="quantile1",]
+#df.neg[df.neg$status=="full.DHS.control.rep1",]
+
+frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 18) / length(df.chip[df.chip$status=="quantile1",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis <= 18) / length(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
+
+**3) quantile1 vs. "indep.DHS.control.rep1"** \
+
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
+# x[1:1449] =      0,      1,      2,  ..., 7.1132e+05, 7.3298e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile1"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 17; 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 1 to the indep.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 17 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile1",], df.neg[df.neg$status=="indep.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile1", "indep.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 17, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 1 compared with the negative control. At the marked red dotted line positioned at distance 17, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (17.6%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+#df.chip[df.chip$status=="quantile1",]
+#df.neg[df.neg$status=="full.DHS.control.rep1",]
+
+frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis <= 17) / length(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
+
+
+4) "indep.DHS.control.rep2" \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile1"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) # 18; 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile1) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 1 to the indep.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 18 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile1",], df.neg[df.neg$status=="indep.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile1", "indep.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 18, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 1 compared with the negative control. At the marked red dotted line positioned at distance 17, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (20%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+#df.chip[df.chip$status=="quantile1",]
+#df.neg[df.neg$status=="full.DHS.control.rep1",]
+
+frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis <= 17) / length(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
+
+#### empirically determine binding distance for each quantile--quantile0.8
+
+
+**1) quantile0.8 vs. "full.DHS.control.rep1":** \
+**2) quantile0.8 vs. "full.DHS.control.rep2":** \
+**3) quantile0.8 vs. "indep.DHS.control.rep1":** \
+**4) quantile0.8 vs. "indep.DHS.control.rep2":** \
+
+#### empirically determine binding distance for each quantile--quantile0.6
+
+
+**1) quantile0.6 vs. "full.DHS.control.rep1":** \
+**2) quantile0.6 vs. "full.DHS.control.rep2":** \
+**3) quantile0.6 vs. "indep.DHS.control.rep1":** \
+**4) quantile0.6 vs. "indep.DHS.control.rep2":** \
+
+#### empirically determine binding distance for each quantile--quantile0.4
+
+
+**1) quantile0.4 vs. "full.DHS.control.rep1":** \
+**2) quantile0.4 vs. "full.DHS.control.rep2":** \
+**3) quantile0.4 vs. "indep.DHS.control.rep1":** \
+**4) quantile0.4 vs. "indep.DHS.control.rep2":** \
+
+#### empirically determine binding distance for each quantile--quantile0.2
+
+
+**1) quantile0.2 vs. "full.DHS.control.rep1":** \
+**2) quantile0.2 vs. "full.DHS.control.rep2":** \
+**3) quantile0.2 vs. "indep.DHS.control.rep1":** \
+**4) quantile0.2 vs. "indep.DHS.control.rep2":** \
+
+
+### barchart summary
+Summarize the fraction of peaks (in each quantile) that has a closest GAT to its peak summits. \
 
 ## find the second closest GAT
 
