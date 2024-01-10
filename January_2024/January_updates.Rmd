@@ -2105,8 +2105,6 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 We can determine the fraction of peaks with closest GAT (17%): \
 
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
-#df.chip[df.chip$status=="quantile1",]
-#df.neg[df.neg$status=="full.DHS.control.rep1",]
 
 frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
 frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis <= 17) / length(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis)
@@ -2193,8 +2191,6 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 We can determine the fraction of peaks with closest GAT (19.8%): \
 
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
-#df.chip[df.chip$status=="quantile1",]
-#df.neg[df.neg$status=="full.DHS.control.rep1",]
 
 frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 18) / length(df.chip[df.chip$status=="quantile1",]$dis)
 frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis <= 18) / length(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis)
@@ -2282,9 +2278,6 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 We can determine the fraction of peaks with closest GAT (17.6%): \
 
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
-#df.chip[df.chip$status=="quantile1",]
-#df.neg[df.neg$status=="full.DHS.control.rep1",]
-
 frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
 frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis <= 17) / length(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis)
 frac1-frac2
@@ -2292,7 +2285,8 @@ frac1-frac2
 
 
 
-4) "indep.DHS.control.rep2" \
+**4) quantile1 vs. "indep.DHS.control.rep2"** \
+
 ```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
@@ -2346,7 +2340,7 @@ df1$status = factor(df1$status, levels = c("quantile1", "indep.DHS.control.rep2"
 
 ecdfplot(~abs(dis), groups = status, data = df1,
          auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
-         col=c("#ce228e", "grey60"),
+         col=c("#ce228e", "grey30"),
          aspect = 1,
         #xlim = c(0, 50000),
          scales=list(relation="free",alternating=c(1,1,1,1)),
@@ -2358,7 +2352,7 @@ ecdfplot(~abs(dis), groups = status, data = df1,
          xlim = c(0,60),
          lwd=2,
          lty=c(1),
-         par.settings = list(superpose.line = list(col=c("#ce228e", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "grey30"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
              panel.abline(v= 18, lty =2, col="red")
              #panel.abline(v= 18, lty =2, col="grey30")
@@ -2371,8 +2365,6 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 We can determine the fraction of peaks with closest GAT (20%): \
 
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
-#df.chip[df.chip$status=="quantile1",]
-#df.neg[df.neg$status=="full.DHS.control.rep1",]
 
 frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
 frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis <= 17) / length(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis)
@@ -2384,37 +2376,1381 @@ frac1-frac2
 
 
 **1) quantile0.8 vs. "full.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.8 to the full.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.8",], df.neg[df.neg$status=="full.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.8", "full.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 8, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.8 compared with the negative control. At the marked red dotted line positioned at distance 8, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (5.27%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.8",]$dis <= 8) / length(df.chip[df.chip$status=="quantile0.8",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis <= 8) / length(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **2) quantile0.8 vs. "full.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.8 to the full.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 9 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.8",], df.neg[df.neg$status=="full.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.8", "full.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 9, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.8 compared with the negative control. At the marked red dotted line positioned at distance 9, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT 7%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+frac1=sum(df.chip[df.chip$status=="quantile0.8",]$dis <= 9) / length(df.chip[df.chip$status=="quantile0.8",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis <= 9) / length(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
+
 **3) quantile0.8 vs. "indep.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.8 to the indep.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.8",], df.neg[df.neg$status=="indep.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.8", "indep.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 8, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.8 compared with the negative control. At the marked red dotted line positioned at distance 8, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (5.5%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.8",]$dis <= 8) / length(df.chip[df.chip$status=="quantile0.8",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis <= 8) / length(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
+
 **4) quantile0.8 vs. "indep.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.8"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.8) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.8 to the indep.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 9 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.8",], df.neg[df.neg$status=="indep.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.8", "indep.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 9, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.8 compared with the negative control. At the marked red dotted line positioned at distance 9, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (7.48%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+frac1=sum(df.chip[df.chip$status=="quantile0.8",]$dis <= 9) / length(df.chip[df.chip$status=="quantile0.8",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis <= 9) / length(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis)
+frac1-frac2
+```
 
 #### empirically determine binding distance for each quantile--quantile0.6
 
-
 **1) quantile0.6 vs. "full.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.6 to the full.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 7 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.6",], df.neg[df.neg$status=="full.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.6", "full.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 7, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.6 compared with the negative control. At the marked red dotted line positioned at distance 7, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (3.5%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.6",]$dis <= 7) / length(df.chip[df.chip$status=="quantile0.6",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis <= 7) / length(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **2) quantile0.6 vs. "full.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.6 to the full.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 11 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.6",], df.neg[df.neg$status=="full.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.6", "full.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 11, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.6 compared with the negative control. At the marked red dotted line positioned at distance 11, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (5.7%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.6",]$dis <= 11) / length(df.chip[df.chip$status=="quantile0.6",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis <= 11) / length(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
+
 **3) quantile0.6 vs. "indep.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.6 to the indep.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.6",], df.neg[df.neg$status=="indep.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.6", "indep.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 8, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.6 compared with the negative control. At the marked red dotted line positioned at distance 8, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (3.8%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+frac1=sum(df.chip[df.chip$status=="quantile0.6",]$dis <= 8) / length(df.chip[df.chip$status=="quantile0.6",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis <= 8) / length(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **4) quantile0.6 vs. "indep.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.6"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.6) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.6 to the indep.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 11 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.6",], df.neg[df.neg$status=="indep.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.6", "indep.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 11, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.6 compared with the negative control. At the marked red dotted line positioned at distance 11, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (5.85%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+frac1=sum(df.chip[df.chip$status=="quantile0.6",]$dis <= 11) / length(df.chip[df.chip$status=="quantile0.6",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis <= 11) / length(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
 
 #### empirically determine binding distance for each quantile--quantile0.4
 
 
 **1) quantile0.4 vs. "full.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.4 to the full.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 4 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.4",], df.neg[df.neg$status=="full.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.4", "full.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 4, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, the left-shift is not as prominent as previous few cdf plots. At the marked red dotted line positioned at distance 4, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (1.4%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.4",]$dis <= 4) / length(df.chip[df.chip$status=="quantile0.4",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis <= 4) / length(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **2) quantile0.4 vs. "full.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.4 to the full.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.4",], df.neg[df.neg$status=="full.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.4", "full.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 8, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.4 compared with the negative control. At the marked red dotted line positioned at distance 8, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (2.9%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+#df.chip[df.chip$status=="quantile0.4",]
+#df.neg[df.neg$status=="full.DHS.control.rep1",]
+
+frac1=sum(df.chip[df.chip$status=="quantile0.4",]$dis <= 8) / length(df.chip[df.chip$status=="quantile0.4",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis <= 8) / length(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
+
 **3) quantile0.4 vs. "indep.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.4 to the indep.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.4",], df.neg[df.neg$status=="indep.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.4", "indep.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 5, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, left-shift is not that remarkable. At the marked red dotted line positioned at distance 5, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (1.4%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+#df.chip[df.chip$status=="quantile0.4",]
+#df.neg[df.neg$status=="full.DHS.control.rep1",]
+
+frac1=sum(df.chip[df.chip$status=="quantile0.4",]$dis <= 5) / length(df.chip[df.chip$status=="quantile0.4",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis <= 5) / length(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **4) quantile0.4 vs. "indep.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.4"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.4) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.4 to the indep.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.4",], df.neg[df.neg$status=="indep.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.4", "indep.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 8, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.4 compared with the negative control. At the marked red dotted line positioned at distance 9, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (3.1%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+frac1=sum(df.chip[df.chip$status=="quantile0.4",]$dis <= 8) / length(df.chip[df.chip$status=="quantile0.4",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis <= 8) / length(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis)
+frac1-frac2
+```
 
 #### empirically determine binding distance for each quantile--quantile0.2
 
 
 **1) quantile0.2 vs. "full.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(full.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.2 to the full.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 3 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.2",], df.neg[df.neg$status=="full.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.2", "full.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 3, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, left-shift is not prominent. At the marked red dotted line positioned at distance 3, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (0.3%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.2",]$dis <= 3) / length(df.chip[df.chip$status=="quantile0.2",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis <= 3) / length(df.neg[df.neg$status=="full.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **2) quantile0.2 vs. "full.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "full.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1]) 
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(full.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.2 to the full.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 10 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.2",], df.neg[df.neg$status=="full.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.2", "full.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 10, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.2 compared with the negative control. At the marked red dotted line positioned at distance 10, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (2.3%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.2",]$dis <= 10) / length(df.chip[df.chip$status=="quantile0.2",]$dis)
+frac2=sum(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis <= 10) / length(df.neg[df.neg$status=="full.DHS.control.rep2",]$dis)
+frac1-frac2
+```
+
+
 **3) quantile0.2 vs. "indep.DHS.control.rep1":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep1'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep1"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(indep.DHS.control.rep1) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.2 to the indep.DHS.control.rep1 (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.2",], df.neg[df.neg$status=="indep.DHS.control.rep1",])
+df1$status = factor(df1$status, levels = c("quantile0.2", "indep.DHS.control.rep1"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey60"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey60"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 4, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, the left-shift is not prominent. At the marked red dotted line positioned at distance 4, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (0.6%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+
+frac1=sum(df.chip[df.chip$status=="quantile0.2",]$dis <= 4) / length(df.chip[df.chip$status=="quantile0.2",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis <= 4) / length(df.neg[df.neg$status=="indep.DHS.control.rep1",]$dis)
+frac1-frac2
+```
+
 **4) quantile0.2 vs. "indep.DHS.control.rep2":** \
+```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+# Specify categories to compare within df.all
+match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control.rep2'])
+rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
+#match
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "indep.DHS.control.rep2"])
+# x[1:2207] =      0,      1,      2,  ..., 7.33e+05, 7.3424e+05
+#rep
+#Empirical CDF 
+#Call: ecdf(abs(df.all$dis)[df.all$status == "quantile0.2"])
+# x[1:187] =      0,      1,      2,  ...,    359,    425
+match.y = seq(0, 2000, by=1) # creating indices
+rep.y = seq(0, 2000, by=1)
+
+spl = smooth.spline(rep.y, rep(rep.y) - match(match.y))
+pred = predict(spl)
+pred1 = predict(spl, deriv=1)
+
+print('The distance that CDFs are parallel or converge:')
+print(rep.y[min(which(pred1$y<=0)) - 1])  
+
+# Plot graph depicting the distance determination
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,60),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+      
+# this is the same plot as above but with a longer x-axis limit
+plot(rep.y, rep(rep.y) - match(match.y),
+     xlim = c(0,300),
+     cex=0.7,
+     xlab = '3mer-GAT Distance from peak summit (bp)',
+     ylab = 'GATA3 peak (quantile0.2) CDF - negative ctrl(indep.DHS.control.rep2) CDF')
+     abline(v = rep.y[min(which(pred1$y<=0)) - 1], col =2, lty =2)
+      lines(pred[[1]], pred[[2]], col = 'blue')
+```
+
+When comparing GATA3 peaks within quantile 0.2 to the indep.DHS.control.rep2 (MCF7 cells), we observe that at a distance of 10 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+df1=rbind(df.chip[df.chip$status=="quantile0.2",], df.neg[df.neg$status=="indep.DHS.control.rep2",])
+df1$status = factor(df1$status, levels = c("quantile0.2", "indep.DHS.control.rep2"))
+
+
+ecdfplot(~abs(dis), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "grey30"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "grey30"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 10, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+```
+
+In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.2 compared with the negative control. At the marked red dotted line positioned at distance 10, we empirically identify the point where the two traces align in parallel. \
+
+We can determine the fraction of peaks with closest GAT (2.5%): \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+frac1=sum(df.chip[df.chip$status=="quantile0.2",]$dis <= 10) / length(df.chip[df.chip$status=="quantile0.2",]$dis)
+frac2=sum(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis <= 10) / length(df.neg[df.neg$status=="indep.DHS.control.rep2",]$dis)
+frac1-frac2
+```
 
 
 ### barchart summary
 Summarize the fraction of peaks (in each quantile) that has a closest GAT to its peak summits. \
+
 
 ## find the second closest GAT
 
