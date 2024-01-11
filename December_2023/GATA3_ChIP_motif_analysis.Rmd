@@ -1130,9 +1130,10 @@ head -5 Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed
 tail -5 Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed
 awk '{print $7}' Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed | sort | uniq
 ```
+**Notice that here the motif indices 12345678 is following the motif's PSWMs order in the concatenated database file.**
+
 
 Use `intersectBed` with `-v` option to find peaks (161bp window) without motif 12345678. \
-
 And convert to fasta. \
 
 ```{r, engine='bash', eval=F, echo=TRUE}
