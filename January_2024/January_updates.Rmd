@@ -1201,7 +1201,7 @@ There are 924 unique peaks previously defined as containing motif8 (STREME motif
 #module load R/4.1.2 
 #R 
 
-library("lattice") 
+library(lattice) 
 bar=read.table(file = "bar.txt", header = T)
 bar$dum.x="peak fraction"
 bar$supp=factor(bar$supp, levels=c("new_motif","no_motif"))
@@ -3024,7 +3024,7 @@ df1$status = factor(df1$status, levels = c("quantile0.8", "full.DHS.control.rep2
 
 ecdfplot(~abs(dis), groups = status, data = df1,
          auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
-         col=c("#ce228e", "blue"),
+         col=c("red", "blue"),
          aspect = 1,
         #xlim = c(0, 50000),
          scales=list(relation="free",alternating=c(1,1,1,1)),
@@ -3036,7 +3036,7 @@ ecdfplot(~abs(dis), groups = status, data = df1,
          xlim = c(0,60),
          lwd=2,
          lty=c(1),
-         par.settings = list(superpose.line = list(col=c("#ce228e", "blue"), lwd=3), strip.background=list(col="grey85")),
+         par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
              panel.abline(v= 9, lty =2, col="red")
              #panel.abline(v= 18, lty =2, col="grey30")
@@ -4149,6 +4149,73 @@ frac1-frac2
 
 ### barchart summary
 Summarize the fraction of peaks (in each quantile) that has a closest GAT to its peak summits. \
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#module load R/4.1.2
+#R
+library(lattice)
+bar=read.csv(file ="barchart_sum.csv", header = T)
+str(bar)
+bar$lib=factor(bar$lib, levels=c("quantile1","quantile0.8","quantile0.6","quantile0.4","quantile0.2",))
+
+pdf('240112_fraction_of_peaks_have_closer_GAT.pdf', width=10,height=8)
+my.settings <- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c("red","pink"))(6),colorRampPalette(c("blue","light blue"))(3), "light grey"), border="transparent"),
+  superpose.polygon=list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(fraction ~ lib | negctrl,        
+         data = bar,
+         groups = lib,
+         stack = TRUE,
+         ylim=c(0,0.25),
+         auto.key=list(space="right"),
+         scales = list(x = list(rot = 45)),
+         ylab = "fraction of peak set with closer GAT to summit",
+         xlab = "peaks without motifs in quantiles",
+         par.settings = my.settings)
+)
+dev.off()
+```
+
+```{r  out.width = "80%", out.height="50%", echo=F, fig.align = "center", fig.cap="fraction of peaks in each quantile with closer GAT compared to 4 different negative ctrls"}
+#library(knitr)
+knitr::include_graphics("./240112_fraction_of_peaks_have_closer_GAT.png") 
+```
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+library(lattice)
+bar=read.csv(file ="barchart_sum.csv", header = T)
+str(bar)
+bar$lib=factor(bar$lib, levels=c("quantile1","quantile0.8","quantile0.6","quantile0.4","quantile0.2",))
+
+pdf('240112_fraction_of_peaks_have_closer_GAT_2.pdf', width=8,height=6)
+my.settings <- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c("red","pink"))(6),colorRampPalette(c("blue","light blue"))(3), "light grey"), border="transparent"),
+  superpose.polygon=list(col=c(colorRampPalette(c("pink","red"))(4), "#ce228e"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(fraction ~ negctrl,        
+         data = bar,
+         groups = lib,
+         stack = TRUE,
+         ylim=c(0,0.50),
+         auto.key=list(space="right"),
+         scales = list(x = list(rot = 45)),
+         ylab = "fraction of peak set with closer GAT to summit",
+         xlab = "peaks without motifs in quantiles",
+         par.settings = my.settings)
+)
+dev.off()
+```
+
+```{r  out.width = "80%", out.height="50%", echo=F, fig.align = "center", fig.cap="fraction of peaks in each quantile with closer GAT compared to 4 different negative ctrls2"}
+#library(knitr)
+knitr::include_graphics("./240112_fraction_of_peaks_have_closer_GAT_2.png") 
+```
+
 
 
 ## find the second closest GAT
