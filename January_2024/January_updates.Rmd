@@ -176,6 +176,17 @@ library(knitr)
 knitr::include_graphics("./240103_peak_number_with_or_without_GATA3_motif_variant.png") 
 ```
 
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="number of peaks with or without GATA3 motif variants"}
+#library(knitr)
+knitr::include_graphics("./240116_peak_number_with_or_without_GATA3_motif_variant2.png") 
+```
+
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="number of peaks with or without GATA3 motif variants"}
+#library(knitr)
+knitr::include_graphics("./240116_peak_number_with_or_without_GATA3_motif_variant.png") 
+```
+
 **bar plot (group by peak intensity)** \
 The fraction of peaks with MEME-found-motif 123456, as well as STREME-found motif78, in each quantile: \
 ```{r, engine='R' ,eval=F, echo=TRUE}
@@ -978,7 +989,7 @@ Notice that the motif indices here is based on the PWM order in the concatenated
 
 We don't have peaks assigned with motif indice==6, that means previously we have a set of peak assigned with STREME motif2 (motif8) are 1) no longer defined as contain motifs, or 2) now assigned with other motifs. \
 
-
+<!--
 - round1 motif: GAT---ATC \
 ```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
 #mast motif indice==7
@@ -1049,7 +1060,7 @@ GATA3_peak_161win_with_motif_2.bed \
 GATA3_peak_161win_with_motif_4.bed \
 GATA3_peak_161win_with_motif_5.bed \
 GATA3_peak_161win_with_motif_6.bed \
-
+-->
 
 ### coherence check --barchart
 When using `mast` to assess all 8 motifs concurrently, the `-best` option selectively assigns each peak region with only the most significant motif hit from the list of motif sites. \
@@ -1459,9 +1470,129 @@ awk 'BEGIN {print "browser position chr10:16,000-17,000"
             } {print $1, $2, $3}' motif_8_PSWM_in_peak_161win_previous_with_motif8.bed > motif_8_PSWM_in_peak_161win_previous_with_motif8.header.bed
 ```
 
-**calculate the distance between old motif8 with newly assigned motifs** \
-anchor at old motif coordinates summit, then calculate the distance from old motif coordinates to newly assigned motif coordinates in each peak region. \
+### positive control: 1 peak with 1 best motif
 
+- round1 motif: GAT---ATC \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#with_motifs_1_101bp_mast.bed
+#with_motifs_1_161bp_mast.bed
+
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_1_101bp_mast.bed | sort | uniq | wc -l #11428 
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_1_161bp_mast.bed | sort | uniq | wc -l #1042
+
+#keep the first 4 column (uniq)-the peak region info
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_1_101bp_mast.bed | sort | uniq >temp_101bp.bed
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_1_161bp_mast.bed | sort | uniq >temp_161bp.bed
+#combine together
+cat temp_101bp.bed temp_161bp.bed > GATA3_peak_161win_with_motif_1.bed
+wc -l GATA3_peak_161win_with_motif_1.bed
+#12470 GATA3_peak_161win_with_motif_1.bed
+head -5 GATA3_peak_161win_with_motif_1.bed
+#chr10	100072622	100072723	GATA_ChIP_peak_10714
+#chr10	100522457	100522558	GATA_ChIP_peak_10733
+#chr10	101380152	101380253	GATA_ChIP_peak_10758b
+#chr10	101453866	101453967	GATA_ChIP_peak_10760b
+#chr10	101892915	101893016	GATA_ChIP_peak_10774
+```
+
+- round2 motif: GAT----ATC \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#with_motifs_2_101bp_mast.bed
+#with_motifs_2_161bp_mast.bed
+
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_2_101bp_mast.bed | sort | uniq | wc -l #10461
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_2_161bp_mast.bed | sort | uniq | wc -l #1014
+
+#keep the first 4 column (uniq)-the peak region info
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_2_101bp_mast.bed | sort | uniq >temp_101bp.bed
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_2_161bp_mast.bed | sort | uniq >temp_161bp.bed
+#combine together
+cat temp_101bp.bed temp_161bp.bed > GATA3_peak_161win_with_motif_2.bed
+wc -l GATA3_peak_161win_with_motif_2.bed
+#11475 GATA3_peak_161win_with_motif_2.bed
+head -5 GATA3_peak_161win_with_motif_2.bed
+#chr10	100301265	100301366	GATA_ChIP_peak_10723
+#chr10	100742525	100742626	GATA_ChIP_peak_10737
+#chr10	100857059	100857160	GATA_ChIP_peak_10738
+#chr10	101033052	101033153	GATA_ChIP_peak_10745
+#chr10	101310780	101310881	GATA_ChIP_peak_10754
+```
+
+
+- round4 motif: GAT-----GAT \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#with_motifs_4_101bp_mast.bed
+#with_motifs_4_161bp_mast.bed
+
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_4_101bp_mast.bed | sort | uniq | wc -l #5665
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_4_161bp_mast.bed | sort | uniq | wc -l #840
+
+#keep the first 4 column (uniq)-the peak region info
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_4_101bp_mast.bed | sort | uniq >temp_101bp.bed
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_4_161bp_mast.bed | sort | uniq >temp_161bp.bed
+#combine together
+cat temp_101bp.bed temp_161bp.bed > GATA3_peak_161win_with_motif_4.bed
+wc -l GATA3_peak_161win_with_motif_4.bed
+#6505 GATA3_peak_161win_with_motif_4.bed
+head -5 GATA3_peak_161win_with_motif_4.bed
+#chr10	101454211	101454312	GATA_ChIP_peak_10760c
+#chr10	101703087	101703188	GATA_ChIP_peak_10768a
+#chr10	101716906	101717007	GATA_ChIP_peak_10770
+#chr10	102509685	102509786	GATA_ChIP_peak_10791b
+#chr10	1025897	1025998	GATA_ChIP_peak_7503
+```
+
+- round5 motif: ATC-GAT \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#with_motifs_5_101bp_mast.bed
+#with_motifs_5_161bp_mast.bed
+
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_5_101bp_mast.bed | sort | uniq | wc -l #3564
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_5_161bp_mast.bed | sort | uniq | wc -l #603
+
+#keep the first 4 column (uniq)-the peak region info
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_5_101bp_mast.bed | sort | uniq >temp_101bp.bed
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_5_161bp_mast.bed | sort | uniq >temp_161bp.bed
+#combine together
+cat temp_101bp.bed temp_161bp.bed > GATA3_peak_161win_with_motif_5.bed
+wc -l GATA3_peak_161win_with_motif_5.bed
+#4167 GATA3_peak_161win_with_motif_5.bed
+head -5 GATA3_peak_161win_with_motif_5.bed
+#chr10	100139100	100139201	GATA_ChIP_peak_10715
+#chr10	100374094	100374195	GATA_ChIP_peak_10727b
+#chr10	100413259	100413360	GATA_ChIP_peak_10729
+#chr10	101355424	101355525	GATA_ChIP_peak_10756
+#chr10	101402156	101402257	GATA_ChIP_peak_10759
+```
+
+- round6 motif: GAT------GAT \
+```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+#with_motifs_6_101bp_mast.bed
+#with_motifs_6_161bp_mast.bed
+
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_6_101bp_mast.bed | sort | uniq | wc -l #4510
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_6_161bp_mast.bed | sort | uniq | wc -l #853
+
+#keep the first 4 column (uniq)-the peak region info
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_6_101bp_mast.bed | sort | uniq >temp_101bp.bed
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_6_161bp_mast.bed | sort | uniq >temp_161bp.bed
+#combine together
+cat temp_101bp.bed temp_161bp.bed > GATA3_peak_161win_with_motif_6.bed
+wc -l GATA3_peak_161win_with_motif_6.bed
+#5363 GATA3_peak_161win_with_motif_6.bed
+head -5 GATA3_peak_161win_with_motif_6.bed
+#chr10	100015084	100015185	GATA_ChIP_peak_10709
+#chr10	101986847	101986948	GATA_ChIP_peak_10777
+#chr10	103188015	103188116	GATA_ChIP_peak_10826b
+#chr10	103931753	103931854	GATA_ChIP_peak_10852
+#chr10	103979874	103979975	GATA_ChIP_peak_10857b
+```
+
+GATA3_peak_161win_with_motif_1.bed \
+GATA3_peak_161win_with_motif_2.bed \
+GATA3_peak_161win_with_motif_4.bed \
+GATA3_peak_161win_with_motif_5.bed \
+GATA3_peak_161win_with_motif_6.bed \
 
 # GAT-GAT/ATC 3mer analaysis
 
@@ -2064,6 +2195,7 @@ GATA3_peak_161win_with_motif_1.bed \
 GATA3_peak_161win_with_motif_2.bed \
 GATA3_peak_161win_with_motif_4.bed \
 GATA3_peak_161win_with_motif_5.bed \
+GATA3_peak_161win_with_motif_6.bed \
 
 ```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
 # positive control
@@ -2103,10 +2235,10 @@ write.table(closest.1stGAT.to.pos.control.motif4,file= 'closest.1stGAT.to.pos.co
 write.table(closest.1stGAT.to.pos.control.motif5,file= 'closest.1stGAT.to.pos.control.motif5.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1stGAT.to.pos.control.motif6,file= 'closest.1stGAT.to.pos.control.motif6.bed', quote=F,sep="\t",col.names=F,row.names=F)
 
-save.image('240108_GATA3_ChIP_clsestbed3.Rdata') 
+save.image('240116_GATA3_ChIP_clsestbed3.Rdata') 
 ```
 
-
+<!--
 ### CDFs
 
 We are generating a cumulative distribution function to assess the proximity of a 3mer GAT to the summit of GATA3 ChIP peaks, potentially utilizing 3mer GAT as a binding sequence, across five quantile files. This evaluation aims to determine if the 3mer GAT sequences are closer to the summit of GATA3 ChIP peaks than they are to the summit of the MCF7 DHS regions, which consist of four files. Additionally, we possess four positive control peaks containing GATA3 motifs with known structures. \
@@ -2526,6 +2658,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
 
 ```
 A coherence check on the five positive control vs. the four negative controls. We can observe a remarkble left-shift in the cdf plot, indicates that GAT is closer to peak summit in GATA3 peaks. \
+
 
 #### empirically determine binding distance for each quantile--quantile1
 
@@ -4471,6 +4604,7 @@ xyplot(peak_count ~ read_depth, data = data,
 
 -       Peak sensitivity and specificity using GATA3-depleted cells and untreated cells. Do sensitive peak sets have a sequence-binding element?  \
 
+-->
 
 ## GATA3 structure
 -       Homology of two GATA3 zinc fingers -N-zinc sequence, C-zinc sequences, align them. \
