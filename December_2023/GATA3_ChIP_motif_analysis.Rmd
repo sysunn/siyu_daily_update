@@ -1307,3 +1307,491 @@ STREME for the full 181 window and flanking region (central 141bp swapped to N) 
 
 <span class="highlighted2">At this point, we can conclude that: GATA3 can bind **within 161bp** window around peak summit. Among the 96868 peaks called by MACS3, we have **~38.5%** GATA3 peaks do not contain MEME/STREME found GATA3 motifs.</span> \
 <span class="highlighted2">Then we can perform the kmer analysis to these 38.5% peaks and see if we can find specific GATA3 binding elements.</span> \
+
+
+# 1 peak 1 motif
+For peak in 101window, In each round, we have assigned each peak with one most enriched motif. For the remaining peaks, we have extended the window to 161bp, then mast for full 8 motifs' database, and get 5545 more peaks with motifs. \
+However, the `mast -best`, sometimes it will assign one peak with more than 1 different motif. \
+In this analysis, the goal is to assign the best and only one motif for each peak. For peak assigned with more than 1 motif, we will select the "best" motif based on its distance to peak summit (and choose the more centered one). \
+
+A coherence check will be: test if the "best" motifs are not on central region, only on spanned region. \
+
+
+## get peak in 161win with motifs
+
+```{r, engine='bash', eval=F, echo=TRUE}
+#mast -hit_list -best combined_output_meme.txt without_motifs_123456_78_161bpwindow.fasta > mast_GATA3_PSWM_in_peaks_round9.txt 
+
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/parse_multi_mast_to_coordinates.R
+#Rscript parse_multi_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round9.txt 8
+```
+
+`mast` output file is peak sequences (161bp) with the best motif assigned. \
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.txt 
+```
+Notice that there are peaks with more than one motif assigned (less unique peak regions than total peak regions). \
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+cat Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.txt | wc -l
+cat Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.txt | cut -f1 -d' ' | sort | uniq | wc -l
+```
+
+The parse_multi_mast_to_coordinates.R generates the motif coordinates associated the 161bp peak sequences. \
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round9.bed
+```
+We can use `intersectBed` to get peaks regions as well as the motif assigned to it. \
+```{r, engine='bash', eval=F, echo=TRUE}
+module load bedtools
+# From peaks (without motif1, 2, 3, 4, 5, 6, 7, 8) (101bp window), find peaks with any of the motifs found in 161bp window
+intersectBed -wa -wb -a without_motifs_123456_78_161bpwindow.bed -b mast_GATA3_PSWM_in_peaks_round9.bed > without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed
+
+wc -l without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed
+#6005 
+head -5 without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed
+#chr1	1859356	1859517	GATA_ChIP_peak_75b	62.1909	chr1	1859381	18593951504.05	1.48e-05	+	5
+#chr1	4649639	4649800	GATA_ChIP_peak_101	12.5259	chr1	4649770	46497801752.5	1.54e-06	+	7
+#chr1	6815710	6815871	GATA_ChIP_peak_134	5.02874	chr1	6815856	68158701541.45	1.14e-05	+	5
+#chr1	6820004	6820165	GATA_ChIP_peak_135a	88.3707	chr1	6820128	68201381538.49	1.08e-05	+	7
+#chr1	6820319	6820480	GATA_ChIP_peak_135b	6.37157	chr1	6820469	68204791441.21	2.2e-05	+	7
+```
+
+## isolate peaks that with more than one motif
+get the set of peaks that has only 1 motif assigned. \
+```{r, engine='bash', eval=F, echo=TRUE}
+awk 'NR==FNR{count[$4]++; next} count[$4]==1' without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed > unique_without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed
+```
+
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+awk 'NR==FNR{count[$4]++; next} count[$4]==1' Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed | wc -l
+```
+
+get the set of peaks that has more than 1 motif assigned. \
+```{r, engine='bash', eval=F, echo=TRUE}
+awk 'NR==FNR{count[$4]++; next} count[$4]>1' without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed > dup_without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+awk 'NR==FNR{count[$4]++; next} count[$4]>1' Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed Exhaustive_MEME_MAST_round1to8/without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed | wc -l
+```
+
+
+
+```{r, engine='R', eval=F, echo=TRUE}
+duplicated_peak <- read.table("Exhaustive_MEME_MAST_round1to8/dup_without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed", header = FALSE, stringsAsFactors = FALSE)
+
+head(duplicated_peak)
+nrow(duplicated_peak)
+```
+
+
+## for peak more than one motif, check the distance to peak summit (for each peak); then choose the motif that closer to peak summit as a better represented motif winthin that peak region
+coherence check: the distances should all >50bp \
+
+Calculate the absolute distance between peak summits and motif summits, and keep only the one that the distance is smaller. \
+```{r, engine='R', eval=F, echo=TRUE}
+calculate_distance <- function(peak_coords, motif_coords) {
+  # Extract summit coordinates (assuming they are in the middle of the given ranges)
+  peak_summit <- (peak_coords[, 2] + peak_coords[, 3]) / 2
+  motif_summit <- (motif_coords[, 2] + motif_coords[, 3]) / 2
+  
+  # Calculate absolute distance
+  abs_distance <- abs(peak_summit - motif_summit)
+  
+  return(abs_distance)
+}
+
+
+find_closest_motif <- function(peak_indices, df) {
+  closest_rows <- list()
+  
+  for (peak_index in peak_indices) {
+    # Filter rows based on the peak index
+    subset_df <- df[df[, 4] == peak_index, ]
+    
+    if (nrow(subset_df) > 0) {
+      # Calculate distances using the function
+      distances <- calculate_distance(subset_df[, c(1, 2, 3)], subset_df[, c(6, 7, 8)])
+      
+      # Find the row with the smallest absolute distance
+      closest_row <- subset_df[which.min(distances), ]
+      # Add an extra column for the distance
+      closest_row$distance <- min(distances)
+      
+      # Store the closest row in the list
+      closest_rows[[as.character(peak_index)]] <- closest_row
+    }
+  }
+  
+  return(do.call(rbind, closest_rows))
+}
+
+closest_motif_rows <- find_closest_motif(unique(duplicated_peak$V4), duplicated_peak)
+```
+
+coherence check: \
+```{r, engine='R', eval=F, echo=TRUE}
+summary(closest_motif_rows$distance)
+```
+
+There are 11 peaks with distance range from 1bp to 28bp, all associated with mast motif indice 8 (round2 motif 2). \
+These peaks were not found when `mast` in the 101bp window peaks in round 2. \
+
+## change mast motif indice to reflect the same indice as in round 1 to 8
+
+```{r, engine='R', eval=F, echo=TRUE}
+motif_round1=closest_motif_rows[closest_motif_rows$V12=="7", ]
+motif_round2=closest_motif_rows[closest_motif_rows$V12=="8", ]
+motif_round3=closest_motif_rows[closest_motif_rows$V12=="1", ]
+motif_round4=closest_motif_rows[closest_motif_rows$V12=="5", ]
+motif_round5=closest_motif_rows[closest_motif_rows$V12=="3", ]
+motif_round6=closest_motif_rows[closest_motif_rows$V12=="2", ]
+motif_round7=closest_motif_rows[closest_motif_rows$V12=="4", ]
+
+nrow(motif_round1)
+nrow(motif_round2)
+nrow(motif_round3)
+nrow(motif_round4)
+nrow(motif_round5)
+nrow(motif_round6)
+nrow(motif_round7)
+
+```
+
+combine with the peaks (161bp) that uniquely assigned with only one motif. \
+```{r, engine='R', eval=F, echo=TRUE}
+unique_peak <- read.table("Exhaustive_MEME_MAST_round1to8/unique_without_motifs_123456_78_101bp_with_motifs_161bp_mast.bed", header = FALSE, stringsAsFactors = FALSE)
+
+head(unique_peak)
+nrow(unique_peak)
+
+#coherence check:
+length(unique(unique_peak$V4))
+```
+```{r, engine='R', eval=F, echo=TRUE}
+unique_motif_round1=unique_peak[unique_peak$V12=="7", ]
+unique_motif_round2=unique_peak[unique_peak$V12=="8", ]
+unique_motif_round3=unique_peak[unique_peak$V12=="1", ]
+unique_motif_round4=unique_peak[unique_peak$V12=="5", ]
+unique_motif_round5=unique_peak[unique_peak$V12=="3", ]
+unique_motif_round6=unique_peak[unique_peak$V12=="2", ]
+unique_motif_round7=unique_peak[unique_peak$V12=="4", ]
+
+nrow(unique_motif_round1)
+nrow(unique_motif_round2)
+nrow(unique_motif_round3)
+nrow(unique_motif_round4)
+nrow(unique_motif_round5)
+nrow(unique_motif_round6)
+nrow(unique_motif_round7)
+
+```
+
+```{r, engine='R', eval=F, echo=TRUE}
+motif_round1_161bp=rbind(unique_motif_round1, motif_round1[, 1:12])
+motif_round2_161bp=rbind(unique_motif_round2, motif_round2[, 1:12])
+motif_round3_161bp=rbind(unique_motif_round3, motif_round3[, 1:12])
+motif_round4_161bp=rbind(unique_motif_round4, motif_round4[, 1:12])
+motif_round5_161bp=rbind(unique_motif_round5, motif_round5[, 1:12])
+motif_round6_161bp=rbind(unique_motif_round6, motif_round6[, 1:12])
+motif_round7_161bp=rbind(unique_motif_round7, motif_round7[, 1:12])
+
+nrow(motif_round1_161bp)
+nrow(motif_round2_161bp)
+nrow(motif_round3_161bp)
+nrow(motif_round4_161bp)
+nrow(motif_round5_161bp)
+nrow(motif_round6_161bp)
+nrow(motif_round7_161bp)
+
+
+#coherence check:
+nrow(rbind(motif_round1_161bp, motif_round2_161bp, motif_round3_161bp, motif_round4_161bp, motif_round5_161bp, motif_round6_161bp, motif_round7_161bp))
+```
+```{r, engine='R', eval=F, echo=TRUE}
+write.table(motif_round1_161bp,file= 'with_motifs_1_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(motif_round2_161bp,file= 'with_motifs_2_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(motif_round3_161bp,file= 'with_motifs_3_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(motif_round4_161bp,file= 'with_motifs_4_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(motif_round5_161bp,file= 'with_motifs_5_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(motif_round6_161bp,file= 'with_motifs_6_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(motif_round7_161bp,file= 'with_motifs_7_161bp_mast.bed', quote=F,sep="\t",col.names=F,row.names=F)
+```
+
+## 101bp window peak with motif in round 1 to 8.
+
+mast_GATA3_PSWM_in_peaks_round1.bed  mast_GATA3_PSWM_in_peaks_round4.bed  mast_GATA3_PSWM_in_peaks_round7.bed \
+mast_GATA3_PSWM_in_peaks_round2.bed  mast_GATA3_PSWM_in_peaks_round5.bed  mast_GATA3_PSWM_in_peaks_round8.bed \
+mast_GATA3_PSWM_in_peaks_round3.bed  mast_GATA3_PSWM_in_peaks_round6.bed \
+
+These mast BED files store motif coordinates in 101bp peak window. \
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+head -5 Exhaustive_MEME_MAST_round1to8/mast_GATA3_PSWM_in_peaks_round1.bed
+```
+We can use `intersectBed` to get peaks with motifs in 101bp window in the first 8 rounds. \
+
+Round1: \
+```{r, engine='bash', eval=F, echo=TRUE}
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/
+module load bedtools
+# From peaks (without motif1, 2, 3, 4, 5, 6, 7, 8) (101bp window), find peaks with any of the motifs found in 161bp window
+intersectBed -wa -wb -a ${dir}GATA_ChIP_summit_100window.bed -b mast_GATA3_PSWM_in_peaks_round1.bed > with_motifs_1_101bp_mast.bed
+
+wc -l with_motifs_1_101bp_mast.bed
+#11428
+head -5 with_motifs_1_101bp_mast.bed
+#chr1	1080506	1080607	GATA_ChIP_peak_45	6.37157	chr1	1080566	1080576	840.25	9.55e-05	+	1
+#chr1	1238187	1238288	GATA_ChIP_peak_51	16.8938	chr1	1238219	1238229	1413	9.62e-06	-	1
+#chr1	1686381	1686482	GATA_ChIP_peak_63	35.0463	chr1	1686405	1686415	1176	3.73e-05	-	1
+#chr1	1741080	1741181	GATA_ChIP_peak_68	11.6965	chr1	1741170	1741180	1176	3.73e-05	-	1
+#chr1	2001971	2002072	GATA_ChIP_peak_77	7.79887	chr1	2002016	2002026	1176	3.73e-05	+	1
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_1_101bp_mast.bed | sort | uniq | wc -l #11428
+```
+
+Round2: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_1.bed -b mast_GATA3_PSWM_in_peaks_round2.bed > with_motifs_2_101bp_mast.bed
+
+wc -l with_motifs_2_101bp_mast.bed
+#11467
+head -5 with_motifs_2_101bp_mast.bed
+#chr1	996099	996200	GATA_ChIP_peak_35	38.3686	chr1	996149	996160	1256.25	2.21e-05	+	1
+#chr1	3213828	3213929	GATA_ChIP_peak_87	118.864	chr1	3213875	3213886	1455.15	5.8e-06	-	1
+#chr1	5603406	5603507	GATA_ChIP_peak_106	2.64066	chr1	5603417	5603428	977.79	8.07e-05	-	1
+#chr1	5688597	5688698	GATA_ChIP_peak_109	93.8407	chr1	5688630	5688641	1236.36	2.5e-05	+	1
+#chr1	5959780	5959881	GATA_ChIP_peak_110	65.9829	chr1	5959797	5959808	1276.14	1.96e-05	-	1
+
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_2_101bp_mast.bed | sort | uniq | wc -l #10461
+
+#there are peaks with more than one motif2 assigned
+```
+
+Round3: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_12.bed -b mast_GATA3_PSWM_in_peaks_round3.bed > with_motifs_3_101bp_mast.bed
+
+wc -l with_motifs_3_101bp_mast.bed
+#5202
+head -5 with_motifs_3_101bp_mast.bed
+#chr1	7912015	7912116	GATA_ChIP_peak_158	10.8826	chr1	7912050	7912057	1207.4	2.16e-05	-	1
+#chr1	8395017	8395118	GATA_ChIP_peak_195	6.37157	chr1	8395075	8395082	1186.58	3.93e-05	+	1
+#chr1	8571689	8571790	GATA_ChIP_peak_201b	18.377	chr1	8571741	8571748	1165.76	5.7e-05	-	1
+#chr1	8635931	8636032	GATA_ChIP_peak_207	7.79887	chr1	8635951	8635958	1207.4	2.16e-05	-	1
+#chr1	10507853	10507954	GATA_ChIP_peak_299b	10.0853	chr1	10507886	10507893	1207.4	2.16e-05	+	1
+
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_3_101bp_mast.bed | sort | uniq | wc -l #5202
+```
+
+Round4: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_123.bed -b mast_GATA3_PSWM_in_peaks_round4.bed > with_motifs_4_101bp_mast.bed
+
+wc -l with_motifs_4_101bp_mast.bed
+#5666
+head -5 with_motifs_4_101bp_mast.bed
+#chr1	869447	869548	GATA_ChIP_peak_30	3.78065	chr1	869468	869482	1223.57	5.03e-05	-	1
+#chr1	917484	917585	GATA_ChIP_peak_32	75.0238	chr1	917504	917518	1111.37	7.37e-05	+	1
+#chr1	3927027	3927128	GATA_ChIP_peak_98	14.2308	chr1	3927062	3927076	1691.04	2.59e-06	-	1
+#chr1	4659215	4659316	GATA_ChIP_peak_102	54.7665	chr1	4659255	4659269	1691.04	2.59e-06	+	1
+#chr1	5406545	5406646	GATA_ChIP_peak_103	3.78065	chr1	5406564	5406578	1747.14	1.19e-06	+	1
+
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_4_101bp_mast.bed | sort | uniq | wc -l #5665
+
+#there are peaks with more than one motif4 assigned
+```
+
+Round5: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_1234.bed -b mast_GATA3_PSWM_in_peaks_round5.bed > with_motifs_5_101bp_mast.bed
+
+wc -l with_motifs_5_101bp_mast.bed
+#3564
+head -5 with_motifs_5_101bp_mast.bed
+#chr1	1858856	1858957	GATA_ChIP_peak_75a	32.8724	chr1	1858925	1858935	1196.17	5.23e-05	+	1
+#chr1	3948545	3948646	GATA_ChIP_peak_99	53.5507	chr1	3948619	3948629	1469.94	1.62e-05	-	1
+#chr1	6317549	6317650	GATA_ChIP_peak_118	14.2308	chr1	6317632	6317642	1433.43	2.15e-05	+	1
+#chr1	8121132	8121233	GATA_ChIP_peak_179b	16.8938	chr1	8121183	8121193	1013.66	8.51e-05	-	1
+#chr1	8137785	8137886	GATA_ChIP_peak_181	39.6542	chr1	8137811	8137821	1634.2	6.22e-06	+	1
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_5_101bp_mast.bed | sort | uniq | wc -l #3564
+
+```
+
+Round6: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_12345.bed -b mast_GATA3_PSWM_in_peaks_round6.bed > with_motifs_6_101bp_mast.bed
+
+wc -l with_motifs_6_101bp_mast.bed
+#4510
+head -5 with_motifs_6_101bp_mast.bed
+#chr1	6800878	6800979	GATA_ChIP_peak_133	261.961	chr1	6800916	6800930	1076.4	8.4e-05	-	1
+#chr1	6959598	6959699	GATA_ChIP_peak_137	253.515	chr1	6959683	6959697	1644.31	4.74e-06	-	1
+#chr1	8015116	8015217	GATA_ChIP_peak_161	378.26	chr1	8015155	8015169	1845.83	8.64e-07	-	1
+#chr1	8312136	8312237	GATA_ChIP_peak_191	21.5896	chr1	8312221	8312235	1369.52	2.22e-05	+	1
+#chr1	8421170	8421271	GATA_ChIP_peak_197	10.8826	chr1	8421203	8421217	1131.36	6.68e-05	-	1
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_6_101bp_mast.bed | sort | uniq | wc -l #4510
+```
+
+Round7: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_123456.bed -b mast_GATA3_PSWM_in_peaks_round7.bed > with_motifs_7_101bp_mast.bed
+
+wc -l with_motifs_7_101bp_mast.bed
+#8735
+head -5 with_motifs_7_101bp_mast.bed
+#chr1	845746	845847	GATA_ChIP_peak_29	541.83	chr1	845781	845787	1169.98	0.00027	+	1
+#chr1	1504971	1505072	GATA_ChIP_peak_56	16.8938	chr1	1505049	1505055	1284.91	9.58e-05	+	1
+#chr1	1746897	1746998	GATA_ChIP_peak_70	4.46672	chr1	1746948	1746954	724.65	0.000445	+	1
+#chr1	3186510	3186611	GATA_ChIP_peak_86	15.1046	chr1	3186512	3186518	1284.91	9.58e-05	-	1
+#chr1	6623397	6623498	GATA_ChIP_peak_126	26.5697	chr1	6623440	6623446	1241.81	0.000175	+	1
+
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_7_101bp_mast.bed | sort | uniq | wc -l #8733
+
+#there are peaks with more than one motif7 assigned
+```
+
+Round8: \
+```{r, engine='bash', eval=F, echo=TRUE}
+intersectBed -wa -wb -a without_motifs_123456_7.bed -b mast_GATA3_PSWM_in_peaks_round8.bed > with_motifs_8_101bp_mast.bed
+
+wc -l with_motifs_8_101bp_mast.bed
+#4454
+head -5 with_motifs_8_101bp_mast.bed
+#chr1	1775793	1775894	GATA_ChIP_peak_72	24.5459	chr1	1775856	1775861	1142.66	0.000349	+	1
+#chr1	1855841	1855942	GATA_ChIP_peak_74	3.19627	chr1	1855920	1855925	1142.66	0.000349	+	1
+#chr1	1883543	1883644	GATA_ChIP_peak_76	36.5894	chr1	1883563	1883568	1142.66	0.000349	-	1
+#chr1	2135560	2135661	GATA_ChIP_peak_79	18.7357	chr1	2135607	2135612	1142.66	0.000349	-	1
+#chr1	3613537	3613638	GATA_ChIP_peak_90	27.5967	chr1	3613592	3613597	1142.66	0.000349	-	1
+
+
+#coherence check:
+awk '{OFS="\t"} {print $1, $2, $3, $4}' with_motifs_8_101bp_mast.bed | sort | uniq | wc -l #4452
+
+#there are peaks with more than one motif8 assigned
+```
+
+
+## bar plot
+Two bar plots: one is peak with motif 1, motif 2, ..., motif 8; one is bar plot with more details (i.e., further separate peaks with motif1 to motif1 found in 101bp window, and motif1 found in 161 flanking regions). \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+touch peak.with.motif.240116.sum.txt
+for i in with_motifs*_101bp_mast.bed
+do
+ nm=$(echo $i | awk -F"_101bp_mast.bed" '{print $1}' | awk -F"with_motifs_" '{print $2}' )
+ p=$(awk '{OFS="\t"} {print $1, $2, $3, $4}' $i | sort | uniq | wc -l)
+ echo "motif_${nm}_101bp" "" $p >> peak.with.motif.240116.sum.txt
+done
+
+for i in with_motifs*_161bp_mast.bed
+do
+ nm=$(echo $i | awk -F"_161bp_mast.bed" '{print $1}' | awk -F"with_motifs_" '{print $2}' )
+ p=$(awk '{OFS="\t"} {print $1, $2, $3, $4}' $i | sort | uniq | wc -l)
+ echo "motif_${nm}_161bp" "" $p >> peak.with.motif.240116.sum.txt
+done
+
+# peak withour motifs
+wc -l without_motifs_123456_78_161bp_mast.bed
+#37308 without_motifs_123456_78_161bp_mast.bed
+head -5 without_motifs_123456_78_161bp_mast.bed
+#chr1	827300	827461	GATA_ChIP_peak_28	9.30478
+#chr1	916689	916850	GATA_ChIP_peak_31	7.79887
+#chr1	924773	924934	GATA_ChIP_peak_33	3.78065
+#chr1	966573	966734	GATA_ChIP_peak_34	3.78065
+#chr1	999428	999589	GATA_ChIP_peak_36	2.11515
+
+echo "without_motif" "" "37308" >> peak.with.motif.240116.sum.txt
+
+```
+
+```{r, engine='bash', eval=TRUE, echo=TRUE}
+cat peak.with.motif.240116.sum.txt 
+```
+
+```{r, engine='R', eval=F, echo=TRUE}
+#module load R/4.1.2 
+#R 
+library("lattice") 
+bar=read.table('peak.with.motif.240116.sum.txt', sep = "", header=F)
+colnames(bar)=c("enriched_motifs", "peak_numbers")
+bar$dum.x="peak number"
+bar$enriched_motif<- factor(bar$enriched_motif, levels = c("motif_1_101bp", "motif_1_161bp", "motif_2_101bp", "motif_2_161bp", "motif_3_101bp", "motif_3_161bp", "motif_4_101bp", "motif_4_161bp", "motif_5_101bp", "motif_5_161bp", "motif_6_101bp", "motif_6_161bp", "motif_7_101bp",  "motif_7_161bp", "motif_8_101bp", "without_motif"))
+
+#coherence check
+sum(bar$peak_numbers) #96868
+
+pdf('240116_peak_number_with_or_without_GATA3_motif_variant.pdf', width=5,height=6)
+my.settings <- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c("red","pink"))(6),colorRampPalette(c("blue","light blue"))(3), "light grey"), border="transparent"),
+  superpose.polygon=list(col=c("red","pink","orange3","orange","yellow3","yellow","green","lightgreen","skyblue","lightcyan","blue4","blue","purple","#FF00FF","brown","lightgrey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(peak_numbers ~ dum.x,         
+         data = bar,
+         groups = enriched_motif,
+         stack = TRUE,
+         auto.key=list(space="right"),
+         #scales = list(x = list(rot = 45)),
+         ylab = "peak number",
+         xlab = "number of peaks with/without GATA3 motif variant",
+         par.settings = my.settings)
+)
+dev.off()
+
+bar2=data.frame(matrix(ncol = 2, nrow = 9))
+colnames(bar2)=c("enriched_motifs", "peak_numbers")
+bar2$enriched_motifs=c("motif1","motif2","motif3","motif4","motif5","motif6","motif7","motif8","without_motif")
+bar2$peak_numbers=c("12470","11475","5893","6505","4167","5363","9235","4452", "37308")
+bar2$peak_numbers=as.numeric(bar2$peak_numbers)
+bar2$dum.x="peak number"
+bar2$enriched_motifs<- factor(bar2$enriched_motifs, levels = c("motif1","motif2","motif3","motif4","motif5","motif6","motif7","motif8","without_motif"))
+    
+
+pdf('240116_peak_number_with_or_without_GATA3_motif_variant2.pdf', width=5,height=6)
+my.settings <- list(
+  #superpose.polygon=list(col=c(colorRampPalette(c("red","pink"))(6),colorRampPalette(c("blue","light blue"))(3), "light grey"), border="transparent"),
+  superpose.polygon=list(col=c("red","orange","yellow","lightgreen","skyblue","blue","#FF00FF","brown","lightgrey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+print(barchart(peak_numbers ~ dum.x,         
+         data = bar2,
+         groups = enriched_motifs,
+         stack = TRUE,
+         auto.key=list(space="right"),
+         #scales = list(x = list(rot = 45)),
+         ylab = "peak number",
+         xlab = "number of peaks with/without GATA3 motif variant",
+         par.settings = my.settings)
+)
+dev.off()
+```
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="number of peaks with or without GATA3 motif variants"}
+library(knitr)
+knitr::include_graphics("./240116_peak_number_with_or_without_GATA3_motif_variant2.png") 
+```
+
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="number of peaks with or without GATA3 motif variants"}
+#library(knitr)
+knitr::include_graphics("./240116_peak_number_with_or_without_GATA3_motif_variant.png") 
+```
+
+
+
