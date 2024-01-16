@@ -1,0 +1,16 @@
+motif_1_101bp  11428
+motif_2_101bp  10461
+motif_3_101bp  5202
+motif_4_101bp  5665
+motif_5_101bp  3564
+motif_6_101bp  4510
+motif_7_101bp  8733
+motif_8_101bp  4452
+motif_1_161bp  1042
+motif_2_161bp  1014
+motif_3_161bp  691
+motif_4_161bp  840
+motif_5_161bp  603
+motif_6_161bp  853
+motif_7_161bp  502
+without_motif  37308
