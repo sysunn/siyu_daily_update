@@ -3843,7 +3843,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
          lty=c(1),
          par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85")),
          panel = function(...) {
-             panel.abline(v= 8, lty =2, col="red")
+             panel.abline(v= 0.9, lty =2, col="red")
              #panel.abline(v= 18, lty =2, col="grey30")
              panel.ecdfplot(...)
          })
