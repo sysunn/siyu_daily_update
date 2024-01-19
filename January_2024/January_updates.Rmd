@@ -3150,7 +3150,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 ```
 <span class="highlighted">The CDF differences between positive control and negative control reach to plateau at absolute distance==16bp. This is also saying that GAT tend to be "not randomly" found within 16bp upstream/downstream window of GATA3 peak summit. Beyond 16bp window, we have less confidence saying that GAT is significantly enriched in GATA3 peaks.</span> \
 
-
+### CDF plot - GATA3 quantile vs. negative control
 
 #### empirically determine binding distance for each quantile--quantile1
 
@@ -3264,6 +3264,28 @@ ecdfplot(~abs(dis), groups = status, data = df1,
              #panel.abline(v= 18, lty =2, col="grey30")
              panel.ecdfplot(...)
          })
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("#ce228e", "blue4","blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance (absolute) from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("#ce228e", "blue4","blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 1.255, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+    
 ```
 
 In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 1 compared with the negative control. At the marked red dotted line positioned at distance 18, we empirically identify the point where the positive trace converge with the negative traces. \
@@ -3383,6 +3405,29 @@ ecdfplot(~abs(dis), groups = status, data = df1,
              #panel.abline(v= 18, lty =2, col="grey30")
              panel.ecdfplot(...)
          })
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4","blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4", "blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 0.954, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+
+    
 ```
 
 In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.8 compared with the negative control. At the marked red dotted line positioned at distance 9, we empirically identify the point where the two traces align in parallel. \
@@ -3502,6 +3547,28 @@ ecdfplot(~abs(dis), groups = status, data = df1,
              #panel.abline(v= 18, lty =2, col="grey30")
              panel.ecdfplot(...)
          })
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4","blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 1, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+
 ```
 
 In the above CDF plot, a noticeable left-shift is evident in the closest GAT distance to GATA3 peaks within quantile 0.6 compared with the negative control. At the marked red dotted line positioned at distance 10, we empirically identify the point where the two traces align in parallel. \
@@ -3619,6 +3686,28 @@ ecdfplot(~abs(dis), groups = status, data = df1,
              #panel.abline(v= 18, lty =2, col="grey30")
              panel.ecdfplot(...)
          })
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4","blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 0.699, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+
 ```
 
 In the above CDF plot, the left-shift is not as prominent as previous few cdf plots. At the marked red dotted line positioned at distance 4, we empirically identify the point where the two traces align in parallel. \
@@ -3729,6 +3818,27 @@ ecdfplot(~abs(dis), groups = status, data = df1,
          between=list(y=1.0),
          type = 'a',
          xlim = c(0,60),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85")),
+         panel = function(...) {
+             panel.abline(v= 8, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             panel.ecdfplot(...)
+         })
+
+ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4","blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer-GAT Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
          lwd=2,
          lty=c(1),
          par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85")),
