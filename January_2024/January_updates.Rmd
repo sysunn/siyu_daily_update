@@ -2347,11 +2347,6 @@ ks.test(data3 , data4)
 # full vs. indep (within each rep)
 ks.test(data1 , data3)
 ks.test(data2 , data4)
-
-# Print a specific number and append it to a .txt file along with the 3mer name
-specific_number <- 42  # Replace with the actual specific number you want to print
-output_txt_file <- paste0(output_prefix, "_output.txt")
-writeLines(paste("3mer:", output_prefix, "Specific Number:", specific_number), con = output_txt_file, append = TRUE)
 ```
 
 <span class="highlighted">Looking at **KS test** p-value from different comparisons, we can tell that:</span> \
