@@ -2380,6 +2380,8 @@ ks.test(data3 , data4)
 # full vs. indep (within each rep)
 ks.test(data1 , data3)
 ks.test(data2 , data4)
+
+# default of ks.test() uses two-tail t test, which is what we wanted, because we do not restrict the test on whether one of the two dataset is larger/smaller than the other. If we had the expectation, we should use one-tail. 
 ```
 
 <span class="highlighted">Looking at **KS test** p-value from different comparisons, we can tell that:</span> \
@@ -4513,10 +4515,22 @@ for (folder_name in folder_names) {
   auc_difference <- ((pos.AUC - neg.full.AUC)+(pos.AUC - neg.indep.AUC))/2
   
   # Print the auc_difference value as needed
-  cat(sprintf("%s\t%s\t%s\n", folder_name, pos.AUC, neg.full.AUC, neg.indep.AUC, auc_difference), file = output_connection)
+  cat(sprintf("%s\t%s\t%s\t%s\t%s\n", folder_name, pos.AUC, neg.full.AUC, neg.indep.AUC, auc_difference), file = output_connection)
   
 }
 ```
+
+Rank the difference of AUC from largest difference to smallest difference. \
+
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+data <- read.table("AUC_values.txt", header = FALSE, sep = "\t")
+
+# Sort the data frame based on the fifth column in descending order
+sorted_data <- data[order(-data$V5), ]
+sorted_data
+```
+
+We have some expected 3mer show up in the top list. \
 
 
 **Box-Whisker Plot** \
