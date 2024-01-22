@@ -2752,14 +2752,18 @@ bw.df$status = factor(bw.df$status, levels = c("non_overlap_rep1", "overlap_rep1
 str(bw.df)
 unique(bw.df$status)
 
+bw.df$rep <- apply(bw.df, 1, function(row) sub(".*_(rep\\d+)", "\\1", row["status"]))
+unique(bw.df$rep)
+bw.df$supp <- apply(bw.df, 1, function(row) sub("^(.*)_rep\\d+$", "\\1", row["status"]))
+
 # Create a bw plot using lattice
-bwplot(intensity ~ status, 
+bwplot(intensity ~ supp | rep, 
        data = bw.df, 
        ylim=c(-50,400),
        do.out=FALSE,
-       main = "Box-and-Whisker Plot")
+       main = "DHS regions (complete) intensity")
 ```
-
+If we only take intersection of rep1 and rep2 DHS regions, we know that the majority in the intersection has higher intensity compared to the disgarded regions (non-overlapped). \
 
 **closestBed** \
 
@@ -4296,23 +4300,6 @@ closest.1st3mer.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS
 
 write.table(closest.1st3mer.to.full.DHS.control.consensus,file= paste0('closest.1st',output_prefix,'.to.full.DHS.control.consensus.bed'), quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st3mer.to.indep.DHS.control.consensus,file= paste0('closest.1st',output_prefix,'.to.indep.DHS.control.consensus.bed'), quote=F,sep="\t",col.names=F,row.names=F)
-
-#ks test
-pos.dis=closest.1st3mer.to.pos.control.motif.all$V11
-neg.full.dis=closest.1st3mer.to.full.DHS.control.consensus$V11
-neg.indep.dis=closest.1st3mer.to.indep.DHS.control.consensus$V11
-
-ks_result1<-ks.test(pos.dis, neg.full.dis)
-ks_result2<-ks.test(pos.dis, neg.indep.dis)
-
-# Print the p-value from the ks.test() and append it to a .txt file along with the 3mer name
-ks_p_value1 <- ks_result1$p.value
-ks_p_value2 <- ks_result2$p.value
-
-
-# Append the 3mer name and KS test p-value to a common output file
-output_txt_file <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer/ks_results_output.txt"
-writeLines(paste("3mer:", output_prefix, "KS Test p-value:", ks_p_value1, ks_p_value2), con = output_txt_file, append = TRUE)
 ```
 
 generate a "closestBed_3mer.sh": \
@@ -4374,6 +4361,166 @@ do
 done
 ```
 
+**KS TEST** \
+**CDF and PDFs** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#module load R/4.1.2
+#R
+directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
+output_file <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer/p_values.txt"
+output_connection <- file(output_file, "w") # Open the output file for writing
+folder_names <- apply(expand.grid(c("A", "T", "C", "G"), c("A", "T", "C", "G"), c("A", "T", "C", "G")), 1, paste, collapse = "")
+#folder_names <- list.dirs(directory_path, full.names = FALSE) # Get a list of folder names in the directory
+
+library(lattice)
+library(latticeExtra)
+# Iterate through each folder
+for (folder_name in folder_names) {
+  # Set the path to the current folder
+  current_folder <- file.path(directory_path, folder_name)
+  
+  # Read the bed files 
+  neg.indep.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.indep.DHS.control.consensus.bed")), header = FALSE)
+  neg.full.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.full.DHS.control.consensus.bed")), header = FALSE)
+  pos.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.pos.control.motif.all.bed")), header = FALSE)
+  
+  # Perform the ks.test for positive control vs independent negative control
+  ks_test_result_bed1 <- ks.test(pos.dis[, 11], neg.indep.dis[, 11])
+  
+  # Perform the ks.test for positive control vs full negative control
+  ks_test_result_bed2 <- ks.test(pos.dis[, 11], neg.full.dis[, 11])
+  
+  # Write the p-values to the output file
+  cat(sprintf("%s\t%s\t%s\n", folder_name, ks_test_result_bed1$p.value, ks_test_result_bed2$p.value), file = output_connection)
+  
+  # Generate PDF and CDF plots for the distance info in the three bed files
+  df.plot=as.data.frame(rbind(cbind(neg.indep.dis[, 11], "neg.indep"), cbind(neg.full.dis[, 11], "neg.full"), cbind(pos.dis[, 11], "pos")))
+  colnames(df.plot)=c("dis","status")
+  df.plot$status = factor(df.plot$status, levels = c("pos", "neg.indep", "neg.full"))
+  df.plot$dis=as.numeric(df.plot$dis)
+  
+  # PDF plot
+  pdf(file.path(current_folder, paste0("PDF_plot_1st_3mer_", folder_name, "_distance_to_summits.pdf")))
+  print(densityplot( ~ abs(dis),
+            groups = status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red", "blue4","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = paste0("distance (bp) from 1st 3mer", folder_name, "to summit"),
+            main = "GATA3 peaks (red) vs. DHS regions (blue)",
+            between=list(y=1.0),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85"))
+         #panel = function(...) {
+             #panel.abline(v= 9, lty =2)
+             #panel.abline(v= 2, lty =2)
+             #panel.densityplot(...)
+         #}
+))
+  dev.off()
+  
+  # CDF plot
+  pdf(file.path(current_folder, paste0("CDF_plot_1st_3mer_", folder_name, "_distance_to_summits.pdf")))
+  print(ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.plot,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red", "blue4","blue"),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         #scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = paste0(expression('log'[10]~'3mer Distance from peak summit -'),folder_name),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c("red", "blue4","blue"), lwd=3), strip.background=list(col="grey85"))
+         #panel = function(...) {
+         #    panel.abline(v= 1.255, lty =2) #log10(17)=1.23 #log10(17)=1.255
+         #    panel.ecdfplot(...)
+         #}
+))
+  dev.off()
+  
+}
+
+# Close the output file
+close(output_connection)
+
+# Print a message indicating the completion of the task
+cat("KS tests and Plots completed. P-values are stored in", output_file, "\n")
+```
+
+
+The above PDF and CDF plots provide a visual inspection of the closest 3mer's distribution for each GATA3 peak/DHS regions summit. \
+The densityplot() uses kernel density probability estimate to calculate the density probability of numeric variables. \
+To quantatively compare the differences of 3mer enrichment near summit regions within range (0,16)(bp) between GATA3 peaks and DHS regions, we can calculate the differences of AUC within the range we selected. \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#module load R/4.1.2
+#R
+directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
+output_file <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer/AUC_values.txt"
+output_connection <- file(output_file, "w") # Open the output file for writing
+folder_names <- apply(expand.grid(c("A", "T", "C", "G"), c("A", "T", "C", "G"), c("A", "T", "C", "G")), 1, paste, collapse = "")
+#folder_names <- list.dirs(directory_path, full.names = FALSE) # Get a list of folder names in the directory
+
+#define a function to calculate AUC
+library(lattice)
+calculate_area_under_curve <- function(df, status, range_start, range_end) {
+  # Calculate density values using the density() function
+  density_values <- density(abs(df[df$status==status,]$dis), from=0, to=50)
+  # Find indices corresponding to the specified range
+  indices <- density_values$x >= range_start & density_values$x <= range_end
+  # Subset density values within the specified range
+  density_values_within_range <- density_values$y[indices]
+  # Calculate the area under the curve
+  area_under_curve <- sum(density_values_within_range) * diff(density_values$x)[1]
+  
+  return(area_under_curve)
+}
+
+
+# Iterate through each folder
+for (folder_name in folder_names) {
+  # Set the path to the current folder
+  current_folder <- file.path(directory_path, folder_name)
+  
+  # Read the bed files 
+  neg.indep.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.indep.DHS.control.consensus.bed")), header = FALSE)
+  neg.full.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.full.DHS.control.consensus.bed")), header = FALSE)
+  pos.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.pos.control.motif.all.bed")), header = FALSE)
+  
+  # combine data for convenience
+  df.plot=as.data.frame(rbind(cbind(neg.indep.dis[, 11], "neg.indep"), cbind(neg.full.dis[, 11], "neg.full"), cbind(pos.dis[, 11], "pos")))
+  colnames(df.plot)=c("dis","status")
+  df.plot$status = factor(df.plot$status, levels = c("pos", "neg.indep", "neg.full"))
+  df.plot$dis=as.numeric(df.plot$dis)
+  
+  #get the AUC for each status
+  pos.AUC=calculate_area_under_curve(df.plot, "pos", 0, 16)
+  neg.full.AUC=calculate_area_under_curve(df.plot, "neg.full", 0, 16)
+  neg.indep.AUC=calculate_area_under_curve(df.plot, "neg.indep", 0, 16)
+  
+  #get the average difference between pos.AUC vs. neg.AUC
+  auc_difference <- ((pos.AUC - neg.full.AUC)+(pos.AUC - neg.indep.AUC))/2
+  
+  # Print the auc_difference value as needed
+  cat(sprintf("%s\t%s\t%s\n", folder_name, pos.AUC, neg.full.AUC, neg.indep.AUC, auc_difference), file = output_connection)
+  
+}
+```
+
+
+**Box-Whisker Plot** \
+? \
 
 
 ## Second closest GAT
