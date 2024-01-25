@@ -4882,7 +4882,7 @@ head(CDF_df_20bp)
 
 Barchart of GATA3 peak\
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
 library(dplyr)
 CDF_df_pos<-rbind(CDF_df_16bp, CDF_df_20bp, CDF_df_30bp, CDF_df_40bp, CDF_df_50bp)
 # Reorder levels of the factor variable based on descending fraction
@@ -4913,7 +4913,7 @@ barchart(prox_enrich_ave_difference ~ triplet |dis,
           #col=ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0, "skyblue", "grey"),
           #col = ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0.20, "skyblue",
           #             ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0 & CDF_df_pos$prox_enrich_ave_difference < 0.20, "lightgreen", "grey")),
-          col=as.factor(CDF_df_pos$my_color),
+          col=CDF_df_pos$my_color,
           origin = 0,
           scales = list(x = list(cex = 0.5, rot = 45)),
           xlab="3mer",
