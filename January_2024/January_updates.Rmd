@@ -71,6 +71,7 @@ library(bigWig)
 
 install.packages("latticeExtra", quiet = TRUE)
 install.packages("DESeq2", quiet = TRUE)
+install.packages("dplyr", quiet = TRUE)
 ```
 
 Install `bedtools` \
@@ -4980,6 +4981,9 @@ CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference > 0.2, ]$triplet # --8 3mers 
 CDF_df_40bp[CDF_df_40bp$prox_enrich_ave_difference > 0.2, ]$triplet # --8 3mers (TTT/AAA now in the neutral group)
 CDF_df_50bp[CDF_df_50bp$prox_enrich_ave_difference > 0.2, ]$triplet # --4 3mers (TTT/AAA, AAT/ATT, GAT/ATC now in the neutral group)
 ```
+
+It is unsurprising that, with an increase in the distance to 50bp, the enriched group exhibits fewer 3mers. As we expand the search radius for the closest 3mer (any 3mer), the likelihood of encountering random 3mers rises. This increase in random occurrences diminishes the observed 'enrichment' fraction. \
+
 **3mer in neutral category changed while using different distance from summits** \
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
 CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet # 22 3mers
@@ -5101,7 +5105,7 @@ dev.off()
 
 ```
 
-This is CDF looks too crowded. I will subset to "No enrichment" and "with enrichment" 3mers, then make two CDF plots. \
+This CDF looks too crowded. I will subset to "No enrichment" and "with enrichment" 3mers, then make two CDF plots. \
 
 ```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
 library(lattice)
@@ -5270,6 +5274,34 @@ depleted:  "CTG", "CAG", "CGA", "TCG", "CGT", "ACG", "CTC", "GAG", "GTC", "GAC",
 
 
 ## Second closest GAT
+
+**Plan**: Use the positive control GATA3 peaks with known motif structure: \
+First, identify the closest GAT to the peak summit on the plus and minus strands, respectively. \
+For the plus strand: \
+a. Anchor at the 1st +GAT and find the 2nd closest GAT on the same strand (+). This is equivalent to searching for the opposite strand ATC (coherence check1). \
+b. Anchor at the 1st +GAT and find the 2nd closest GAT on the opposite strand (-). This is equivalent to searching for the same strand ATC (coherence check2). \
+
+
+For the minus strand: \
+a. Anchor at the 1st -GAT and find the 2nd closest GAT on the same strand (-). This is equivalent to searching for the opposite strand ATC (coherence check3). \
+b. Anchor at the 1st -GAT and find the 2nd closest GAT on the opposite strand (+). This is equivalent to searching for the same strand ATC (coherence check4). \
+
+
+Coherence check5: Visualize on genome browser \
+
+### closest GAT on + strand
+
+####  Anchor at the 1st +GAT and find the 2nd closest GAT on the same strand (+). This is equivalent to searching for the opposite strand ATC (coherence check1).
+
+#### Anchor at the 1st +GAT and find the 2nd closest GAT on the opposite strand (-). This is equivalent to searching for the same strand ATC (coherence check2).
+
+### closest GAT on - strand
+
+#### Anchor at the 1st -GAT and find the 2nd closest GAT on the same strand (-). This is equivalent to searching for the opposite strand ATC (coherence check3).
+
+####  Anchor at the 1st -GAT and find the 2nd closest GAT on the opposite strand (+). This is equivalent to searching for the same strand ATC (coherence check4).
+
+### Coherence check5: Visualize on genome browser 
 
 **In this section, we need to consider two things**: \
 One is to define spacing/distance as the relative position of two zinc finger; \
