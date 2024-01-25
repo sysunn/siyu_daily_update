@@ -4629,7 +4629,7 @@ colnames(CDF_df)=c("triplet", "prox_enrich_16bp_pos", "prox_enrich_16bp_neg_full
 head(CDF_df)
 ```
 
-Barchart of  GATA3 peak\
+Barchart of GATA3 peak\
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
 CDF_df_rank_pos=CDF_df[order(-CDF_df$prox_enrich_16bp_ave_difference), ][,c(1,5)]
 # Reorder levels of the factor variable based on fraction
@@ -4661,13 +4661,13 @@ barchart(prox_enrich_16bp_ave_difference ~ triplet,
           par.settings=my.settings,
           panel=function(...) {
            panel.barchart(...)
-           panel.abline(h=0.15, lty = "dotted", col = "red", identifier = "abline")
+           panel.abline(h=0.20, lty = "dotted", col = "red", identifier = "abline")
            panel.abline(h=0, lty = "dotted", col = "red", identifier = "abline")
        }
           )
 ```
 
-I want to put cut-offs at fration==0.15, and fraction==0; The 3mers that has a proximal enrichment larger than 0.15 will be defined as "high enrichment", between 0 to 0.15 is "low enrichment", fraction below 0 is "no enrichment". \
+I want to put cut-offs at fration==0.20, and fraction==0; The 3mers that has a proximal enrichment larger than 0.15 will be defined as "high enrichment", between 0 to 0.15 is "low enrichment", fraction below 0 is "no enrichment". \
 
 
 **test robustness of our categorization** \
@@ -4767,6 +4767,52 @@ for (folder_name in folder_names) {
 close(output_connection)
 ```
 
+At distance==40bp: \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#module load R/4.1.2
+#R
+directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
+output_file <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer/CDF_fractions_40bp.txt"
+output_connection <- file(output_file, "w") # Open the output file for writing
+folder_names <- apply(expand.grid(c("A", "T", "C", "G"), c("A", "T", "C", "G"), c("A", "T", "C", "G")), 1, paste, collapse = "")
+#folder_names <- list.dirs(directory_path, full.names = FALSE) # Get a list of folder names in the directory
+
+#define a function to calculate AUC
+library(lattice)
+
+# Iterate through each folder
+for (folder_name in folder_names) {
+  # Set the path to the current folder
+  current_folder <- file.path(directory_path, folder_name)
+  
+  # Read the bed files 
+  neg.indep.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.indep.DHS.control.consensus.bed")), header = FALSE)
+  neg.full.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.full.DHS.control.consensus.bed")), header = FALSE)
+  pos.dis <- read.table(file.path(current_folder, paste0("closest.1st",folder_name,".to.pos.control.motif.all.bed")), header = FALSE)
+  
+  # combine data for convenience
+  df.plot=as.data.frame(rbind(cbind(neg.indep.dis[, 11], "neg.indep"), cbind(neg.full.dis[, 11], "neg.full"), cbind(pos.dis[, 11], "pos")))
+  colnames(df.plot)=c("dis","status")
+  df.plot$status = factor(df.plot$status, levels = c("pos", "neg.indep", "neg.full"))
+  df.plot$dis=as.numeric(df.plot$dis)
+  
+  #get the fraction of regions with closer 3mer for each status
+  
+  pos.peak=ecdf(df.plot[df.plot$status=="pos",]$dis)(40)
+  neg.full.peak=ecdf(df.plot[df.plot$status=="neg.full",]$dis)(40)
+  neg.indep.peak=ecdf(df.plot[df.plot$status=="neg.indep",]$dis)(40)
+  
+  #get the average difference between fraction of pos.peak vs. neg.peak
+  fraction_difference <- ((pos.peak - neg.full.peak)+(pos.peak - neg.indep.peak))/2
+  
+  # Print the CDF_fraction_difference value as needed
+  cat(sprintf("%s\t%s\t%s\t%s\t%s\n", folder_name, pos.peak, neg.full.peak, neg.indep.peak, fraction_difference), file = output_connection)
+  
+}
+# Close the output file
+close(output_connection)
+```
+
 At distance==50bp: \
 ```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
 #module load R/4.1.2
@@ -4819,11 +4865,13 @@ load data \
 CDF_df_16bp <- cbind(read.table("CDF_fractions.txt", header = FALSE, sep = "\t"), "16bp")
 CDF_df_20bp <- cbind(read.table("CDF_fractions_20bp.txt", header = FALSE, sep = "\t"),"20bp")
 CDF_df_30bp <- cbind(read.table("CDF_fractions_30bp.txt", header = FALSE, sep = "\t"),"30bp")
+CDF_df_40bp <- cbind(read.table("CDF_fractions_40bp.txt", header = FALSE, sep = "\t"),"40bp")
 CDF_df_50bp <- cbind(read.table("CDF_fractions_50bp.txt", header = FALSE, sep = "\t"),"50bp")
 
 colnames(CDF_df_16bp)=c("triplet", "prox_enrich_pos", "prox_enrich_neg_full", "prox_enrich_neg_indep", "prox_enrich_ave_difference", "dis")
 colnames(CDF_df_20bp)=c("triplet", "prox_enrich_pos", "prox_enrich_neg_full", "prox_enrich_neg_indep", "prox_enrich_ave_difference", "dis")
 colnames(CDF_df_30bp)=c("triplet", "prox_enrich_pos", "prox_enrich_neg_full", "prox_enrich_neg_indep", "prox_enrich_ave_difference", "dis")
+colnames(CDF_df_40bp)=c("triplet", "prox_enrich_pos", "prox_enrich_neg_full", "prox_enrich_neg_indep", "prox_enrich_ave_difference", "dis")
 colnames(CDF_df_50bp)=c("triplet", "prox_enrich_pos", "prox_enrich_neg_full", "prox_enrich_neg_indep", "prox_enrich_ave_difference", "dis")
 
 head(CDF_df_20bp)
@@ -4835,7 +4883,7 @@ Barchart of GATA3 peak\
 
 ```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
 library(dplyr)
-CDF_df_pos<-rbind(CDF_df_16bp, CDF_df_20bp, CDF_df_30bp, CDF_df_50bp)
+CDF_df_pos<-rbind(CDF_df_16bp, CDF_df_20bp, CDF_df_30bp, CDF_df_40bp, CDF_df_50bp)
 # Reorder levels of the factor variable based on descending fraction
 CDF_df_pos <- CDF_df_pos %>%
   arrange(dis, desc(prox_enrich_ave_difference)) %>%
@@ -4843,22 +4891,28 @@ CDF_df_pos <- CDF_df_pos %>%
   mutate(triplet = factor(triplet, levels = triplet))
 
 head(CDF_df_pos)
+CDF_df_pos <- CDF_df_pos %>%
+  mutate(my_color = ifelse(prox_enrich_ave_difference < 0, "grey",
+                           ifelse(prox_enrich_ave_difference > 0.2, "lightblue", "lightgreen")))
+head(CDF_df_pos)
 
-
-#pdf('3mer_fraction_of_Proximal_Emrichment_to_GATA3_peaks.pdf',width=8,height=8)
+pdf('3mer_fraction_of_Proximal_Emrichment_to_GATA3_peaks.pdf',width=8,height=8)
 my.settings <- list(
   superpose.polygon=list(col=c("black", "grey"), border="transparent"),
   strip.background=list(col="grey80", cex = 0.6),
   strip.border=list(col="black")
 )
-#print(
+print(
 barchart(prox_enrich_ave_difference ~ triplet |dis,
           horizontal = FALSE,
           data=CDF_df_pos,
           #type="count",
-          layout = c(1, 4),
+          layout = c(1, 5),
           #ylim=c(-0,0.5),
-          col=ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0, "skyblue", "grey"),
+          #col=ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0, "skyblue", "grey"),
+          #col = ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0.20, "skyblue",
+          #             ifelse(CDF_df_pos$prox_enrich_ave_difference >= 0 & CDF_df_pos$prox_enrich_ave_difference < 0.20, "lightgreen", "grey")),
+          col=as.factorCDF_df_pos$my_color,
           origin = 0,
           scales = list(x = list(cex = 0.5, rot = 45)),
           xlab="3mer",
@@ -4870,15 +4924,76 @@ barchart(prox_enrich_ave_difference ~ triplet |dis,
           par.settings=my.settings,
           panel=function(...) {
            panel.barchart(...)
-           panel.abline(h=0.15, lty = "dotted", col = "red", identifier = "abline")
+           panel.abline(h=0.20, lty = "dotted", col = "red", identifier = "abline")
            panel.abline(h=0, lty = "dotted", col = "red", identifier = "abline")
        }
           )
-#)
-#dev.off()
+)
+dev.off()
 ```
 
+
 It seems that the most robust categorization should be made at fraction differences==0. This will give us two category, "no enrichment" and "with enrichment". There are 32 3mers enriched in close proximity to GATA3 peaks (remains true when defining "close proximity" with distance ==16bp, 20bp, 30bp, 50bp). \
+
+
+**violin plot** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+my.settings <- list(
+  superpose.polygon=list(col=c("black", "grey"), border="transparent"),
+  strip.background=list(col="grey80", cex = 0.6),
+  strip.border=list(col="black")
+)
+
+bwplot(prox_enrich_ave_difference ~ dis, 
+       data=CDF_df_pos,
+       #do.out = F,
+       xlab='distance', ylab='fraction of proximal emrichment',
+       ylim=c(-0.5, 1),
+       par.settings = my.settings,
+       scales=list(x=list(rot=45, cex=1)),
+       panel = function(..., box.ratio) {
+             panel.violin(...,col="white", varwidth = FALSE, box.ratio = box.ratio, do.out = F)
+             panel.abline(h= 0, lty =2, col="red")
+             panel.abline(h= 0.2, lty =2, col="red")
+             #panel.bwplot(...)
+             panel.stripplot(...,jitter.data = T, pch=4, cex=0.4, col="grey")
+             
+         }
+       )
+```
+
+It seems reasonable to put a cut-off at 0.2 and a cut-off at 0 to divide 3mers into three categories: enriched, neutral and depleted. \
+
+**3mer in depleted category remains same while using different distance from summits** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference < 0, ]$triplet
+CDF_df_20bp[CDF_df_20bp$prox_enrich_ave_difference < 0, ]$triplet
+CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference < 0, ]$triplet
+CDF_df_40bp[CDF_df_40bp$prox_enrich_ave_difference < 0, ]$triplet
+CDF_df_50bp[CDF_df_50bp$prox_enrich_ave_difference < 0, ]$triplet
+```
+**3mer in enriched category changed while using different distance from summits** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference > 0.2, ]$triplet # --10 3mers
+CDF_df_20bp[CDF_df_20bp$prox_enrich_ave_difference > 0.2, ]$triplet # --10 3mers
+CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference > 0.2, ]$triplet # --8 3mers (TTT/AAA now in the neutral group)
+CDF_df_40bp[CDF_df_40bp$prox_enrich_ave_difference > 0.2, ]$triplet # --8 3mers (TTT/AAA now in the neutral group)
+CDF_df_50bp[CDF_df_50bp$prox_enrich_ave_difference > 0.2, ]$triplet # --4 3mers (TTT/AAA, AAT/ATT, GAT/ATC now in the neutral group)
+```
+**3mer in neutral category changed while using different distance from summits** \
+```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet # 22 3mers
+CDF_df_20bp[CDF_df_20bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet
+CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet
+CDF_df_40bp[CDF_df_40bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet
+CDF_df_50bp[CDF_df_50bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet
+```
+
+
+```{r  out.width = "80%", out.height="100%", echo=F, fig.align = "center", fig.cap="3mer categorization"}
+#library(knitr)
+knitr::include_graphics("./3mer_fraction_of_Proximal_Emrichment_to_GATA3_peaks.png") 
+```
 
 **all traces in one plot** \
 Based on the above analysis, we can cluster 3mer into () categories, namely "high enrichment", "low enrichment", and "no enrichment". And plot these traces in one single CDF plot. \
@@ -4997,8 +5112,6 @@ colnames(all_1st_3mer_distance)=c("triplet", "dis", "status")
 all_1st_3mer_distance$supp=paste0(all_1st_3mer_distance$triplet, "_", all_1st_3mer_distance$status)
 df.plot=rbind(all_1st_3mer_distance[all_1st_3mer_distance$status=="indep.DHS.control.consensus",], all_1st_3mer_distance[all_1st_3mer_distance$status=="pos.control.motif.all",])
 
-
-
 with_enrichment_list <- c("ATA", "TAT", "TAA", "TTA", "ATC", "GAT", "AAT", "ATT", "TTT", "AAA", "AGA", "TCT", "TAG", "CTA", "ATG", "CAT", "TGA", "TCA", "GTA", "TAC", "CTT", "AAG", "CAA", "TTG", "AAC", "GTT", "ACA", "TGT", "GAA", "TTC", "ACT","AGT")
 no_enrichment_list <- c( "CTG", "CAG", "CGA", "TCG", "CGT", "ACG", "CTC", "GAG", "GTC", "GAC", "GGT", "ACC", "GCA", "TGC", "CAC", "GTG", "TCC", "GGA", "TGG", "CCA", "AGC", "GCT", "CCT","AGG", "CCG", "CGG", "CGC", "GCG", "CCC", "GGG", "GCC", "GGC")
 
@@ -5074,6 +5187,86 @@ print(ecdfplot(~log(abs(dis), base = 10), groups = supp, data = df_plot_no_enr,
 dev.off()
 
 ```
+
+
+We could further separate the 3mers into "enriched" and "neutral" groups.  \
+And we could make 5 CDFs for the five different distance from summits to visualize 3mer change within each category. \
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+
+all_1st_3mer_distance=read.table("all_1st_3mer_distance.csv", header=FALSE)
+colnames(all_1st_3mer_distance)=c("triplet", "dis", "status")
+all_1st_3mer_distance$supp=paste0(all_1st_3mer_distance$triplet, "_", all_1st_3mer_distance$status)
+df.plot=rbind(all_1st_3mer_distance[all_1st_3mer_distance$status=="indep.DHS.control.consensus",], all_1st_3mer_distance[all_1st_3mer_distance$status=="pos.control.motif.all",])
+
+with_enrichment_list <- c("ATA", "TAT", "TAA", "TTA", "ATC", "GAT", "AAT", "ATT", "TTT", "AAA", "AGA", "TCT", "TAG", "CTA", "ATG", "CAT", "TGA", "TCA", "GTA", "TAC", "CTT", "AAG", "CAA", "TTG", "AAC", "GTT", "ACA", "TGT", "GAA", "TTC", "ACT","AGT")
+
+df_plot_with_enr=df.plot[df.plot$triplet %in% with_enrichment_list, ]
+df_plot_with_enr$supp = factor(df_plot_with_enr$supp, levels = c( "ATA_indep.DHS.control.consensus", "TAT_indep.DHS.control.consensus", "TAA_indep.DHS.control.consensus", "TTA_indep.DHS.control.consensus", "ATC_indep.DHS.control.consensus", "GAT_indep.DHS.control.consensus", "AAT_indep.DHS.control.consensus", "ATT_indep.DHS.control.consensus", "TTT_indep.DHS.control.consensus", "AAA_indep.DHS.control.consensus","AGA_indep.DHS.control.consensus", "TCT_indep.DHS.control.consensus", "TAG_indep.DHS.control.consensus", "CTA_indep.DHS.control.consensus", "ATG_indep.DHS.control.consensus","CAT_indep.DHS.control.consensus", "TGA_indep.DHS.control.consensus", "TCA_indep.DHS.control.consensus", "GTA_indep.DHS.control.consensus", "TAC_indep.DHS.control.consensus", "CTT_indep.DHS.control.consensus", "AAG_indep.DHS.control.consensus", "CAA_indep.DHS.control.consensus", "TTG_indep.DHS.control.consensus", "AAC_indep.DHS.control.consensus", "GTT_indep.DHS.control.consensus", "ACA_indep.DHS.control.consensus", "TGT_indep.DHS.control.consensus", "GAA_indep.DHS.control.consensus", "TTC_indep.DHS.control.consensus", "ACT_indep.DHS.control.consensus","AGT_indep.DHS.control.consensus", "ATA_pos.control.motif.all", "TAT_pos.control.motif.all", "TAA_pos.control.motif.all", "TTA_pos.control.motif.all", "ATC_pos.control.motif.all", "GAT_pos.control.motif.all", "AAT_pos.control.motif.all", "ATT_pos.control.motif.all", "TTT_pos.control.motif.all", "AAA_pos.control.motif.all", "AGA_pos.control.motif.all", "TCT_pos.control.motif.all", "TAG_pos.control.motif.all", "CTA_pos.control.motif.all", "ATG_pos.control.motif.all", "CAT_pos.control.motif.all", "TGA_pos.control.motif.all", "TCA_pos.control.motif.all", "GTA_pos.control.motif.all", "TAC_pos.control.motif.all", "CTT_pos.control.motif.all", "AAG_pos.control.motif.all", "CAA_pos.control.motif.all", "TTG_pos.control.motif.all", "AAC_pos.control.motif.all", "GTT_pos.control.motif.all", "ACA_pos.control.motif.all", "TGT_pos.control.motif.all", "GAA_pos.control.motif.all", "TTC_pos.control.motif.all", "ACT_pos.control.motif.all", "AGT_pos.control.motif.all"))
+
+pdf('3mer_Distance_from_peak_summit_with_enr_traces_in_group.pdf',width=8,height=15)
+print(ecdfplot(~log(abs(dis), base = 10), groups = supp, data = df_plot_with_enr,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("grey22","lightgrey"))(32), "red","red","red","red", "hotpink","hotpink","hotpink","hotpink","pink","pink", colorRampPalette(c("green","lightgreen"))(22)),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("grey22","lightgrey"))(32), "red","red","red","red", "hotpink","hotpink","hotpink","hotpink","pink","pink", colorRampPalette(c("green","lightgreen"))(22)), lwd=3), strip.background=list(col="grey85"))
+         #panel = function(...) {
+             #panel.abline(v= 1, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             #panel.ecdfplot(...)
+         #}
+        )
+)
+dev.off()
+
+pdf('3mer_Distance_from_peak_summit_no_enr_traces.pdf',width=8,height=15)
+print(ecdfplot(~log(abs(dis), base = 10), groups = supp, data = df_plot_no_enr,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c(colorRampPalette(c("blue","lightblue"))(32), colorRampPalette(c("grey22","lightgrey"))(32)),
+         aspect = 1,
+        #xlim = c(0, 50000),
+         scales=list(relation="free",alternating=c(1,1,1,1)),
+         ylab = 'Cumulative Distribution Function',
+         xlab = expression('log'[10]~'3mer Distance from peak summit'),
+                                        #index.cond = list(c(2,1)),
+         between=list(y=1.0),
+         type = 'a',
+         xlim = c(0,2.5),
+         lwd=2,
+         lty=c(1),
+         par.settings = list(superpose.line = list(col=c(colorRampPalette(c("blue","lightblue"))(32), colorRampPalette(c("grey22","lightgrey"))(32)), lwd=3), strip.background=list(col="grey85"))
+         #panel = function(...) {
+             #panel.abline(v= 1, lty =2, col="red")
+             #panel.abline(v= 18, lty =2, col="grey30")
+             #panel.ecdfplot(...)
+         #}
+        )
+)
+dev.off()
+
+```
+
+### Conclusion
+There are 32 3mers ( with GAT/ATC, ATA/TAT, TAA/TTA on the top of the list) exhibit closer proximity to the GATA3 peak summit and demonstrate enrichment compared to DHS regions near (use distance==16bp) the GATA3 peak summit. \
+enriched (n=10): "AAA" "TAA" "ATA" "TTA" "AAT" "TAT" "GAT" "ATT" "TTT" "ATC" \
+neutral (n=22): "CAA" "GAA" "CTA" "GTA" "ACA" "TCA" "AGA" "TGA" "CAT" "CTT" "GTT" "ACT" "TCT" "AGT" "TGT" "AAC" "TAC" "TTC" "AAG" "TAG" "ATG" "TTG" \
+
+There are 32 3mers do not show closer proximity and have no enrichment near GATA3 peaks. These 3mers shows a negative CDF differences in the ranked list. These 3mers are: GGC/GCC, GGG/CCC, GCG/CGC, CGG/CCG, AGG/CCT, GCT/AGC, CCA/TGG, GGA/TCC, GTG/CAC, TGC/GCA, ACC/GGT, GAT/GTC, GAG/CTC, ACG/CGT, TCG/CGA, CAG/CTG. We can put these 3mers aside for now. \
+depleted:  "CTG", "CAG", "CGA", "TCG", "CGT", "ACG", "CTC", "GAG", "GTC", "GAC", "GGT", "ACC", "GCA", "TGC", "CAC", "GTG", "TCC", "GGA", "TGG", "CCA", "AGC", "GCT", "CCT","AGG", "CCG", "CGG", "CGC", "GCG", "CCC", "GGG", "GCC", “GGC" \
+
+**The different 3mer in enriched cluster is AAA/TTT while we change the 16/20bp to 30/40bp. I want to include AAA/TTT since they are reasonable 3mer while looking at the PWM of GATA3 motifs.** \
 
 
 ## Second closest GAT
