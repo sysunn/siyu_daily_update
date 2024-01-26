@@ -390,7 +390,7 @@ head -5 MCF7_hg38_Encode_DHS_Rep1_peak.bed
 
 Make alternative bed files that keep the original intensity info. \
 Notice that the original file from ENCODE is in bigNarrowPeak format with 10 columns, the 7th column is the signalValue: "Measurement of average enrichment for the region". \
-```{r, engine='bash', class.source = "revision", eval=F, echo=TRUE}
+```{r, engine='bash', eval=F, echo=TRUE}
 #files contains intensity info with hg19 coordinates
 #to match with the converted hg38 file, add 1bp to the start coordinates.
 awk '{print $1":"$2+1"-"$3, $7}' MCF7-DS9445.peaks.fdr0.01.hg19.bed > hg19.rep1.intensity.bed
@@ -398,7 +398,7 @@ awk '{print $1":"$2+1"-"$3, $7}' MCF7-DS12619.peaks.fdr0.01.hg19.bed > hg19.rep2
 ```
 
 
-```{r, engine='R', class.source = "revision", eval=T, echo=TRUE}
+```{r, engine='R', eval=T, echo=TRUE}
 #files contains intensity info with hg19 coordinates
 hg19.rep1=read.table('hg19.rep1.intensity.bed', sep = "", header=FALSE)  #rep1
 hg19.rep2=read.table('hg19.rep2.intensity.bed', sep = "", header=FALSE) #rep2
@@ -983,7 +983,7 @@ Since now we know that GATA3 is likely to bind in an 161bp window around summit,
 ## Process the positive control
 There are 8 GATA3-like motifs found by MEME/STREME. Among them, 5 of them have GATA3 binding motifs that are formed by two GAT (or ATC) 3mer and various spacings. \
 
-I will utilize `MAST` against the 161bp window peaks for all 8 motifs (the concatenated database file) to identify motif coordinates corresponding to each motif. Subsequently, I'll employ `intersectBed` to isolate the peak sets containing the best motif within the 161bp window. The peak sets characterized by the presence of the specific motif structures that we are insterested in will serve as positive controls. \
+I will utilize `MAST` against the 161bp window peaks for all 8 motifs (the concatenated database file) to identify motif coordinates corresponding to each motif. Subsequently, I'll employ `intersectBed` to isolate the peak sets containing the best motif within the 161bp window. The peak sets characterized by the presence of the specific motif structures that we are interested in will serve as positive controls. \
 
 
 ```{r, engine='bash', eval=F, echo=TRUE}
@@ -2321,7 +2321,7 @@ save.image('240108_GATA3_ChIP_clsestbed2.Rdata')
 
 Combine info to the same data frame: negative control (MCF7 DHS regions) info + distance +status. \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.neg = data.frame(matrix(nrow = 0, ncol = 5))     
 colnames(df.neg) = c("V1","V2","v3", "dis", "status")
 for (chip.peak in Sys.glob(file.path("./*DHS.control.rep*.bed"))) {
@@ -2338,7 +2338,7 @@ head(df.neg)
 ```
 
 CDF plot \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -2368,7 +2368,7 @@ The blue traces are the two reps from full MCF7 DHS regions, the grey traces are
 <span class="highlighted">**Kolmogorov–Smirnov test**</span> \
 <span class="highlighted">KS test is used to compare distributions. Notice that it is a pretty sensitive test.</span> \
 <span class="highlighted">The `ks.test` function in R returns a test statistic and a p-value. We can interpret the p-value to determine whether to reject the null hypothesis (H0: two sample draw from populations with same distribution). If the p-value is less than than significance level (e.g., 0.05), we can reject the null hypothesis and conclude that the distributions are significantly different.</span> \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 data1=abs(df.neg$dis)[df.neg$status == 'indep.DHS.control.rep1']
 data2=abs(df.neg$dis)[df.neg$status == 'indep.DHS.control.rep2']
 data3=abs(df.neg$dis)[df.neg$status == 'full.DHS.control.rep1']
@@ -2392,7 +2392,7 @@ ks.test(data2 , data4)
 We also expect that the independent control compared to its complete version in the same rep will be more right-shifted. (in other word, has less GAT 3mer close to its summit). let's check: \
 
 **indep vs. full in rep1** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -2421,7 +2421,7 @@ The two traces are mostly overlapped. By eye, blue trace (full) is slightly left
 
 Further validate if these traces converge/parallel to each other. \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.neg.rep1
 match = ecdf(abs(df.neg.rep1$dis)[df.neg.rep1$status == 'indep.DHS.control.rep1'])
 rep = ecdf(abs(df.neg.rep1$dis)[df.neg.rep1$status == 'full.DHS.control.rep1'])
@@ -2455,7 +2455,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 ```
 
 **indep vs. full in rep2** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -2485,7 +2485,7 @@ The two traces are mostly overlapped. \
 
 Further validate if these traces converge/parallel to each other. \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.neg.rep2
 match = ecdf(abs(df.neg.rep2$dis)[df.neg.rep2$status == 'indep.DHS.control.rep2'])
 rep = ecdf(abs(df.neg.rep2$dis)[df.neg.rep2$status == 'full.DHS.control.rep2'])
@@ -2520,7 +2520,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 
 Comparing the full DHS regions between rep1 and rep2. \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -2545,7 +2545,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.neg.full,
          )
 ```
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories 
 match = ecdf(abs(df.neg$dis)[df.neg$status == 'full.DHS.control.rep2'])
 rep = ecdf(abs(df.neg$dis)[df.neg$status == 'full.DHS.control.rep1'])
@@ -2586,7 +2586,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 <span class="highlighted">The above ks tests as well as cdf plots reveal that data (closest GAT distance to DHS regions summit) distribution is significantly different between rep1 and rep2 DHS. Thus, we want to take the intersect regions from the two replicates, then use the new sets' summit to calculate distance to closest GAT as the consensus negative controls.</span> \
 
 **DHS peak intensity append from original data** \
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 head -5 hg38.rep1.intensity.bed 
 #chr1	99534644	99534794	11
 #chr1	9942462	9942612	14
@@ -2604,7 +2604,7 @@ head -5 hg38.rep2.intensity.bed
 
 Assign the intensity to full neg control rep1 and rep2: \
 intersect with peak that extend to 161bp and removed motifs123456_78 \
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools
 intersectBed -wa -wb -a MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed -b hg38.rep1.intensity.bed | head -5  
 #chr1	267964	268125	chr1	267969	268119	11
@@ -2663,7 +2663,7 @@ chr1	143972158	143972319	chr1	143972163	143972313	377
 chr1	143972158	143972319	chr1	143972226	143972376	1352
 ```
 
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 # rep1 with intensity
 intersectBed -wa -wb -a MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed -b hg38.rep1.intensity.bed | awk '{print $1, $2, $3, $7}' OFS="\t"| uniq > MCF7DHS_Rep1_161bp_without_motifs_123456_78_with_intensity.bed
 wc -l MCF7DHS_Rep1_161bp_without_motifs_123456_78_with_intensity.bed
@@ -2692,7 +2692,7 @@ head -5 MCF7DHS_Rep2_161bp_without_motifs_123456_78_with_intensity.bed
 
 
 **Venn plot** \
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash',  eval=F, echo=TRUE}
 # rep1 peak (overlapped with rep2)
 module load bedtools
 intersectBed -wa -a MCF7DHS_Rep1_161bp_without_motifs_123456_78_with_intensity.bed -b MCF7DHS_Rep2_161bp_without_motifs_123456_78_with_intensity.bed | awk '{print $1, $2, $3}' OFS="\t"| uniq | wc -l #78703
@@ -2723,7 +2723,7 @@ knitr::include_graphics("./venn_plot.png")
 The above venn plot is showing the intersected regions while intersecting rep1 vs. rep2 (count the original entry in rep1 for each overlap); the below venn plot is showing the intersected regions while intersecting rep2 vs. rep1 (count the original entry in rep2 for each overlap). \
 
 **bw plot** \
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 # rep1 peak (overlapped with rep2)
 module load bedtools
 intersectBed -wa -a MCF7DHS_Rep1_161bp_without_motifs_123456_78_with_intensity.bed -b MCF7DHS_Rep2_161bp_without_motifs_123456_78_with_intensity.bed > overlap_rep1.bed 
@@ -2739,7 +2739,7 @@ intersectBed -v -wa -a MCF7DHS_Rep2_161bp_without_motifs_123456_78_with_intensit
 ```
 
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 bw.df = data.frame(matrix(nrow = 0, ncol = 5))     
@@ -2770,7 +2770,7 @@ If we only take intersection of rep1 and rep2 DHS regions, we know that the majo
 
 **closestBed** \
 
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 #cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/ENCODE_DHS_GSE29692
 # "full DHS control"
 head -5 MCF7DHS_Rep1_161bp_without_motifs_123456_78.bed  #92388 
@@ -2825,7 +2825,7 @@ head -5 MCF7DHS_consensus_noGATA_without_motifs_123456_78.bed
 #chr1	631375	631536
 ```
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 full.DHS.control.consensus=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_consensus_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 nrow(full.DHS.control.consensus)
 #[1] 78858
@@ -2869,6 +2869,7 @@ save.image('240118_GATA3_ChIP_clsestbed4.Rdata')
 
 ### positive controls
 
+<!--
 load files contains the 4 positive controls (GATA3 peak set with enriched GATA3-like motif of known structures). \
 
 GATA3_peak_161win_with_motif_1.bed \
@@ -2957,9 +2958,11 @@ write.table(closest.1stGAT.to.pos.control.motif6,file= 'closest.1stGAT.to.pos.co
 save.image('240116_GATA3_ChIP_clsestbed3.Rdata') 
 ```
 
+-->
+
 <span class="highlighted">An alternative positive control could be closest GAT distance to all peaks that contains GATA3-like motifs found by MEME/STREME. Load files contains all peak with GATA3-like motifs (1 to 8): </span> \
 
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/
 ls with_motifs_*mast.bed
 head -5 with_motifs_1_101bp_mast.bed
@@ -2979,7 +2982,7 @@ with_motifs_3_161bp_mast.bed  with_motifs_7_161bp_mast.bed \
 with_motifs_4_101bp_mast.bed  with_motifs_8_101bp_mast.bed \
 with_motifs_4_161bp_mast.bed \
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 # positive control-all
 library(bigWig)
 pos.control.peak.with.all=data.frame()
@@ -3047,7 +3050,7 @@ head(closest.1stGAT.to.GATA.peak.quantile0.2)
 <span class="highlighted">closest.1stGAT.to.full.DHS.control.consensus.bed</span> \
 <span class="highlighted">closest.1stGAT.to.indep.DHS.control.consensus.bed</span> \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 closest.1stGAT.to.full.DHS.control.consensus=read.table('closest.1stGAT.to.full.DHS.control.consensus.bed',header=F, comment.char='')
 closest.1stGAT.to.indep.DHS.control.consensus=read.table('closest.1stGAT.to.indep.DHS.control.consensus.bed',header=F, comment.char='')
 
@@ -3094,7 +3097,7 @@ nrow(closest.1stGAT.to.pos.control.motif6)
 -->
 
 <span class="highlighted">While plotting the closest GAT to peak summit, we can use all peaks that contains GATA3-like motifs (found by MEME/STREME) as the positive control. Thus the latter CDF plot will only show one trace of pos control which will make the plot more concise:</span> \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 closest.1stGAT.to.pos.control.motif.all=read.table('closest.1stGAT.to.pos.control.motif.all.bed',header=F, comment.char='')
 
 
@@ -3108,7 +3111,7 @@ nrow(closest.1stGAT.to.pos.control.motif.all[closest.1stGAT.to.pos.control.motif
 
 GATA3 peak info + distance + status. \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.chip = data.frame(matrix(nrow = 0, ncol = 5))     
 colnames(df.chip) = c("V1","V2","v3", "dis", "status")
 for (chip.peak in Sys.glob(file.path("./closest.1stGAT.to.GATA.peak.quantile*.bed"))) {
@@ -3125,7 +3128,7 @@ head(df.chip)
 ```
 
 negative control info + distance +status. \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.neg.consensus = data.frame(matrix(nrow = 0, ncol = 5))     
 colnames(df.neg.consensus) = c("V1","V2","v3", "dis", "status")
 for (chip.peak in Sys.glob(file.path("./closest.1stGAT.to.*DHS.control.consensus.bed"))) {
@@ -3142,7 +3145,7 @@ head(df.neg.consensus)
 ```
 positive control info + distance +status. \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.pos=read.table('closest.1stGAT.to.pos.control.motif.all.bed',header=F, comment.char='')[,c(1:3, 11)]
 df.pos$status="pos.control.motif.all"
 colnames(df.pos) = c("V1","V2","V3", "dis", "status")
@@ -3170,7 +3173,7 @@ head(df.pos)
 -->
 
 **merge files**. \
-```{r engine='R', eval=TRUE, class.source = "revision", echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 df.all=rbind(df.chip, df.neg.consensus, df.pos)
 unique(df.all$status)
 df.all$status = factor(df.all$status, levels = c("quantile0.2", "quantile0.4", "quantile0.6", "quantile0.8", "quantile1", "full.DHS.control", "indep.DHS.control", "pos.control.motif.all"))
@@ -3181,7 +3184,7 @@ nrow(df.all)
 ### CDF plot - single figure
 
 **all in one plot** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -3214,7 +3217,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.all,
 <span class="highlighted">For GATA3 peaks without MEME/STREME found GATA3-like motifs (5 red traces), they also show leftward shift compared to negative controls (grey). Notice that peaks with higher intensity also shows greater left-shift.</span> \
 
 ### CDF plot - negative control (consensus)
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.neg.consensus,
          auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
          col=c("grey","grey30"),
@@ -3238,7 +3241,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df.neg.consensus,
     
 ```
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories 
 match = ecdf(abs(df.neg.consensus$dis)[df.neg.consensus$status == 'indep.DHS.control'])
 rep = ecdf(abs(df.neg.consensus$dis)[df.neg.consensus$status == 'full.DHS.control'])
@@ -3273,7 +3276,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 
 ### CDF plot - positive control vs. negative control
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 df1= rbind(df.neg.consensus, df.pos)
 df1$status = factor(df1$status, levels = c("full.DHS.control", "indep.DHS.control", "pos.control.motif.all"))
 ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
@@ -3303,7 +3306,7 @@ ecdfplot(~log(abs(dis), base = 10), groups = status, data = df1,
 A coherence check on the positive control vs. the two negative controls. We can observe a remarkble left-shift in the cdf plot, indicates that GAT is closer to peak summit in GATA3 peaks. \
 
 **pos vs. full.neg** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories 
 match = ecdf(abs(df1$dis)[df1$status == 'full.DHS.control'])
 rep = ecdf(abs(df1$dis)[df1$status == 'pos.control.motif.all'])
@@ -3337,7 +3340,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 ```
 
 **pos vs. indep.neg** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories 
 match = ecdf(abs(df1$dis)[df1$status == 'indep.DHS.control'])
 rep = ecdf(abs(df1$dis)[df1$status == 'pos.control.motif.all'])
@@ -3373,7 +3376,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 
 We can determine the fraction of peaks with closest GAT: \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 frac1=sum(df1[df1$status=="pos.control.motif.all",]$dis <= 16) / length(df1[df1$status=="pos.control.motif.all",]$dis)
 frac2=sum(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis <= 16) / length(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis)
 frac3=sum(df.neg.consensus[df.neg.consensus$status=="indep.DHS.control",]$dis <= 16) / length(df.neg.consensus[df.neg.consensus$status=="indep.DHS.control",]$dis)
@@ -3383,7 +3386,7 @@ frac1-frac3
 
 The above code same as: \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 ecdf(df1[df1$status=="pos.control.motif.all",]$dis)(16)
 ```
 
@@ -3394,7 +3397,7 @@ ecdf(df1[df1$status=="pos.control.motif.all",]$dis)(16)
 
 We can empirically determine the distance at which the CDFs' difference between GATA3 peak set and ctrl peak set reach the plateaus (where CDF traces became parallel or converging). \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 unique(df.all$status)
 ```
 
@@ -3402,7 +3405,7 @@ Comparing between MCF7 DHS regions (neg control) and GATA3 peak in quantile1 to 
 
 
 **1) quantile1 vs. "full.DHS.control"** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
@@ -3436,7 +3439,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 ```
 **2) quantile1 vs. "indep.DHS.control"** \
 
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile1'])
@@ -3474,7 +3477,7 @@ By plotting the difference between the CDFs of GATA3 peaks (quantile 1) and the 
 When comparing GATA3 peaks within quantile 1 to the full.DHS.control (MCF7 cells), we observe that at a distance of 17 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
 A slightly larger distance cut-off (dis==18bp) was found when comparing with the indep.DHS.control. This is expected because we already know that indep neg control are more towards right compared to full neg control. \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -3530,7 +3533,7 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 
 We can determine the fraction of peaks with closest GAT (19%): \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 
 frac1=sum(df.chip[df.chip$status=="quantile1",]$dis <= 17) / length(df.chip[df.chip$status=="quantile1",]$dis)
 frac2=sum(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis <= 17) / length(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis)
@@ -3546,7 +3549,7 @@ Here, indep.DHS neg control serves as a good internal control for the full.DHS n
 #### empirically determine binding distance for each quantile--quantile0.8
 
 **1) quantile0.8 vs. "full.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
@@ -3580,7 +3583,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 ```
 
 **2) quantile0.8 vs. "indep.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.8'])
@@ -3615,7 +3618,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 When comparing GATA3 peaks within quantile 0.8 to the two DHS control (MCF7 cells), we observe that at a distance of 9 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
 
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -3672,7 +3675,7 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 
 We can determine the fraction of peaks with closest GAT (6.9%): \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 frac1=sum(df.chip[df.chip$status=="quantile0.8",]$dis <= 9) / length(df.chip[df.chip$status=="quantile0.8",]$dis)
 frac2=sum(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis <= 9) / length(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis)
 frac3=sum(df.neg.consensus[df.neg.consensus$status=="indep.DHS.control",]$dis <= 9) / length(df.neg.consensus[df.neg.consensus$status=="indep.DHS.control",]$dis)
@@ -3686,7 +3689,7 @@ Very similar fraction of peak considerred to have a closer GAT. Again, it allign
 #### empirically determine binding distance for each quantile--quantile0.6
 
 **1) quantile0.6 vs. "full.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
@@ -3722,7 +3725,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 When comparing GATA3 peaks within quantile 0.6 to the full.DHS.control (MCF7 cells), we observe that at a distance of 10 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
 
 **2) quantile0.6 vs. "indep.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.6'])
@@ -3757,7 +3760,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 
 When comparing GATA3 peaks within quantile 0.6 to the indep.DHS.control (MCF7 cells), we observe that at a distance of 10 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -3813,7 +3816,7 @@ In the above CDF plot, a noticeable left-shift is evident in the closest GAT dis
 
 We can determine the fraction of peaks with closest GAT (4.9%): \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 
 frac1=sum(df.chip[df.chip$status=="quantile0.6",]$dis <= 10) / length(df.chip[df.chip$status=="quantile0.6",]$dis)
 frac2=sum(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis <= 10) / length(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis)
@@ -3827,7 +3830,7 @@ frac1-frac3
 
 
 **1) quantile0.4 vs. "full.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
@@ -3861,7 +3864,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
       lines(pred[[1]], pred[[2]], col = 'blue')
 ```
 **2) quantile0.4 vs. "indep.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.4'])
@@ -3896,7 +3899,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 
 When comparing GATA3 peaks within quantile 0.4 to the DHS negative controls (MCF7 cells), we observe that at a distance of 5 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -3952,7 +3955,7 @@ In the above CDF plot, the left-shift is not as prominent as previous few cdf pl
 
 We can determine the fraction of peaks with closest GAT (2.5%): \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 
 frac1=sum(df.chip[df.chip$status=="quantile0.4",]$dis <= 5) / length(df.chip[df.chip$status=="quantile0.4",]$dis)
 frac2=sum(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis <= 5) / length(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis)
@@ -3967,7 +3970,7 @@ frac1-frac3
 
 
 **1) quantile0.2 vs. "full.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'full.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
@@ -4000,7 +4003,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
       lines(pred[[1]], pred[[2]], col = 'blue')
 ```
 **2) quantile0.2 vs. "indep.DHS.control":** \
-```{r engine='R', class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 # Specify categories to compare within df.all
 match = ecdf(abs(df.all$dis)[df.all$status == 'indep.DHS.control'])
 rep = ecdf(abs(df.all$dis)[df.all$status == 'quantile0.2'])
@@ -4036,7 +4039,7 @@ plot(rep.y, rep(rep.y) - match(match.y),
 When comparing GATA3 peaks within quantile 0.2 to the DHS negative controls (MCF7 cells), we observe that at a distance of 8 from the GATA3 peak summit, there are peaks exhibiting a closer resemblance to the GAT 3mer. \
 
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -4091,7 +4094,7 @@ In the above CDF plot, left-shift is not prominent. At the marked red dotted lin
 
 We can determine the fraction of peaks with closest GAT (1.7%): \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 
 frac1=sum(df.chip[df.chip$status=="quantile0.2",]$dis <= 8) / length(df.chip[df.chip$status=="quantile0.2",]$dis)
 frac2=sum(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis <= 8) / length(df.neg.consensus[df.neg.consensus$status=="full.DHS.control",]$dis)
@@ -4105,7 +4108,7 @@ frac1-frac3
 ### barchart summary
 Summarize the fraction of peaks (in each quantile) that has a closest GAT to its peak summits. \
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 library(lattice)
@@ -4159,7 +4162,7 @@ dev.off()
 knitr::include_graphics("./240119_fraction_of_peaks_have_closer_GAT.png") 
 ```
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 library(lattice)
 bar=read.csv(file ="barchart_sum.csv", header = T)
 str(bar)
@@ -4218,7 +4221,7 @@ In the above analysis, we have used only 3mer GAT to do the analysis. \
 
 Automate the process that concatenate the minus and plus 3mer coordinates file together. \
 3mer coordinates on full hg38 use **read size==1000**. \
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 # Specify the directory containing the bed files
 dir="/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/"
 
@@ -4239,7 +4242,7 @@ Automate a parallel running process to find closest distance between different 3
 
 
 First create the R file (closestBed_3mer.R) to run the closestBed job: \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',   eval=F, echo=TRUE}
 #!/usr/bin/env Rscript
 
 Args=commandArgs(TRUE)
@@ -4323,7 +4326,7 @@ write.table(closest.1st3mer.to.indep.DHS.control.consensus,file= paste0('closest
 ```
 
 generate a "closestBed_3mer.sh": \
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash',   eval=F, echo=TRUE}
 #!/bin/bash
 #SBATCH --job-name=closestBed_3mer.sh     # name for job
 #SBATCH -N 1
@@ -4350,7 +4353,7 @@ echo "Job for ${triplet} completed."
 
 Run the below chunk to submit multiple jobs in parallel: \
 
-```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='bash', eval=F, echo=TRUE}
 #!/bin/bash
 
 # Specify the directory containing the 3mer bed files
@@ -4383,7 +4386,7 @@ done
 
 **KS TEST** \
 **CDF and PDFs** \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4483,7 +4486,7 @@ close(output_connection)
 The above PDF and CDF plots provide a visual inspection of the closest 3mer's distribution for each GATA3 peak/DHS regions summit. \
 The densityplot() uses kernel density probability estimate to calculate the density probability of numeric variables. \
 To quantitatively compare the differences of 3mer enrichment near summit regions within range (0,16)(bp) between GATA3 peaks and DHS regions, we can calculate the differences of AUC within the range we selected. \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4542,7 +4545,7 @@ close(output_connection)
 
 Rank the difference of AUC from largest difference to smallest difference. \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 AUC_df <- read.table("AUC_values.txt", header = FALSE, sep = "\t")
 colnames(AUC_df)=c("triplet", "prox_enrich_16bp_pos", "prox_enrich_16bp_neg_full", "prox_enrich_16bp_neg_indep", "prox_enrich_16bp_ave_difference")
 # Sort the data frame based on the fifth column in descending order
@@ -4552,7 +4555,7 @@ sorted_AUC_df
 
 
 calculate the fraction of peaks has closer 3mer by CDF. \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4599,7 +4602,7 @@ close(output_connection)
 
 Rank the fraction of peaks with closer 3mer from largest difference to smallest difference. \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 CDF_df <- read.table("CDF_fractions.txt", header = FALSE, sep = "\t")
 colnames(CDF_df)=c("triplet", "prox_enrich_16bp_pos", "prox_enrich_16bp_neg_full", "prox_enrich_16bp_neg_indep", "prox_enrich_16bp_ave_difference")
 # Sort the data frame based on the fifth column in descending order
@@ -4611,7 +4614,7 @@ sorted_CDF_df
 
 The intersection point of CDF is essentially same with the AUC of PDF at distance(x)==16bp. \
 The scatter plot of the y intersection of CDF at x==16bp and the AUC of PDF at x==16bp is on the diagonal. 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 library(lattice)
 xyplot(AUC_df$prox_enrich_16bp_ave_difference ~CDF_df$prox_enrich_16bp_ave_difference, 
      asp=1,
@@ -4624,14 +4627,14 @@ xyplot(AUC_df$prox_enrich_16bp_ave_difference ~CDF_df$prox_enrich_16bp_ave_diffe
 We've compiled a list of 3-mers ranked by their proximity to GATA3 peaks. Our next step involves clustering these 3-mers based on their enrichment levels. To gain insights, we'll use visual plots depicting the distribution of 3-mer enrichment. \
 Since in the scatter plot above, it is very similar for using AUC from PDF plots or y intersection from CDF plots at the defined distance. From now on, I will only use the y values from CDF plots at defined distance to determine "proximal enrichment". \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 CDF_df <- read.table("CDF_fractions.txt", header = FALSE, sep = "\t")
 colnames(CDF_df)=c("triplet", "prox_enrich_16bp_pos", "prox_enrich_16bp_neg_full", "prox_enrich_16bp_neg_indep", "prox_enrich_16bp_ave_difference")
 head(CDF_df)
 ```
 
 Barchart of GATA3 peak\
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 CDF_df_rank_pos=CDF_df[order(-CDF_df$prox_enrich_16bp_ave_difference), ][,c(1,5)]
 # Reorder levels of the factor variable based on fraction
 CDF_df_rank_pos$triplet<- factor(CDF_df_rank_pos$triplet, 
@@ -4677,7 +4680,7 @@ The fraction we plot in the above plots are using distance at 16bp to define 3me
 Calculate the fraction of peaks has closer 3mer by CDF. \
 
 At distance==20bp: \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4723,7 +4726,7 @@ close(output_connection)
 ```
 
 At distance==30bp: \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4769,7 +4772,7 @@ close(output_connection)
 ```
 
 At distance==40bp: \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4815,7 +4818,7 @@ close(output_connection)
 ```
 
 At distance==50bp: \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R',  eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -4862,7 +4865,7 @@ close(output_connection)
 
 load data \
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 CDF_df_16bp <- cbind(read.table("CDF_fractions.txt", header = FALSE, sep = "\t"), "16bp")
 CDF_df_20bp <- cbind(read.table("CDF_fractions_20bp.txt", header = FALSE, sep = "\t"),"20bp")
 CDF_df_30bp <- cbind(read.table("CDF_fractions_30bp.txt", header = FALSE, sep = "\t"),"30bp")
@@ -4882,7 +4885,7 @@ head(CDF_df_20bp)
 
 Barchart of GATA3 peak\
 
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 library(dplyr)
 CDF_df_pos<-rbind(CDF_df_16bp, CDF_df_20bp, CDF_df_30bp, CDF_df_40bp, CDF_df_50bp)
 # Reorder levels of the factor variable based on descending fraction
@@ -4938,7 +4941,7 @@ It seems that the most robust categorization should be made at fraction differen
 
 
 **violin plot** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 my.settings <- list(
   superpose.polygon=list(col=c("black", "grey"), border="transparent"),
   strip.background=list(col="grey80", cex = 0.6),
@@ -4966,7 +4969,7 @@ bwplot(prox_enrich_ave_difference ~ dis,
 It seems reasonable to put a cut-off at 0.2 and a cut-off at 0 to divide 3mers into three categories: enriched, neutral and depleted. \
 
 **3mer in depleted category remains same while using different distance from summits** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference < 0, ]$triplet
 CDF_df_20bp[CDF_df_20bp$prox_enrich_ave_difference < 0, ]$triplet
 CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference < 0, ]$triplet
@@ -4974,7 +4977,7 @@ CDF_df_40bp[CDF_df_40bp$prox_enrich_ave_difference < 0, ]$triplet
 CDF_df_50bp[CDF_df_50bp$prox_enrich_ave_difference < 0, ]$triplet
 ```
 **3mer in enriched category changed while using different distance from summits** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R', eval=TRUE, echo=TRUE}
 CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference > 0.2, ]$triplet # --10 3mers
 CDF_df_20bp[CDF_df_20bp$prox_enrich_ave_difference > 0.2, ]$triplet # --10 3mers
 CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference > 0.2, ]$triplet # --8 3mers (TTT/AAA now in the neutral group)
@@ -4985,7 +4988,7 @@ CDF_df_50bp[CDF_df_50bp$prox_enrich_ave_difference > 0.2, ]$triplet # --4 3mers 
 It is unsurprising that, with an increase in the distance to 50bp, the enriched group exhibits fewer 3mers. As we expand the search radius for the closest 3mer (any 3mer), the likelihood of encountering random 3mers rises. This increase in random occurrences diminishes the observed 'enrichment' fraction. \
 
 **3mer in neutral category changed while using different distance from summits** \
-```{r engine='R',  class.source = "revision", eval=TRUE, echo=TRUE}
+```{r engine='R',  eval=TRUE, echo=TRUE}
 CDF_df_16bp[CDF_df_16bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet # 22 3mers
 CDF_df_20bp[CDF_df_20bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet
 CDF_df_30bp[CDF_df_30bp$prox_enrich_ave_difference < 0.2 & CDF_df_50bp$prox_enrich_ave_difference > 0, ]$triplet
@@ -5002,7 +5005,7 @@ knitr::include_graphics("./3mer_fraction_of_Proximal_Emrichment_to_GATA3_peaks.p
 **all traces in one plot** \
 Based on the above analysis, we can cluster 3mer into () categories, namely "high enrichment", "low enrichment", and "no enrichment". And plot these traces in one single CDF plot. \
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 #module load R/4.1.2
 #R
 directory_path <- "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/other_3mer"
@@ -5053,7 +5056,7 @@ close(output_connection)
 ```
 
 CDF plot with all traces (64 pos+64 neg) \
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -5107,7 +5110,7 @@ dev.off()
 
 This CDF looks too crowded. I will subset to "No enrichment" and "with enrichment" 3mers, then make two CDF plots. \
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -5196,7 +5199,7 @@ dev.off()
 We could further separate the 3mers into "enriched" and "neutral" groups.  \
 And we could make 5 CDFs for the five different distance from summits to visualize 3mer change within each category. \
 
-```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 
@@ -5290,6 +5293,140 @@ b. Anchor at the 1st -GAT and find the 2nd closest GAT on the opposite strand (+
 Coherence check5: Visualize on genome browser \
 
 ### closest GAT on + strand
+
+There are 8 motifs found by MEME/STREME in GATA3 peaks. Among these 8 motifs, 5 of them have specific motif structure that we are interested of (two GATA3 motif half sites with un-fixed spacing in between). These are motif 1,2,4,5,6. \
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="GATA3 ChIP peak MME/STREME found motifs"}
+#library(knitr)
+knitr::include_graphics("./GATA3_ChIP_motifs.png") 
+```
+
+In previous analysis (refer to section 2.7.3 positive control: 1 peak with 1 best motif), we have made specific BED files contain information of GATA3 peaks with its best motifs (five motifs with known structure). \
+
+```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MAST_positive_control/
+
+wc -l ${dir}*GATA3_peak_161win_with_motif*.bed
+ 12470 GATA3_peak_161win_with_motif_1.bed
+  11475 GATA3_peak_161win_with_motif_2.bed
+   6505 GATA3_peak_161win_with_motif_4.bed
+   4167 GATA3_peak_161win_with_motif_5.bed
+   5363 GATA3_peak_161win_with_motif_6.bed
+  39980 total
+```
+
+
+### Round1 positive control
+
+We will find the closest GAT on + strand or on - strand for peak with motif1, motif4, motif2, motif6, respectively. \
+
+```{r engine='R', class.source = "revision", eval=F, echo=TRUE}
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+dir1="/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/"
+  
+plus.GAT.file=read.table(file = paste0(dir1,"hg38.3.3.3plus.36_GAT.bed"), sep="\t", header=FALSE)
+minus.GAT.file=read.table(file = paste0(dir1,"hg38.3.3.3minus.14_GAT.bed"), sep="\t", header=FALSE)
+head(plus.GAT.file)
+nrow(plus.GAT.file)
+tail(minus.GAT.file)
+nrow(minus.GAT.file)
+
+library(bigWig)
+
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MAST_positive_control/"
+
+# pos
+
+GATA3_peak_summits_motif1=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_1.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_summits_motif4=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_4.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_summits_motif2=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_2.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_summits_motif6=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_6.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+
+
+# consensus neg
+indep.DHS.control.consensus=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_consensus_noGATA_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+nrow(indep.DHS.control.consensus)
+head(indep.DHS.control.consensus)
+
+
+# closestBed--1st closest plus
+
+closest.1st.plus.GAT.to.GATA3.with.motif1=bedTools.closest(bed1 = GATA3_peak_summits_motif1[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+closest.1st.plus.GAT.to.GATA3.with.motif4=bedTools.closest(bed1 = GATA3_peak_summits_motif4[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+closest.1st.plus.GAT.to.GATA3.with.motif2=bedTools.closest(bed1 = GATA3_peak_summits_motif2[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+closest.1st.plus.GAT.to.GATA3.with.motif6=bedTools.closest(bed1 = GATA3_peak_summits_motif6[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+
+
+
+write.table(closest.1st.plus.GAT.to.GATA3.with.motif1,file= 'closest.1st.plus.GAT.to.GATA3.with.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1st.plus.GAT.to.GATA3.with.motif4,file= 'closest.1st.plus.GAT.to.GATA3.with.motif4.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1st.plus.GAT.to.GATA3.with.motif2,file= 'closest.1st.plus.GAT.to.GATA3.with.motif2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1st.plus.GAT.to.GATA3.with.motif6,file= 'closest.1st.plus.GAT.to.GATA3.with.motif6.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+closest.1st.plus.GAT.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+write.table(closest.1st.plus.GAT.to.indep.DHS.control.consensus,file= 'closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+# closestBed--1st closest minus
+
+closest.1st.minus.GAT.to.GATA3.with.motif1=bedTools.closest(bed1 = GATA3_peak_summits_motif1[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+closest.1st.minus.GAT.to.GATA3.with.motif4=bedTools.closest(bed1 = GATA3_peak_summits_motif4[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+closest.1st.minus.GAT.to.GATA3.with.motif2=bedTools.closest(bed1 = GATA3_peak_summits_motif2[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+closest.1st.minus.GAT.to.GATA3.with.motif6=bedTools.closest(bed1 = GATA3_peak_summits_motif6[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+
+
+
+write.table(closest.1st.minus.GAT.to.GATA3.with.motif1,file= 'closest.1st.minus.GAT.to.GATA3.with.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1st.minus.GAT.to.GATA3.with.motif4,file= 'closest.1st.minus.GAT.to.GATA3.with.motif4.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1st.minus.GAT.to.GATA3.with.motif2,file= 'closest.1st.minus.GAT.to.GATA3.with.motif2.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.1st.minus.GAT.to.GATA3.with.motif6,file= 'closest.1st.minus.GAT.to.GATA3.with.motif6.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+closest.1st.minus.GAT.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+write.table(closest.1st.minus.GAT.to.indep.DHS.control.consensus,file= 'closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('240125_GATA3_ChIP_clsestbed.Rdata') 
+```
+
+
+
+```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+
+```
+
 
 ####  Anchor at the 1st +GAT and find the 2nd closest GAT on the same strand (+). This is equivalent to searching for the opposite strand ATC (coherence check1).
 
