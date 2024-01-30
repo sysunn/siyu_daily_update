@@ -5278,6 +5278,10 @@ depleted:  "CTG", "CAG", "CGA", "TCG", "CGT", "ACG", "CTC", "GAG", "GTC", "GAC",
 
 ## Second closest GAT
 
+**In this section, we need to consider two things**: \
+One is to define spacing/distance as the relative position of two zinc finger; \
+the other is to separate the cases with different strand orientation. \
+
 **Plan**: Use the positive control GATA3 peaks with known motif structure: \
 First, identify the closest GAT to the peak summit on the plus and minus strands, respectively. \
 For the plus strand: \
@@ -5292,7 +5296,7 @@ b. Anchor at the 1st -GAT and find the 2nd closest GAT on the opposite strand (+
 
 Coherence check5: Visualize on genome browser \
 
-### closest GAT on + strand
+### closest GAT on + strand or - strand
 
 There are 8 motifs found by MEME/STREME in GATA3 peaks. Among these 8 motifs, 5 of them have specific motif structure that we are interested of (two GATA3 motif half sites with un-fixed spacing in between). These are motif 1,2,4,5,6. \
 ```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="GATA3 ChIP peak MME/STREME found motifs"}
@@ -5314,8 +5318,6 @@ wc -l ${dir}*GATA3_peak_161win_with_motif*.bed
   39980 total
 ```
 
-
-### Round1 positive control
 
 We will find the closest GAT on + strand or on - strand for peak with motif1, motif4, motif2, motif6, respectively. \
 
@@ -5373,6 +5375,8 @@ GATA3_peak_summits_motif4=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_
 GATA3_peak_summits_motif2=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_2.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 GATA3_peak_summits_motif6=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_6.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
 
+GATA3_peak_summits_motif5=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_motif_5.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+
 
 # consensus neg
 indep.DHS.control.consensus=center.bed(read.table("../ENCODE_DHS_GSE29692/MCF7DHS_consensus_noGATA_without_motifs_123456_78.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
@@ -5387,12 +5391,16 @@ closest.1st.plus.GAT.to.GATA3.with.motif4=bedTools.closest(bed1 = GATA3_peak_sum
 closest.1st.plus.GAT.to.GATA3.with.motif2=bedTools.closest(bed1 = GATA3_peak_summits_motif2[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
 closest.1st.plus.GAT.to.GATA3.with.motif6=bedTools.closest(bed1 = GATA3_peak_summits_motif6[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
 
+closest.1st.plus.GAT.to.GATA3.with.motif5=bedTools.closest(bed1 = GATA3_peak_summits_motif5[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+
 
 
 write.table(closest.1st.plus.GAT.to.GATA3.with.motif1,file= 'closest.1st.plus.GAT.to.GATA3.with.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st.plus.GAT.to.GATA3.with.motif4,file= 'closest.1st.plus.GAT.to.GATA3.with.motif4.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st.plus.GAT.to.GATA3.with.motif2,file= 'closest.1st.plus.GAT.to.GATA3.with.motif2.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st.plus.GAT.to.GATA3.with.motif6,file= 'closest.1st.plus.GAT.to.GATA3.with.motif6.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+write.table(closest.1st.plus.GAT.to.GATA3.with.motif5,file= 'closest.1st.plus.GAT.to.GATA3.with.motif5.bed', quote=F,sep="\t",col.names=F,row.names=F)
 
 
 closest.1st.plus.GAT.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
@@ -5406,12 +5414,16 @@ closest.1st.minus.GAT.to.GATA3.with.motif4=bedTools.closest(bed1 = GATA3_peak_su
 closest.1st.minus.GAT.to.GATA3.with.motif2=bedTools.closest(bed1 = GATA3_peak_summits_motif2[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
 closest.1st.minus.GAT.to.GATA3.with.motif6=bedTools.closest(bed1 = GATA3_peak_summits_motif6[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
 
+closest.1st.minus.GAT.to.GATA3.with.motif5=bedTools.closest(bed1 = GATA3_peak_summits_motif5[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+
 
 
 write.table(closest.1st.minus.GAT.to.GATA3.with.motif1,file= 'closest.1st.minus.GAT.to.GATA3.with.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st.minus.GAT.to.GATA3.with.motif4,file= 'closest.1st.minus.GAT.to.GATA3.with.motif4.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st.minus.GAT.to.GATA3.with.motif2,file= 'closest.1st.minus.GAT.to.GATA3.with.motif2.bed', quote=F,sep="\t",col.names=F,row.names=F)
 write.table(closest.1st.minus.GAT.to.GATA3.with.motif6,file= 'closest.1st.minus.GAT.to.GATA3.with.motif6.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+write.table(closest.1st.minus.GAT.to.GATA3.with.motif5,file= 'closest.1st.minus.GAT.to.GATA3.with.motif5.bed', quote=F,sep="\t",col.names=F,row.names=F)
 
 
 closest.1st.minus.GAT.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
@@ -5422,29 +5434,1343 @@ save.image('240125_GATA3_ChIP_clsestbed.Rdata')
 ```
 
 
+### Round1 motif
+
+Now we have the : \
+closest.1st.plus.GAT.to.GATA3.with.motif1.bed \
+closest.1st.minus.GAT.to.GATA3.with.motif1.bed \
+
+We want to extract the GAT coordinates info from the BED files, and remove the overlapped regions from the files that contains GAT coordinates info on the entire hg38 genome (hg38.3.3.3plus.36_GAT.bed/hg38.3.3.3minus.14_GAT.bed). Then locate the "second closest" + or - GAT to +/- "closest" GAT. \
+
+Then draw PDF to inspect the enrichment. \
+
+**Remove the first closest GAT with `bedtools subtract`** \
+Subtract the 1st closest GAT from all.GAT, then find the closest 2nd GAT to the closest 1st GAT. \
+`-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
+`-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
 
 ```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+module load bedtools 
+dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+sort -k1,1 -k2,2n ${dir}hg38.3.3.3plus.36_GAT.bed > hg38.3.3.3plus.36_GAT.sorted.bed
+awk '{print $4, $5, $6, $7, $8, $9, $10}' closest.1st.plus.GAT.to.GATA3.with.motif1.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.GAT.to.GATA3.with.motif1.uniq.sorted.bed
+bedtools subtract -a hg38.3.3.3plus.36_GAT.sorted.bed -b closest.1st.plus.GAT.to.GATA3.with.motif1.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif1.bed
+
+wc -l hg38.3.3.3plus.36_GAT.sorted.bed #39090736
+wc -l closest.1st.plus.GAT.to.GATA3.with.motif1.uniq.sorted.bed #12461
+wc -l hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif1.bed #39078275
+head -5 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif1.bed
+#chr1	11159	11162	36	36	+	GAT
+#chr1	11462	11465	36	36	+	GAT
+#chr1	11521	11524	36	36	+	GAT
+#chr1	11569	11572	36	36	+	GAT
+#chr1	11651	11654	36	36	+	GAT
+
+
+sort -k1,1 -k2,2n ${dir}hg38.3.3.3minus.14_GAT.bed > hg38.3.3.3minus.14_GAT.sorted.bed
+awk '{print $4, $5, $6, $7, $8, $9, $10}' closest.1st.minus.GAT.to.GATA3.with.motif1.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed
+bedtools subtract -a hg38.3.3.3minus.14_GAT.sorted.bed -b closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+
+wc -l hg38.3.3.3minus.14_GAT.sorted.bed #38717592
+wc -l closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed #12460
+wc -l hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed #38705132
+#38717592-12460
+#[1] 38705132
+
+head -5 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+#chr1	10545	10548	14	14	-	GAT
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	11597	11600	14	14	-	GAT
+```
+
+**Find closest 2nd GAT to 1st GAT** \
+find the + or - 2nd GAT to the closest +GAT \
+find the + or - 2nd GAT to the closest -GAT \
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+
+library(bigWig)
+# GAT coordinates without overlapped closest GAT -- relative to G for plus, relative to C for minus
+plus.GAT.file=fiveprime.bed(read.table(file = "hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif1.bed", sep="\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+minus.GAT.file=fiveprime.bed(read.table(file = "hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed", sep="\t", header=FALSE), upstreamWindow = -1, downstreamWindow = 1)
+
+head(plus.GAT.file) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at G on GAT
+#  V1    V2    V3 V4 V5 V6  V7
+#1 chr1 11159 11160 36 36  + GAT
+#2 chr1 11462 11463 36 36  + GAT
+#3 chr1 11521 11522 36 36  + GAT
+#4 chr1 11569 11570 36 36  + GAT
+#5 chr1 11651 11652 36 36  + GAT
+#6 chr1 11684 11685 36 36  + GAT
+
+
+nrow(plus.GAT.file)
+#[1] 39078275
+
+head(minus.GAT.file) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at C on ATC
+# V1    V2    V3 V4 V5 V6  V7
+#1 chr1 10547 10548 14 14  - GAT
+#2 chr1 11147 11148 14 14  - GAT
+#3 chr1 11162 11163 14 14  - GAT
+#4 chr1 11578 11579 14 14  - GAT
+#5 chr1 11599 11600 14 14  - GAT
+#6 chr1 11848 11849 14 14  - GAT
+
+nrow(minus.GAT.file)
+#[1] 38705132
+
+# anchor position: closest +/- GAT relative to G
+closest_plus_GAT_to_GATA3_peak_summits_motif1=fiveprime.bed(read.table("closest.1st.plus.GAT.to.GATA3.with.motif1.uniq.sorted.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+closest_minus_GAT_to_GATA3_peak_summits_motif1=fiveprime.bed(read.table("closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed", header=FALSE), upstreamWindow = -1, downstreamWindow = 1)
+
+nrow(closest_plus_GAT_to_GATA3_peak_summits_motif1)
+#[1] 12461
+head(closest_plus_GAT_to_GATA3_peak_summits_motif1) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at G on GAT
+# V1      V2      V3 V4 V5 V6  V7
+#1 chr1 1080566 1080567 36 36  + GAT
+#2 chr1 1238219 1238220 36 36  + GAT
+#3 chr1 1686429 1686430 36 36  + GAT
+#4 chr1 1741128 1741129 36 36  + GAT
+#5 chr1 2002016 2002017 36 36  + GAT
+#6 chr1 3127380 3127381 36 36  + GAT
+
+nrow(closest_minus_GAT_to_GATA3_peak_summits_motif1)
+#[1] 12460
+head(closest_minus_GAT_to_GATA3_peak_summits_motif1) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at C on ATC
+#    V1      V2      V3 V4 V5 V6  V7
+#1 chr1 1080574 1080575 14 14  - GAT
+#2 chr1 1238227 1238228 14 14  - GAT
+#3 chr1 1686413 1686414 14 14  - GAT
+#4 chr1 1741178 1741179 14 14  - GAT
+#5 chr1 2002024 2002025 14 14  - GAT
+#6 chr1 3127369 3127370 14 14  - GAT
+
+
+# 2nd closest +/-GAT to closest plus GAT
+
+closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1=bedTools.closest(bed1 = closest_plus_GAT_to_GATA3_peak_summits_motif1[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1=bedTools.closest(bed1 = closest_minus_GAT_to_GATA3_peak_summits_motif1[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+
+
+
+write.table(closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1,file= 'closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1,file= 'closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+# 2nd closest +/- GAT to closest minus GAT
+closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1=bedTools.closest(bed1 = closest_plus_GAT_to_GATA3_peak_summits_motif1[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1=bedTools.closest(bed1 = closest_minus_GAT_to_GATA3_peak_summits_motif1[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+
+
+
+write.table(closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1,file= 'closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1,file= 'closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('240129_GATA3_ChIP_2nd_clsestbed.Rdata') 
+```
+
+### PDFs
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif1.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif1.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif1.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+#'data.frame':	49842 obs. of  3 variables:
+# $ V1           : chr  "240" "3" "117" "114" ...
+# $ anchor_status: chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+# $ query_status : chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+# dis anchor_status query_status
+#1 240     minus.GAT    minus.GAT
+#2   3     minus.GAT    minus.GAT
+#3 117     minus.GAT    minus.GAT
+#4 114     minus.GAT    minus.GAT
+#5  27     minus.GAT    minus.GAT
+#6   3     minus.GAT    minus.GAT
+
+```
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.numeric(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+  # PDF plot
+  pdf('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.pdf', width=15,height=5)
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif1",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.xyplot(x, y, col = "skyblue", pch = 16)
+                                      panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")}
+            
+))
+  dev.off()
+  
+
+  
+  density_values <- density(abs(df[df$status==status,]$dis), from=0, to=50)
+  
+  density_values <- density(abs(df.plot[df.plot$query_status==query_status,]$dis), from=0, to=50)
+
+  
+  pdf('temp_pos_motif1.pdf', width=15,height=5)
+  print(xyplot(density ~ abs(dis) | anchor_status, 
+         data = df.plot,
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         col=c("red","blue"),
+         aspect = 1,
+         #xlim=c(0,50),
+         #from=0,
+         #to=50,
+         between=list(y=1.0),
+         #scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         panel = function(x, y, ...) {
+         panel.xyplot(x, y, ...)
+         panel.densityplot(x, col=c("red","blue"), plot.points = FALSE, ...)
+       },
+       main = "Density Plot of Distances",
+       xlab = "Distances", 
+       ylab = "Density")
+  )
+  dev.off()
+  
+  
+  panel = function(x, y, ...) {
+              panel.densityplot(x, y, ...)
+              panel.xyplot(x, y, col = "red", pch = 16)
+            }
+
+  
+  
+  
+  
+    
+   png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png')
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif1",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")}
+            
+))
+  dev.off()
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="GATA3 peak with motif1: 3mer structure"}
+library(knitr)
+knitr::include_graphics("./PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png") 
+```
+
+**adds individual datapoint on the density plot** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.plot) = c("dis","anchor_status", "query_status","abs.dis", "density")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif1.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif1.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif1.bed")[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.numeric(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    density_values = density(temp$abs.dis, from=0, to=50, bw="nrd0")
+    temp$density =approx(density_values$x, density_values$y, temp$abs.dis)$y
+    df.plot = rbind(df.plot,temp)
+}
+
+str(df.plot)
+#'data.frame':	49842 obs. of  5 variables:
+# $ dis          : int  240 3 117 114 27 3 5 11 67 39 ...
+# $ anchor_status: chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+# $ query_status : chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+# $ abs.dis      : int  240 3 117 114 27 3 5 11 67 39 ...
+# $ density      : num  NA 0.0165 NA NA 0.0138 ...
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+head(df.plot)
+#  dis anchor_status query_status abs.dis    density
+#1 240     minus.GAT    minus.GAT     240         NA
+#2   3     minus.GAT    minus.GAT       3 0.01653378
+#3 117     minus.GAT    minus.GAT     117         NA
+#4 114     minus.GAT    minus.GAT     114         NA
+#5  27     minus.GAT    minus.GAT      27 0.01379179
+#6   3     minus.GAT    minus.GAT       3 0.01653378
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+
+library(lattice)
+library(latticeExtra)
+pdf('PDF2_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.pdf', width=15,height=5)
+print(xyplot(density ~ abs.dis | anchor_status, 
+         data = df.plot,
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="probability density function",
+         main="GATA3 peak with motif1",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x, y, ...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  }))
+ 
+dev.off()
+```
+
+
+### other positive controls
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+#sort -k1,1 -k2,2n ${dir}hg38.3.3.3plus.36_GAT.bed > hg38.3.3.3plus.36_GAT.sorted.bed
+#sort -k1,1 -k2,2n ${dir}hg38.3.3.3minus.14_GAT.bed > hg38.3.3.3minus.14_GAT.sorted.bed
+
+module load bedtools 
+my_motifs=("motif4" "motif2" "motif6" "motif5")
+
+# Use a for loop to iterate over the strings
+for motif in "${my_motifs[@]}"
+do
+  echo $motif
+  awk '{print $4, $5, $6, $7, $8, $9, $10}' closest.1st.plus.GAT.to.GATA3.with.${motif}.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.GAT.to.GATA3.with.${motif}.uniq.sorted.bed
+  bedtools subtract -a hg38.3.3.3plus.36_GAT.sorted.bed -b closest.1st.plus.GAT.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_${motif}.bed
+  
+  wc -l hg38.3.3.3plus.36_GAT.sorted.bed 
+  wc -l closest.1st.plus.GAT.to.GATA3.with.${motif}.uniq.sorted.bed 
+  wc -l hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_${motif}.bed 
+  head -5 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_${motif}.bed
+
+  awk '{print $4, $5, $6, $7, $8, $9, $10}' closest.1st.minus.GAT.to.GATA3.with.${motif}.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.GAT.to.GATA3.with.${motif}.uniq.sorted.bed
+  bedtools subtract -a hg38.3.3.3minus.14_GAT.sorted.bed -b closest.1st.minus.GAT.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_${motif}.bed
+
+  wc -l hg38.3.3.3minus.14_GAT.sorted.bed 
+  wc -l closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed 
+  wc -l hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed 
+  head -5 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+
+done 2>&1 | tee -a 240129_bedtools_subtract.txt
+```
+
+```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+#cat 240129_bedtools_subtract.txt 
+motif4
+39090736 hg38.3.3.3plus.36_GAT.sorted.bed
+6487 closest.1st.plus.GAT.to.GATA3.with.motif4.uniq.sorted.bed
+39084249 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif4.bed
+#39090736-6487
+#[1] 39084249
+
+chr1	11159	11162	36	36	+	GAT
+chr1	11462	11465	36	36	+	GAT
+chr1	11521	11524	36	36	+	GAT
+chr1	11569	11572	36	36	+	GAT
+chr1	11651	11654	36	36	+	GAT
+38717592 hg38.3.3.3minus.14_GAT.sorted.bed
+12460 closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed
+38705132 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+#38717592-12460
+#[1] 38705132
+
+chr1	10545	10548	14	14	-	GAT
+chr1	11145	11148	14	14	-	GAT
+chr1	11160	11163	14	14	-	GAT
+chr1	11576	11579	14	14	-	GAT
+chr1	11597	11600	14	14	-	GAT
+
+motif2
+39090736 hg38.3.3.3plus.36_GAT.sorted.bed
+11464 closest.1st.plus.GAT.to.GATA3.with.motif2.uniq.sorted.bed
+39079272 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif2.bed
+chr1	11159	11162	36	36	+	GAT
+chr1	11462	11465	36	36	+	GAT
+chr1	11521	11524	36	36	+	GAT
+chr1	11569	11572	36	36	+	GAT
+chr1	11651	11654	36	36	+	GAT
+38717592 hg38.3.3.3minus.14_GAT.sorted.bed
+12460 closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed
+38705132 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+chr1	10545	10548	14	14	-	GAT
+chr1	11145	11148	14	14	-	GAT
+chr1	11160	11163	14	14	-	GAT
+chr1	11576	11579	14	14	-	GAT
+chr1	11597	11600	14	14	-	GAT
+motif6
+39090736 hg38.3.3.3plus.36_GAT.sorted.bed
+5360 closest.1st.plus.GAT.to.GATA3.with.motif6.uniq.sorted.bed
+39085376 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif6.bed
+chr1	11159	11162	36	36	+	GAT
+chr1	11462	11465	36	36	+	GAT
+chr1	11521	11524	36	36	+	GAT
+chr1	11569	11572	36	36	+	GAT
+chr1	11651	11654	36	36	+	GAT
+38717592 hg38.3.3.3minus.14_GAT.sorted.bed
+12460 closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed
+38705132 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+chr1	10545	10548	14	14	-	GAT
+chr1	11145	11148	14	14	-	GAT
+chr1	11160	11163	14	14	-	GAT
+chr1	11576	11579	14	14	-	GAT
+chr1	11597	11600	14	14	-	GAT
+motif5
+39090736 hg38.3.3.3plus.36_GAT.sorted.bed
+4166 closest.1st.plus.GAT.to.GATA3.with.motif5.uniq.sorted.bed
+39086570 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_motif5.bed
+chr1	11159	11162	36	36	+	GAT
+chr1	11462	11465	36	36	+	GAT
+chr1	11521	11524	36	36	+	GAT
+chr1	11569	11572	36	36	+	GAT
+chr1	11651	11654	36	36	+	GAT
+38717592 hg38.3.3.3minus.14_GAT.sorted.bed
+12460 closest.1st.minus.GAT.to.GATA3.with.motif1.uniq.sorted.bed
+38705132 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_motif1.bed
+chr1	10545	10548	14	14	-	GAT
+chr1	11145	11148	14	14	-	GAT
+chr1	11160	11163	14	14	-	GAT
+chr1	11576	11579	14	14	-	GAT
+chr1	11597	11600	14	14	-	GAT
 
 ```
 
 
-####  Anchor at the 1st +GAT and find the 2nd closest GAT on the same strand (+). This is equivalent to searching for the opposite strand ATC (coherence check1).
+### closest 2nd to 1st GAT
 
-#### Anchor at the 1st +GAT and find the 2nd closest GAT on the opposite strand (-). This is equivalent to searching for the same strand ATC (coherence check2).
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
 
-### closest GAT on - strand
-
-#### Anchor at the 1st -GAT and find the 2nd closest GAT on the same strand (-). This is equivalent to searching for the opposite strand ATC (coherence check3).
-
-####  Anchor at the 1st -GAT and find the 2nd closest GAT on the opposite strand (+). This is equivalent to searching for the same strand ATC (coherence check4).
-
-### Coherence check5: Visualize on genome browser 
-
-**In this section, we need to consider two things**: \
-One is to define spacing/distance as the relative position of two zinc finger; \
-the other is to separate the cases with different strand orientation. \
+Args=commandArgs(TRUE)
 
 
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+
+library(bigWig)
+
+my_motifs = c("motif4","motif2", "motif6", "motif5")
+for (motif in my_motifs) {
+  print(motif)
+  # GAT coordinates without overlapped closest GAT -- relative to G for plus, relative to C for minus
+  plus.GAT.file=fiveprime.bed(read.table(file = paste0("hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_GATA3_with_", motif, ".bed"), sep="\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+  minus.GAT.file=fiveprime.bed(read.table(file =paste0("hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_GATA3_with_", motif, ".bed"), sep="\t", header=FALSE), upstreamWindow = -1, downstreamWindow = 1)
+  
+  head(plus.GAT.file) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at G on GAT
+  nrow(plus.GAT.file)
+  head(minus.GAT.file) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at C on ATC
+  nrow(minus.GAT.file)
+  
+  
+  # anchor position: closest +/- GAT relative to G
+  closest_plus_GAT_to_GATA3_peak_summits_=fiveprime.bed(read.table(paste0("closest.1st.plus.GAT.to.GATA3.with.", motif, ".uniq.sorted.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+  closest_minus_GAT_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0("closest.1st.minus.GAT.to.GATA3.with.", motif, ".uniq.sorted.bed"), header=FALSE), upstreamWindow = -1, downstreamWindow = 1)
+  
+  nrow(closest_plus_GAT_to_GATA3_peak_summits)
+  head(closest_plus_GAT_to_GATA3_peak_summits) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at G on GAT
+  
+  
+  nrow(closest_minus_GAT_to_GATA3_peak_summits)
+  head(closest_minus_GAT_to_GATA3_peak_summits) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at C on ATC
+  
+  
+  
+  # 2nd closest +/-GAT to closest plus GAT
+  
+  closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.with.motif=bedTools.closest(bed1 = closest_plus_GAT_to_GATA3_peak_summits[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+  closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.with.motif=bedTools.closest(bed1 = closest_minus_GAT_to_GATA3_peak_summits[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+  
+  
+  write.table(closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.with.motif,file= paste0('closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.', motif, '.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.with.motif,file= paste0('closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.', motif, '.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # 2nd closest +/- GAT to closest minus GAT
+  closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.with.motif=bedTools.closest(bed1 = closest_plus_GAT_to_GATA3_peak_summits[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+  closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.with.motif=bedTools.closest(bed1 = closest_minus_GAT_to_GATA3_peak_summits[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+  
+  
+  write.table(closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.with.motif,file= paste0('closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.', motif, '.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.with.motif,file= paste0('closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.', motif, '.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+  
+}
+
+save.image('240129_GATA3_ChIP_2nd_clsestbed2.Rdata') 
+```
+
+### PDFs
+
+**motif4** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif4.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif4.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif4.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+#dis anchor_status query_status
+#1   4     minus.GAT    minus.GAT
+#2  12     minus.GAT    minus.GAT
+#3  39     minus.GAT    minus.GAT
+#4   4     minus.GAT    minus.GAT
+#5   7     minus.GAT    minus.GAT
+#6 110     minus.GAT    minus.GAT
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.numeric(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+  # PDF plot
+  pdf('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif4.pdf', width=15,height=5)
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif4",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")
+                                      }
+            
+))
+  dev.off()
+  
+   png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif4.png')
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif4",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")}
+            
+))
+  dev.off()
+```
+
+**motif2** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif2.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif2.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif2.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+#  dis anchor_status query_status
+#1 117     minus.GAT    minus.GAT
+#2   6     minus.GAT    minus.GAT
+#3   6     minus.GAT    minus.GAT
+#4  17     minus.GAT    minus.GAT
+#5  14     minus.GAT    minus.GAT
+#6  14     minus.GAT    minus.GAT
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.numeric(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+  # PDF plot
+  pdf('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif2.pdf', width=15,height=5)
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif2",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")
+                                      panel.ablineq(v = 9, col = "red", lty = 2, adj=c(0,1), label="9")} # change to actual y relative to each distance x values; xyplot
+            
+))
+  dev.off()
+  
+   png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif2.png')
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif2",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")
+                                      panel.ablineq(v = 9, col = "red", lty = 2, adj=c(0,1), label="9")}
+            
+))
+  dev.off()
+```
+
+**motif6** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif6.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif6.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif6.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+# dis anchor_status query_status
+#1   9     minus.GAT    minus.GAT
+#2   9     minus.GAT    minus.GAT
+#3 166     minus.GAT    minus.GAT
+#4   9     minus.GAT    minus.GAT
+#5  15     minus.GAT    minus.GAT
+#6  10     minus.GAT    minus.GAT
+
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.numeric(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+  # PDF plot
+  pdf('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif6.pdf', width=15,height=5)
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif6",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 9, col = "red", lty = 2, adj=c(0,1), label="9")}
+            
+))
+  dev.off()
+  
+   png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif6.png')
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif6",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 9, col = "red", lty = 2, adj=c(0,1), label="9")}
+            
+))
+  dev.off()
+```
+
+
+**motif5** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif5.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif5.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif5.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+# dis anchor_status query_status
+#1  45     minus.GAT    minus.GAT
+#2   7     minus.GAT    minus.GAT
+#3  47     minus.GAT    minus.GAT
+#4   5     minus.GAT    minus.GAT
+#5  41     minus.GAT    minus.GAT
+#6  10     minus.GAT    minus.GAT
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.numeric(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+  # PDF plot
+  pdf('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif5.pdf', width=15,height=5)
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif5",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 2, col = "red", lty = 2, adj=c(0,1), label="2")
+                                      panel.ablineq(v = 5, col = "red", lty = 2, adj=c(0,1), label="5")
+                                      panel.ablineq(v = 9, col = "red", lty = 2, adj=c(0,1), label="9")}
+            
+))
+  dev.off()
+  
+   png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif5.png')
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("red","blue"),
+            aspect = 1,
+            xlim=c(0,50),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="GATA3 peak with motif5",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+            panel = function(x, ...) {
+                                      panel.densityplot(x, ...)
+                                      panel.ablineq(v = 2, col = "red", lty = 2, adj=c(0,1), label="2")
+                                      panel.ablineq(v = 5, col = "red", lty = 2, adj=c(0,1), label="5")
+                                      panel.ablineq(v = 9, col = "red", lty = 2, adj=c(0,1), label="9")}
+            
+))
+  dev.off()
+```
+
+**alternative PDFs with data points** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+my_motifs = c("motif4","motif2", "motif6", "motif5")
+for (motif in my_motifs) {
+  print(motif)
+  df.plot = data.frame(matrix(nrow = 0, ncol = 5))     
+  colnames(df.plot) = c("dis","anchor_status", "query_status","abs.dis", "density")
+  for (closest_2nd_dis in Sys.glob(file.path(paste0("./closest.2nd*GAT.to.1st*GAT.GATA3.", motif, ".bed")))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), paste0(".GATA3.", motif, ".bed"))[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), paste0(".to.1st.*.GATA3.", motif, ".bed"))[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.numeric(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    density_values = density(temp$abs.dis, from=0, to=50, bw="nrd0")
+    temp$density =approx(density_values$x, density_values$y, temp$abs.dis)$y
+    df.plot = rbind(df.plot,temp)
+}
+
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+head(df.plot)
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+
+library(lattice)
+library(latticeExtra)
+pdf(paste0('PDF2_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_', motif, '.pdf'), width=15,height=5)
+print(xyplot(density ~ abs.dis | anchor_status, 
+         data = df.plot,
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="probability density function",
+         main=paste0("GATA3 peak with ", motif),
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x, y, ...) {panel.densityplot(x, 
+                                                        data = df.plot, 
+                                                        from=0, 
+                                                        to=50,
+                                                        bw="nrd0",
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  }))
+ 
+dev.off()
+}
+
+
+```
+
+### neg control
+closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed \
+closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed \
+
+**Remove the first closest GAT with `bedtools subtract`** \
+Subtract the 1st closest GAT from all.GAT, then find the closest 2nd GAT to the closest 1st GAT. \
+
+```{r engine='bash',  class.source = "revision", eval=F, echo=TRUE}
+module load bedtools 
+#dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+#sort -k1,1 -k2,2n ${dir}hg38.3.3.3plus.36_GAT.bed > hg38.3.3.3plus.36_GAT.sorted.bed
+awk '{print $4, $5, $6, $7, $8, $9, $10}' closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed
+bedtools subtract -a hg38.3.3.3plus.36_GAT.sorted.bed -b closest.1st.plus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_indep_DHS_control.bed
+
+wc -l hg38.3.3.3plus.36_GAT.sorted.bed #39090736
+wc -l closest.1st.plus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed #57261
+wc -l hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_indep_DHS_control.bed #39033475
+head -5 hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_indep_DHS_control.bed
+#chr1	11159	11162	36	36	+	GAT
+#chr1	11462	11465	36	36	+	GAT
+#chr1	11521	11524	36	36	+	GAT
+#chr1	11569	11572	36	36	+	GAT
+#chr1	11651	11654	36	36	+	GAT
+
+
+#sort -k1,1 -k2,2n ${dir}hg38.3.3.3minus.14_GAT.bed > hg38.3.3.3minus.14_GAT.sorted.bed
+awk '{print $4, $5, $6, $7, $8, $9, $10}' closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed
+bedtools subtract -a hg38.3.3.3minus.14_GAT.sorted.bed -b closest.1st.minus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_indep_DHS_control.bed
+
+wc -l hg38.3.3.3minus.14_GAT.sorted.bed #38717592
+wc -l closest.1st.minus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed #57251 
+wc -l hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_indep_DHS_control.bed #38660341
+
+head -5 hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_indep_DHS_control.bed 
+#chr1	10545	10548	14	14	-	GAT
+#chr1	11145	11148	14	14	-	GAT
+#chr1	11160	11163	14	14	-	GAT
+#chr1	11576	11579	14	14	-	GAT
+#chr1	11597	11600	14	14	-	GAT
+```
+
+**Find closest 2nd GAT to 1st GAT** \
+find the + or - 2nd GAT to the closest +GAT \
+find the + or - 2nd GAT to the closest -GAT \
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+
+library(bigWig)
+# GAT coordinates without overlapped closest GAT -- relative to G for plus, relative to C for minus
+plus.GAT.file=fiveprime.bed(read.table(file = "hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_indep_DHS_control.bed", sep="\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+minus.GAT.file=fiveprime.bed(read.table(file = "hg38.3.3.3minus.14_GAT_without_1st_minus_GAT_to_indep_DHS_control.bed", sep="\t", header=FALSE), upstreamWindow = -1, downstreamWindow = 1)
+
+head(plus.GAT.file) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at G on GAT
+
+
+
+nrow(plus.GAT.file)
+
+
+head(minus.GAT.file) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at C on ATC
+
+
+nrow(minus.GAT.file)
+
+
+# anchor position: closest +/- GAT relative to G
+closest_plus_GAT_to_indep_DHS=fiveprime.bed(read.table("closest.1st.plus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+closest_minus_GAT_to_indep_DHS=fiveprime.bed(read.table("closest.1st.minus.GAT.to.indep.DHS.control.consensus.uniq.sorted.bed", header=FALSE), upstreamWindow = -1, downstreamWindow = 1)
+
+nrow(closest_plus_GAT_to_indep_DHS)
+
+head(closest_plus_GAT_to_indep_DHS) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at G on GAT
+
+
+nrow(closest_minus_GAT_to_indep_DHS)
+
+head(closest_minus_GAT_to_indep_DHS) # find coordinates at Genome Browser to make sure the anchor point is correct -- anchor at C on ATC
+
+
+# 2nd closest +/-GAT to closest plus GAT
+
+closest.2nd.plus.GAT.to.1st.plus.GAT.indep.DHS=bedTools.closest(bed1 = closest_plus_GAT_to_indep_DHS[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+closest.2nd.minus.GAT.to.1st.plus.GAT.indep.DHS=bedTools.closest(bed1 = closest_minus_GAT_to_indep_DHS[,1:3], bed2 = plus.GAT.file, opt.string = '-d -t first')
+
+
+
+write.table(closest.2nd.plus.GAT.to.1st.plus.GAT.indep.DHS,file= 'closest.2nd.plus.GAT.to.1st.plus.GAT.indep.DHS.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.2nd.minus.GAT.to.1st.plus.GAT.indep.DHS,file= 'closest.2nd.minus.GAT.to.1st.plus.GAT.indep.DHS.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+# 2nd closest +/- GAT to closest minus GAT
+closest.2nd.plus.GAT.to.1st.minus.GAT.indep.DHS=bedTools.closest(bed1 = closest_plus_GAT_to_indep_DHS[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+closest.2nd.minus.GAT.to.1st.minus.GAT.indep.DHS=bedTools.closest(bed1 = closest_minus_GAT_to_indep_DHS[,1:3], bed2 = minus.GAT.file, opt.string = '-d -t first')
+
+
+
+write.table(closest.2nd.plus.GAT.to.1st.minus.GAT.indep.DHS,file= 'closest.2nd.plus.GAT.to.1st.minus.GAT.indep.DHS.bed', quote=F,sep="\t",col.names=F,row.names=F)
+write.table(closest.2nd.minus.GAT.to.1st.minus.GAT.indep.DHS,file= 'closest.2nd.minus.GAT.to.1st.minus.GAT.indep.DHS.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+
+save.image('240129_GATA3_ChIP_2nd_clsestbed3.Rdata') 
+```
+
+### PDFs
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.indep.DHS.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".indep.DHS.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.indep.DHS.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+#dis anchor_status query_status
+#1  17     minus.GAT    minus.GAT
+#2  23     minus.GAT    minus.GAT
+#3  62     minus.GAT    minus.GAT
+#4  17     minus.GAT    minus.GAT
+#5  83     minus.GAT    minus.GAT
+#6  25     minus.GAT    minus.GAT
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.numeric(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+  # PDF plot
+  pdf('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.pdf', width=15,height=5)
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("pink","skyblue"),
+            aspect = 1,
+            xlim=c(0,50),
+            ylim=c(0, 0.03),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="independent DHS regions",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=3), strip.background=list(col="grey85"))
+           
+            
+))
+  dev.off()
+  
+   png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.png')
+  print(densityplot( ~ abs(dis) | anchor_status,
+            groups = query_status,
+            data = df.plot,
+            auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+            col=c("pink","skyblue"),
+            aspect = 1,
+            xlim=c(0,50),
+            ylim=c(0, 0.03),
+            from=0,
+            to=50,
+            #layout=c(1,2),
+            xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+            ylab="probability density function",
+            main="independent DHS regions",
+            between=list(y=1.0),
+            scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+            type = "count",
+            lty = c(1),
+            lwd=2,
+            par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=3), strip.background=list(col="grey85"))
+            
+))
+  dev.off()
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="independent DHS regions: 3mer structure"}
+library(knitr)
+knitr::include_graphics("./PDF_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.png") 
+```
+
+**Add actual data point to the density plot:** \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.plot) = c("dis","anchor_status", "query_status","abs.dis", "density")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.indep.DHS.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".indep.DHS.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.indep.DHS.bed")[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.numeric(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    density_values = density(temp$abs.dis, from=0, to=50, bw="nrd0")
+    temp$density =approx(density_values$x, density_values$y, temp$abs.dis)$y
+    df.plot = rbind(df.plot,temp)
+}
+
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+head(df.plot)
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+
+library(lattice)
+library(latticeExtra)
+pdf('PDF2_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.pdf', width=15,height=5)
+print(xyplot(density ~ abs.dis | anchor_status, 
+         data = df.plot,
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.03),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="probability density function",
+         main="Indendent DHS Regions",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x, y, ...) {panel.densityplot(x, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        type = "count",
+                                                        bw="nrd0",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  }))
+ 
+dev.off()
+```
 
 
 ## other 3mers--prioritized list of 3mers
@@ -5711,7 +7037,69 @@ The two zinc finger of GATA3 have 60% identity. \
 -       What are the characteristics of the two activation domains? \
 -       What are the characteristics of GATA3 zinc fingers? \
 
-## Software to search for variable spacing motifs. \
+## Software to search for variable spacing motifs. 
+**RSAT (Regulatory Sequence Analysis Tools)- dyad analysis:** \
+RSAT provides a collection of tools for the analysis of regulatory sequences. It includes tools like dyad-analysis, which allows for the detection of transcription factor binding sites with spaced pairs of k-mers. \
+
+http://rsat.sb-roscoff.fr/dyad-analysis_form.cgi \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed with_motifs_1_101bp_mast.bed -fo with_motifs_1_101bp_mast.fasta
+```
+
+### install
+
+refer to: https://rsa-tools.github.io/installing-RSAT/conda-install-rsat/bioconda-rsat-core.html \
+```{r engine='bash', eval=F, echo=TRUE}
+cd /home/FCAM/ssun/packages/
+source ~/miniconda3/bin/activate
+conda create -n rsat
+conda env list | grep rsat
+#rsat                     /home/FCAM/ssun/miniconda3/envs/rsat
+conda activate rsat
+conda list # see what package listed in the env
+conda install -c bioconda rsat-core
+
+#testing
+which rsat
+#~/miniconda3/envs/rsat/bin/rsat     
+
+## Statistics::Distributions exists in conda but for some reason it is not working
+cpan install Statistics::Distributions
+## Email::Sender::Simple is required for the Web server + some particular scripts
+cpan install Email::Sender::Simple
+## Required for matrix-clustering
+cpan install Parallel::ForkManager
+cpan install MCE::Shared
+## For SOAP::WSDL Web services
+cpan install SOAP::WSDL 
+cpan install XML::Compile::SOAP11   
+cpan install XML::Compile::WSDL11   
+cpan install XML::Compile::Transport::SOAPHTTP
+
+rsat --list
+rsat --list | wc -l
+rsat --help
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+conda activate rsat
+rsat --help
+
+rsat dyad-analysis -h
+rsat dyad-analysis -o output_file -i input_file -format FastA -l 3 -sp 0-20-organism hg19 -comp mul -mono tri -mono_len 3 -lmin 5 -lmax 20 -minsc 0.8 input_file.fa
+
+#dyad-analysis  -i .fa -v 1 -quick -sort -timeout 3600 -type any -2str -noov -lth occ 1 -lth occ_sig 0 -uth rank 100 -return occ,proba,rank -l 3 -spacing 0-20
+
+
+```
+
+
+**glk-SVM** \
+Suitable for finding co-binding (individual binding elements with several spacing to another individual binding elements) (happens when protein pairs are found; CAP-SELEX) \
+https://github.com/kevingroup/glk-SVM \
+https://academic.oup.com/bib/article/21/5/1787/5612164 \
 
 ## Functional check: \
 -       Given purified zinc fingers and a DNA template, can we observe different spacing/orientations of binding patterns? (cryoEM or in silicon alphafold to find protein-DNA binding) \
