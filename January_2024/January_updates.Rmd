@@ -7297,6 +7297,224 @@ knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.pn
 ```
 
 
+### UCSC Genome Browser
+#### Visualize the 2nd closest 3mer-GAT distribution relative to the defined "closest GAT" on Genome Browser
+
+files to upload: \
+-peak summit BED file. \
+-3mer-GAT coordinates file (+/-) (in .bigWig format); \
+-several annotation bed files including: 1) peak summit files; 2) closest GAT to peak summit (+/-); 3) 2nd closest GAT to peak summit (+/-). \
+
+**GAT coordinates files: convert to bigWig** \
+sort the .bed file: \
+```{r engine='bash', eval=F, echo=TRUE}
+#GAT
+dir=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+plus_file=${dir}hg38.3.3.3plus.36_GAT.bed
+minus_file=${dir}hg38.3.3.3minus.14_GAT.bed  
+echo "plus_GAT (.bed)"
+wc -l ${plus_file}
+head -5  ${plus_file}
+echo "minus_GAT (.bed)"
+wc -l ${minus_file}
+head -5 ${minus_file}
+
+
+sort -k1,1 -k2,2n ${plus_file} > hg38.3.3.3.1000.plus.36_GAT_sorted.bed
+sort -k1,1 -k2,2n ${minus_file} > hg38.3.3.3.1000.minus.14_GAT_sorted.bed
+wc -l hg38.3.3.3.1000.plus.36_GAT_sorted.bed
+wc -l hg38.3.3.3.1000.minus.14_GAT_sorted.bed
+```
+Use `bedtools genomecov -bg` to convert .bed to .bedGraph. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+module load ucsc_genome/2012.05.22
+
+sizes=/home/FCAM/ssun/Genome_pro/hg38.chrom.sizes
+#bedtools genomecov tool
+bedtools genomecov -bg -i hg38.3.3.3.1000.plus.36_GAT_sorted.bed -g ${sizes} > hg38.3.3.3.1000.plus.36_GAT.bedGraph 
+bedtools genomecov -bg -i hg38.3.3.3.1000.minus.14_GAT_sorted.bed -g ${sizes} > hg38.3.3.3.1000.minus.14_GAT.bedGraph 
+wc -l hg38.3.3.3.1000.plus.36_GAT.bedGraph 
+wc -l hg38.3.3.3.1000.minus.14_GAT.bedGraph 
+```
+
+The final step is to convert .bedGraph to .bigWig with UCSC `bedGraphToBigWig` tool.
+```{r engine='bash', eval=F, echo=TRUE}
+#UCSC bedGraphToBigWig tool
+bedGraphToBigWig hg38.3.3.3.1000.plus.36_GAT.bedGraph ${sizes} hg38.3.3.3.1000.plus.36_GAT.bigWig
+bedGraphToBigWig hg38.3.3.3.1000.minus.14_GAT.bedGraph ${sizes} hg38.3.3.3.1000.minus.14_GAT.bigWig
+```
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
+#cat UCSCGB.sh_7661175.err
+cat UCSCGB.sh_7661175.out
+```
+
+**Note that the .bedGraph converted from .bed with `bedtools genomecov` has less genome coordinates entry. This is because the original .bed file contains adjacent regions, and `bedtools genomecov` collapse these regions into a single entry in the BEDGraph file by merging or summarizing the coverage data.** \
+
+
+**Trackhub link**: http://guertinlab.cam.uchc.edu/over3mer_hub/hub.txt \
+The annotation BED files need to be upload via Custom Track. \
+
+
+**GATA3 peak with motif4** \
+
+```{r, engine='R', eval=F, echo=TRUE}
+library(bigWig)
+peak.region.summit=center.bed(read.table('/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MAST_positive_control/GATA3_peak_161win_with_motif_4.bed', sep = "\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+write.table(peak.region.summit,file= 'GATA3_peak_summit_with_motif_4.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+head -5 GATA3_peak_summit_with_motif_4.bed 
+#chr10	101454261	101454262	GATA_ChIP_peak_10760c
+#chr10	101703137	101703138	GATA_ChIP_peak_10768a
+#chr10	101716956	101716957	GATA_ChIP_peak_10770
+#chr10	102509735	102509736	GATA_ChIP_peak_10791b
+#chr10	1025947	1025948	GATA_ChIP_peak_7503
+
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+# 1) peak summit files
+cat GATA3_peak_summit_with_motif_4.bed | sort -k1,1 -k2,2n > GATA3_peak_summit_with_motif_4.sorted.bed
+
+# 2) closest GAT to peak summit (+/-)
+awk '{print $4, $5, $6, $7, $8, $9}' closest.1st.plus.GAT.to.GATA3.with.motif4.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.1st.plus.GAT.to.GATA3.with.motif4.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.1st.minus.GAT.to.GATA3.with.motif4.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.1st.minus.GAT.to.GATA3.with.motif4.sorted.bed
+
+
+# 3) 2nd closest GAT to peak summit (+/-)
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif4.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif4.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif4.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif4.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif4.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif4.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif4.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif4.sorted.bed
+```
+
+Add trackline: \
+```{r engine='bash', eval=F, echo=TRUE}
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"GATA3.peak.with.motif4.summit.bed\" description=\"peak.motif4.summit_bed\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' GATA3_peak_summit_with_motif_4.sorted.bed > GATA3_peak_summit_with_motif_4.sorted.header.bed
+           
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.1st.plus.GAT.motif4.bed\" description=\"plus.1st.GAT.m4\" visibility=full autoScale=on useScore=1 color=255,0,0"
+            } {print $0}' closest.1st.plus.GAT.to.GATA3.with.motif4.sorted.bed > closest.1st.plus.GAT.to.GATA3.with.motif4.sorted.header.bed
+           
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.1st.minus.GAT.motif4.bed\" description=\"minus.1st.GAT.m4\" visibility=full autoScale=on useScore=1 color=0,0,255"
+            } {print $0}' closest.1st.minus.GAT.to.GATA3.with.motif4.sorted.bed > closest.1st.minus.GAT.to.GATA3.with.motif4.sorted.header.bed
+            
+
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif4.bed\" description=\"plus.2nd.GAT.to.plus.1st.m4\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif4.sorted.bed > closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif4.sorted.header.bed
+            
+
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif4.bed\" description=\"plus.2nd.GAT.to.minus.1st.m4\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif4.sorted.bed > closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif4.sorted.header.bed
+            
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif4.bed\" description=\"minus.2nd.GAT.to.plus.1st.m4\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif4.sorted.bed > closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif4.sorted.header.bed
+            
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif4.bed\" description=\"minus.2nd.GAT.to.minus.1st.m4\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif4.sorted.bed > closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif4.sorted.header.bed
+            
+```
+
+
+**Saved Section**: \
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: 2nd closest GAT to 1st GAT relaive to GATA3 peaks with motif4"}
+#library(knitr)
+knitr::include_graphics("./GATA3_peak_with_motif8_2nd_closest_GAT_8bp.png") 
+```
+
+**GATA3 peak with motif1** \
+
+```{r, engine='R', eval=F, echo=TRUE}
+library(bigWig)
+peak.region.summit=center.bed(read.table('/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MAST_positive_control/GATA3_peak_161win_with_motif_1.bed', sep = "\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+write.table(peak.region.summit,file= 'GATA3_peak_summit_with_motif_1.bed', quote=F,sep="\t",col.names=F,row.names=F)
+
+head -5 GATA3_peak_summit_with_motif_1.bed 
+#chr10	100072672	100072673	GATA_ChIP_peak_10714
+#chr10	100522507	100522508	GATA_ChIP_peak_10733
+#chr10	101380202	101380203	GATA_ChIP_peak_10758b
+#chr10	101453916	101453917	GATA_ChIP_peak_10760b
+#chr10	101892965	101892966	GATA_ChIP_peak_10774
+
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+# 1) peak summit files
+cat GATA3_peak_summit_with_motif_1.bed | sort -k1,1 -k2,2n > GATA3_peak_summit_with_motif_1.sorted.bed
+
+# 2) closest GAT to peak summit (+/-)
+awk '{print $4, $5, $6, $7, $8, $9}' closest.1st.plus.GAT.to.GATA3.with.motif1.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.1st.plus.GAT.to.GATA3.with.motif1.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.1st.minus.GAT.to.GATA3.with.motif1.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.1st.minus.GAT.to.GATA3.with.motif1.sorted.bed
+
+
+# 3) 2nd closest GAT to peak summit (+/-)
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1.sorted.bed
+
+awk '{print $4, $5, $6, $7, $8, $9}' closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1.bed | awk '{$1=$1}1' OFS="\t" | sort -k1,1 -k2,2n > closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1.sorted.bed
+```
+
+Add trackline: \
+```{r engine='bash', eval=F, echo=TRUE}
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"GATA3.peak.with.motif1.summit.bed\" description=\"peak.motif1.summit_bed\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' GATA3_peak_summit_with_motif_1.sorted.bed > GATA3_peak_summit_with_motif_1.sorted.header.bed
+           
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.1st.plus.GAT.motif1.bed\" description=\"plus.1st.GAT.m1\" visibility=full autoScale=on useScore=1 color=255,0,0"
+            } {print $0}' closest.1st.plus.GAT.to.GATA3.with.motif1.sorted.bed > closest.1st.plus.GAT.to.GATA3.with.motif1.sorted.header.bed
+           
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.1st.minus.GAT.motif1.bed\" description=\"minus.1st.GAT.m1\" visibility=full autoScale=on useScore=1 color=0,0,255"
+            } {print $0}' closest.1st.minus.GAT.to.GATA3.with.motif1.sorted.bed > closest.1st.minus.GAT.to.GATA3.with.motif1.sorted.header.bed
+            
+
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1.bed\" description=\"plus.2nd.GAT.to.plus.1st.m1\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1.sorted.bed > closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.motif1.sorted.header.bed
+            
+
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1.bed\" description=\"plus.2nd.GAT.to.minus.1st.m1\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1.sorted.bed > closest.2nd.plus.GAT.to.1st.minus.GAT.GATA3.motif1.sorted.header.bed
+            
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1.bed\" description=\"minus.2nd.GAT.to.plus.1st.m1\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1.sorted.bed > closest.2nd.minus.GAT.to.1st.plus.GAT.GATA3.motif1.sorted.header.bed
+            
+awk 'BEGIN {print "browser position chr10:16,000-17,000" 
+            print "track type=bed name=\"closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1.bed\" description=\"minus.2nd.GAT.to.minus.1st.m1\" visibility=full autoScale=on useScore=1 color=0,0,0"
+            } {print $0}' closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1.sorted.bed > closest.2nd.minus.GAT.to.1st.minus.GAT.GATA3.motif1.sorted.header.bed
+            
+```
+
+
+**Saved Section**: \
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: 2nd closest GAT to 1st GAT relaive to GATA3 peaks with motif1"}
+#library(knitr)
+knitr::include_graphics("./GATA3_peak_with_motif1_2nd_closest_GAT_8bp.png") 
+```
+
 
 ## other 3mers--prioritized list of 3mers
 
@@ -7748,6 +7966,11 @@ The 3mer oligo frequencies stored in ENCODE.MCF7.DHS.background2.txt generated b
 awk '{print $1, $3}' ENCODE.MCF7.DHS.background.txt | awk '{$1=$1}1' OFS="\t" > ENCODE.MCF7.DHS.background3.txt
 ```
 
+**Estimation of expected dyad frequencies** \
+```{r engine='bash', eval=F, echo=TRUE}
+rsat dyad-analysis  -v 1 -i MCF7DHS_consensus_noGATA_without_motifs_123456_78.fasta -format fasta -type any -seqtype dna -1str -ovlp -sp 0-20 -l 3 -return freq,occ -o ENCODE.MCF7.DHS.background4.txt
+#-ovlp Count overlapping occurrences of self-overlpping words.
+```
 
 
 **Perform RSAT-dyad analysis to all five positive controls** \
@@ -7766,7 +7989,7 @@ fastaFromBed -fi $genome -bed ${dir}GATA3_peak_161win_with_motif_6.bed -fo GATA3
 
 
 ```{r engine='bash', eval=F, echo=TRUE}
-rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_1.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background3.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_1.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
 
 #-noov do not allow overlapping matches of the same word
 #-zeroocc
@@ -7776,9 +7999,40 @@ rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak
 
 # -1str	single strand count; only the direct strand is considered for oligonucleotide and dyad occurrence counting.
 # -type dyad_type (dr|ir|any) any	(default)
+
+wc -l GATA3_peak_161win_with_motif_1_RSAT_dyad.txt #43681 GATA3_peak_161win_with_motif_1_RSAT_dyad.txt
+head GATA3_peak_161win_with_motif_1_RSAT_dyad.txt 
+#sequence  	identifier             	expected_freq	occ	exp_occ	ovl_occ	all_occ	ratio
+#gatn{3}atc	gatn{3}atc|gatn{3}atc	0.0000716460535	  12482	  85.98	36	12518	 145.17
+#agan{4}atc	agan{4}atc|gatn{4}tct	0.0003298219842	  10904	 390.07	4445	15349	  27.95
+#atan{2}atc	atan{2}atc|gatn{2}tat	0.0001616794646	  10453	 196.05	1460	11913	  53.32
+#gatn{4}tca	gatn{4}tca|tgan{4}atc	0.0003742452755	   7872	 442.61	1728	9600	  17.79
+#agan{3}tat	agan{3}tat|atan{3}tct	0.0002979478048	   7425	 357.56	613	8038	  20.77
+#gatn{1}tta	gatn{1}tta|taan{1}atc	0.0002442959088	   6255	 300.53	50	6305	  20.81
+#agan{5}tca	agan{5}tca|tgan{5}tct	0.0006445764392	   5986	 756.26	43	6029	   7.92
+#attn{2}atc	attn{2}atc|gatn{2}aat	0.0002487059113	   5956	 301.58	690	6646	  19.75
+#atgn{2}atc	atgn{2}atc|gatn{2}cat	0.0003617165575	   5268	 438.62	51	5319	  12.01
+```
+
+Other positive controls: \
+```{r engine='bash', eval=F, echo=TRUE}
+rsat dyad-analysis -o GATA3_peak_161win_with_motif_2_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_2.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+
+rsat dyad-analysis -o GATA3_peak_161win_with_motif_4_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_4.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+
+rsat dyad-analysis -o GATA3_peak_161win_with_motif_5_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_5.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+
+rsat dyad-analysis -o GATA3_peak_161win_with_motif_6_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_6.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
 ```
 
 **Rank the output patterns** \
+
+The last column ratio is the observed/expected occurrence ratio. This ratio can be used as a rough indicator of over-representation, but it might overestimate the patterns with a very low number of expected occurrences. \
+
+I will rank the patterns by ratio, and plot the top 15 patterns to a bar plot. \
+```{r engine='bash', eval=F, echo=TRUE}
+
+```
 
 
 
