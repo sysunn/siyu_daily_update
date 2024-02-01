@@ -7433,7 +7433,7 @@ awk 'BEGIN {print "browser position chr10:16,000-17,000"
 
 ```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="UCSC Genome browser image: 2nd closest GAT to 1st GAT relaive to GATA3 peaks with motif4"}
 #library(knitr)
-knitr::include_graphics("./GATA3_peak_with_motif8_2nd_closest_GAT_8bp.png") 
+knitr::include_graphics("./GATA3_peak_with_motif4_2nd_closest_GAT_8bp.png") 
 ```
 
 **GATA3 peak with motif1** \
