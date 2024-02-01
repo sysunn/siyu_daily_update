@@ -5640,6 +5640,8 @@ head(df.plot)
 #4 114     minus.GAT    minus.GAT
 #5  27     minus.GAT    minus.GAT
 #6   3     minus.GAT    minus.GAT
+nrow(df.plot)
+#[1] 49842
 
 ```
 
@@ -5673,50 +5675,11 @@ library(latticeExtra)
             par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
             panel = function(x, ...) {
                                       panel.densityplot(x, ...)
-                                      panel.xyplot(x, y, col = "skyblue", pch = 16)
+                                      #panel.xyplot(x, y, col = "skyblue", pch = 16)
                                       panel.ablineq(v = 8, col = "red", lty = 2, adj=c(0,1), label="8")}
             
 ))
   dev.off()
-  
-
-  
-  density_values <- density(abs(df[df$status==status,]$dis), from=0, to=50)
-  
-  density_values <- density(abs(df.plot[df.plot$query_status==query_status,]$dis), from=0, to=50)
-
-  
-  pdf('temp_pos_motif1.pdf', width=15,height=5)
-  print(xyplot(density ~ abs(dis) | anchor_status, 
-         data = df.plot,
-         groups = query_status,
-         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
-         col=c("red","blue"),
-         aspect = 1,
-         #xlim=c(0,50),
-         #from=0,
-         #to=50,
-         between=list(y=1.0),
-         #scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
-         panel = function(x, y, ...) {
-         panel.xyplot(x, y, ...)
-         panel.densityplot(x, col=c("red","blue"), plot.points = FALSE, ...)
-       },
-       main = "Density Plot of Distances",
-       xlab = "Distances", 
-       ylab = "Density")
-  )
-  dev.off()
-  
-  
-  panel = function(x, y, ...) {
-              panel.densityplot(x, y, ...)
-              panel.xyplot(x, y, col = "red", pch = 16)
-            }
-
-  
-  
-  
   
     
    png('PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png')
@@ -5747,7 +5710,7 @@ library(latticeExtra)
   dev.off()
 ```
 
-```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="GATA3 peak with motif1: 3mer structure"}
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="PDF plots of GATA3 peak with motif1: 3mer structure"}
 library(knitr)
 knitr::include_graphics("./PDF_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png") 
 ```
@@ -5790,6 +5753,8 @@ head(df.plot)
 #4 114     minus.GAT    minus.GAT     114         NA
 #5  27     minus.GAT    minus.GAT      27 0.01379179
 #6   3     minus.GAT    minus.GAT       3 0.01653378
+nrow(df.plot)
+#[1] 49842
 
 df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
 df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
@@ -5828,6 +5793,274 @@ print(xyplot(density ~ abs.dis | anchor_status,
 dev.off()
 ```
 
+### histogram
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+df.plot = data.frame(matrix(nrow = 0, ncol = 3))     
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif1.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif1.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif1.bed")[[1]][1]
+    print(query_status)
+    temp = cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)
+    df.plot = rbind(df.plot,temp)
+}
+str(df.plot)
+#'data.frame':	49842 obs. of  3 variables:
+# $ V1           : chr  "240" "3" "117" "114" ...
+# $ anchor_status: chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+# $ query_status : chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+colnames(df.plot) = c("dis", "anchor_status", "query_status")
+head(df.plot)
+# dis anchor_status query_status
+#1 240     minus.GAT    minus.GAT
+#2   3     minus.GAT    minus.GAT
+#3 117     minus.GAT    minus.GAT
+#4 114     minus.GAT    minus.GAT
+#5  27     minus.GAT    minus.GAT
+#6   3     minus.GAT    minus.GAT
+
+nrow(df.plot)
+#[1] 49842
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$dis=as.integer(df.plot$dis)
+
+library(lattice)
+library(latticeExtra)
+
+ pdf('his_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.pdf', width=15,height=5)
+ print(histogram( ~ abs(dis) | anchor_status,
+                  groups = query_status,
+                  auto.key = list(space = "right", main="2nd GAT",rectangles=FALSE, lines=TRUE, points=FALSE, cex = 1),
+                  #key = list(space = "right", text=list(c("+ strand", "- strand"), cex=1)),
+                  data = df.plot, 
+                  aspect = 1,
+                  breaks=seq(from=0,to=24921, by=1),
+                  #breaks=1,
+                  #nint=1,
+                  type = "density",
+                  xlim=c(0,50),
+                  ylim=c(0, 0.3),
+                  scales=list(relation='free'), 
+                  between=list(y=1.0),
+                  layout = c(2, 1),
+                  lwd=2,
+                  xlab = "distance (bp) from 2nd closest GAT to closest GAT", 
+                  ylab = "Density",
+                  main="GATA3 peak with motif1",
+                  par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+                  panel = function(x,...) {#panel.histogram(...)
+                                           #panel.densityplot(...)
+                                          panel.densityplot(x, data = df.plot, 
+                                                            from=0, 
+                                                            to=50, 
+                                                            lty = c(1),
+                                                            darg=list(bw = "nrd0", kernel="gaussian"),
+                                                            #lwd=2, 
+                                                            #type = "count",
+                                                            col=c("red","blue"), ...)
+                                         panel.superpose(x, ..., panel.groups=panel.histogram, 
+                                  col=c('red', 'blue'), alpha=0.4)
+         }))
+  dev.off()
+  
+  png('his_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png')
+ print(histogram( ~ abs(dis) | anchor_status,
+                  groups = query_status,
+                  auto.key = list(space = "right", main="2nd GAT",rectangles=FALSE, lines=TRUE, points=FALSE, cex = 1),
+                  #key = list(space = "right", text=list(c("+ strand", "- strand"), cex=1)),
+                  data = df.plot, 
+                  aspect = 1,
+                  breaks=seq(from=0,to=24921, by=1),
+                  #breaks=1,
+                  #nint=1,
+                  type = "density",
+                  xlim=c(0,50),
+                  ylim=c(0, 0.3),
+                  scales=list(relation='free'), 
+                  between=list(y=1.0),
+                  layout = c(2, 1),
+                  lwd=2,
+                  xlab = "distance (bp) from 2nd closest GAT to closest GAT", 
+                  ylab = "Density",
+                  main="GATA3 peak with motif1",
+                  par.settings = list(superpose.line = list(col=c("red", "blue"), lwd=3), strip.background=list(col="grey85")),
+                  panel = function(x,...) {#panel.histogram(...)
+                                           #panel.densityplot(...)
+                                          panel.densityplot(x, data = df.plot, 
+                                                            from=0, 
+                                                            to=50, 
+                                                            lty = c(1),
+                                                            darg=list(bw = "nrd0", kernel="gaussian"),
+                                                            #lwd=2, 
+                                                            #type = "count",
+                                                            col=c("red","blue"), ...)
+                                         panel.superpose(x, ..., panel.groups=panel.histogram, 
+                                  col=c('red', 'blue'), alpha=0.4)
+         }))
+  dev.off()
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="histogram of GATA3 peak with motif1: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./his_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png") 
+```
+
+### xyplot
+Confirm if the y value from lattice "type==density" is the relative frequency of each distance occurrence in data. \
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+calculate_relative_frequency <- function(data) {
+  # Use table() to create a frequency table
+  relative_frequencies <- table(data)/length(data)
+  result <- data.frame(value = names(relative_frequencies), rel_freq = as.vector(relative_frequencies))
+  return(result)
+}
+
+df.plot = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.plot) = c("dis","anchor_status", "query_status","abs.dis", "rel_freq")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.GATA3.motif1.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".GATA3.motif1.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.GATA3.motif1.bed")[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    relative_frequency = calculate_relative_frequency(temp$abs.dis)
+    temp1= merge(temp, relative_frequency, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+    df.plot = rbind(df.plot,temp1)
+}
+
+str(df.plot)
+#'data.frame':	49842 obs. of  5 variables:
+# $ abs.dis      : int  3 3 3 3 3 3 3 3 3 3 ...
+# $ dis          : int  3 3 3 3 3 3 3 3 3 3 ...
+# $ anchor_status: chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+# $ query_status : chr  "minus.GAT" "minus.GAT" "minus.GAT" "minus.GAT" ...
+# $ rel_freq     : num  0.0272 0.0272 0.0272 0.0272 0.0272 ...
+
+
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+head(df.plot)
+#  abs.dis dis anchor_status query_status   rel_freq
+#1       3   3     minus.GAT    minus.GAT 0.02720706
+#2       3   3     minus.GAT    minus.GAT 0.02720706
+#3       3   3     minus.GAT    minus.GAT 0.02720706
+#4       3   3     minus.GAT    minus.GAT 0.02720706
+#5       3   3     minus.GAT    minus.GAT 0.02720706
+#6       3   3     minus.GAT    minus.GAT 0.02720706
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+nrow(df.plot)
+#[1] 49842
+nrow(df.plot[!duplicated(df.plot), ])
+#1104
+summary(df.plot[!duplicated(df.plot), ])
+    abs.dis             dis            anchor_status    query_status
+ Min.   :   1.00   Min.   :   1.00   plus.GAT :537   plus.GAT :550  
+ 1st Qu.:  70.75   1st Qu.:  70.75   minus.GAT:567   minus.GAT:554  
+ Median : 139.50   Median : 139.50                                  
+ Mean   : 192.12   Mean   : 192.12                                  
+ 3rd Qu.: 212.00   3rd Qu.: 212.00                                  
+ Max.   :1590.00   Max.   :1590.00                                  
+    rel_freq        
+ Min.   :8.025e-05  
+ 1st Qu.:1.605e-04  
+ Median :6.421e-04  
+ Mean   :3.623e-03  
+ 3rd Qu.:3.772e-03  
+ Max.   :1.623e-01  
+```
+
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+pdf('xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.pdf', width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex=1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency",
+         main="GATA3 peak with motif1",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, relation='free', at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+
+png('xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png')
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex=1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency",
+         main="GATA3 peak with motif1",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, relation='free', at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of GATA3 peak with motif1: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1.png") 
+```
 
 ### other positive controls
 ```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
@@ -6475,6 +6708,144 @@ dev.off()
 
 ```
 
+### xyplots
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+calculate_relative_frequency <- function(data) {
+  # Use table() to create a frequency table
+  relative_frequencies <- table(data)/length(data)
+  result <- data.frame(value = names(relative_frequencies), rel_freq = as.vector(relative_frequencies))
+  return(result)
+}
+
+
+my_motifs = c("motif4","motif2", "motif6", "motif5")
+for (motif in my_motifs) {
+  print(motif)
+df.plot = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.plot) = c("dis","anchor_status", "query_status","abs.dis", "rel_freq")
+for (closest_2nd_dis in Sys.glob(file.path(paste0("./closest.2nd*GAT.to.1st*GAT.GATA3.", motif, ".bed")))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), paste0(".GATA3.", motif, ".bed"))[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), paste0(".to.1st.*.GATA3.", motif, ".bed"))[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    relative_frequency = calculate_relative_frequency(temp$abs.dis)
+    temp1= merge(temp, relative_frequency, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+    df.plot = rbind(df.plot,temp1)
+}
+
+str(df.plot)
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+head(df.plot)
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+nrow(df.plot)
+#[1] 49842
+nrow(df.plot[!duplicated(df.plot), ])
+summary(df.plot[!duplicated(df.plot), ])
+
+library(lattice)
+library(latticeExtra)
+pdf(paste0('xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_', motif, '.pdf'), width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency",
+         main=paste0("GATA3 peak with ", motif),
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+
+png(paste0('xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_', motif, '.png'))
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency",
+         main=paste0("GATA3 peak with ", motif),
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+}
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of GATA3 peak with motif4: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif4.png") 
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of GATA3 peak with motif2: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif2.png") 
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of GATA3 peak with motif6: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif6.png") 
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of GATA3 peak with motif5: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif5.png") 
+```
+
+
+
 ### neg control
 closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed \
 closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed \
@@ -6642,6 +7013,8 @@ head(df.plot)
 #4  17     minus.GAT    minus.GAT
 #5  83     minus.GAT    minus.GAT
 #6  25     minus.GAT    minus.GAT
+nrow(df.plot)
+#[1] 229024
 
 df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
 df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
@@ -6732,6 +7105,15 @@ unique(df.plot$anchor_status)
 unique(df.plot$query_status)
 #[1] "minus.GAT" "plus.GAT" 
 head(df.plot)
+#dis anchor_status query_status abs.dis     density
+#1  17     minus.GAT    minus.GAT      17 0.009672190
+#2  23     minus.GAT    minus.GAT      23 0.009327138
+#3  62     minus.GAT    minus.GAT      62          NA
+#4  17     minus.GAT    minus.GAT      17 0.009672190
+#5  83     minus.GAT    minus.GAT      83          NA
+#6  25     minus.GAT    minus.GAT      25 0.009207771
+nrow(df.plot)
+#[1] 229024
 
 df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
 df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
@@ -6771,6 +7153,149 @@ print(xyplot(density ~ abs.dis | anchor_status,
  
 dev.off()
 ```
+
+### xyplot
+```{r engine='R',  class.source = "revision", eval=F, echo=TRUE}
+calculate_relative_frequency <- function(data) {
+  # Use table() to create a frequency table
+  relative_frequencies <- table(data)/length(data)
+  result <- data.frame(value = names(relative_frequencies), rel_freq = as.vector(relative_frequencies))
+  return(result)
+}
+
+df.plot = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.plot) = c("dis","anchor_status", "query_status","abs.dis", "rel_freq")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.indep.DHS.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".indep.DHS.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.indep.DHS.bed")[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    relative_frequency = calculate_relative_frequency(temp$abs.dis)
+    temp1= merge(temp, relative_frequency, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+    df.plot = rbind(df.plot,temp1)
+}
+
+str(df.plot)
+
+unique(df.plot$anchor_status)
+#[1] "minus.GAT" "plus.GAT" 
+unique(df.plot$query_status)
+#[1] "minus.GAT" "plus.GAT" 
+head(df.plot)
+# abs.dis dis anchor_status query_status   rel_freq
+#1       3   3     minus.GAT    minus.GAT 0.01620932
+#2       3   3     minus.GAT    minus.GAT 0.01620932
+#3       3   3     minus.GAT    minus.GAT 0.01620932
+#4       3   3     minus.GAT    minus.GAT 0.01620932
+#5       3   3     minus.GAT    minus.GAT 0.01620932
+#6       3   3     minus.GAT    minus.GAT 0.01620932
+
+df.plot$anchor_status = factor(df.plot$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+df.plot$query_status = factor(df.plot$query_status, levels = c("plus.GAT", "minus.GAT"))
+nrow(df.plot)
+#[1] 229024
+nrow(df.plot[!duplicated(df.plot), ])
+#2859
+summary(df.plot[!duplicated(df.plot), ])
+
+   abs.dis             dis            anchor_status     query_status 
+ Min.   :    1.0   Min.   :    1.0   plus.GAT :1401   plus.GAT :1433  
+ 1st Qu.:  180.0   1st Qu.:  180.0   minus.GAT:1458   minus.GAT:1426  
+ Median :  359.0   Median :  359.0                                    
+ Mean   :  498.4   Mean   :  498.4                                    
+ 3rd Qu.:  569.5   3rd Qu.:  569.5                                    
+ Max.   :42639.0   Max.   :42639.0                                    
+    rel_freq        
+ Min.   :1.746e-05  
+ 1st Qu.:3.493e-05  
+ Median :1.223e-04  
+ Mean   :1.399e-03  
+ 3rd Qu.:1.484e-03  
+ Max.   :1.039e-01  
+ 
+ 
+
+library(lattice)
+library(latticeExtra)
+pdf('xy_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.pdf', width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency",
+         main="Independent DHS Regions",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+
+png('xy_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.png')
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency",
+         main="Independent DHS Regions",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of Independent DHS Regions: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_indep_DHS.png") 
+```
+
 
 
 ## other 3mers--prioritized list of 3mers
@@ -7083,17 +7608,180 @@ rsat --list | wc -l
 rsat --help
 ```
 
+**reading the help menu** \
 ```{r engine='bash', eval=F, echo=TRUE}
+cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/RSAT/
+source ~/miniconda3/bin/activate
 conda activate rsat
-rsat --help
-
+#rsat --help
+rsat oligo-analysis -h
+rsat create-background-model -h
 rsat dyad-analysis -h
-rsat dyad-analysis -o output_file -i input_file -format FastA -l 3 -sp 0-20-organism hg19 -comp mul -mono tri -mono_len 3 -lmin 5 -lmax 20 -minsc 0.8 input_file.fa
+```
 
-#dyad-analysis  -i .fa -v 1 -quick -sort -timeout 3600 -type any -2str -noov -lth occ 1 -lth occ_sig 0 -uth rank 100 -return occ,proba,rank -l 3 -spacing 0-20
+**Generating the expected frequency table** \
 
+The RSAT-dyad analysis provide two ways to control for background. One is using the `-bg` option: Either using the predefined background frequencies of the selected organism (`-org`)/taxon(`-taxon`), or estimating expected dyad frequencies from input sequences (`-bg monads` (default)/`-bg input`). \
+
+The other one allows users to upload their own expected frequency file with `-expfreq`. \
+On the websites, they have a detailed instruction of "How to generate an expected frequency file?". I will follow their rules to generate the expected frequency table use the DHS regions. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#A sample background file on the website:
+head -50 3nt_gene_Saccharomyces_cerevisiae-ovlp-1str.freq 
+
+; oligo-analysis  -v 1 -1str -i /bio/rsa-tools/data/genomes/Saccharomyces_cerevisiae/genome/Saccharomyces_cerevisiae_gene_segments.wc -format wc -1str -ovlp -l 3 -type dna -return freq,occ -o /bio/rsa-tools/data/genomes/Saccharomyces_cerevisiae/oligo-frequencies/3nt_gene_Saccharomyces_cerevisiae-ovlp-1str.freq
+; Citation: van Helden et al. (1998). J Mol Biol 281(5), 827-42. 
+; Oligomer length              	3
+; Input file                   	/bio/rsa-tools/data/genomes/Saccharomyces_cerevisiae/genome/Saccharomyces_cerevisiae_gene_segments.wc
+; Input format                 	wc
+; Output file                  	/bio/rsa-tools/data/genomes/Saccharomyces_cerevisiae/oligo-frequencies/3nt_gene_Saccharomyces_cerevisiae-ovlp-1str.freq
+; Count overlapping matches
+; Counted on a single strand
+; Method                       	
+; Sequence type                	DNA
+; Nb of sequences              	6080
+; Sum of sequence lengths      	8809751
+; discarded residues           	0	 (other letters than ACGT)
+; discarded occurrences        	0	 (contain discarded residues)
+; nb possible positions        	8797591
+; total oligo occurrences      	8797591
+; alphabet size                	4
+; nb possible oligomers        	64
+; oligomers tested for significance	0
+; Threshold values
+;	Parameter      	Lower	Upper
+;	occ_P          	none	1
+;
+; column headers
+;	1	seq            	oligomer sequence
+;	2	id             	oligomer identifier
+;	3	observed_freq  	observed relative frequency
+;	4	occ            	observed occurrences
+;	5	test           	over- or under-representation test
+;seq	id	observed_freq	occ	test
+aaa	aaa	0.0350766476868	308590	
+aac	aac	0.0184259531956	162104	
+aag	aag	0.0218185864744	191951	
+aat	aat	0.0282970645032	248946	
+aca	aca	0.0168762107718	148470	
+acc	acc	0.0126323217344	111134	
+acg	acg	0.0088157087548	77557	
+act	act	0.0149614820694	131625	
+aga	aga	0.0207571595452	182613	
+agc	agc	0.0118527901559	104276	
+agg	agg	0.0118003894475	103815	
+agt	agt	0.0150120640980	132070	
+ata	ata	0.0206869130424	181995	
+atc	atc	0.0186547658331	164117	
+atg	atg	0.0186416940728	164002	
+att	att	0.0282246583184	248309	
+caa	caa	0.0245105734058	215634	
+cac	cac	0.0108630874065	95569	
+cag	cag	0.0135514369786	119220	
+cat	cat	0.0187047795243	164557
+```
+
+
+`create-background-model`: Create a background model by computing oligonucleotide frequencies in a user-specified sequence file (he "background" file). \
+```{r engine='bash', eval=F, echo=TRUE}
+#rsat convert-background-model -h
+#rsat create-background-model -h
+#create-background-model [-i inputfile] [-o outputfile] [-v #] [...]
+
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/ENCODE_DHS_GSE29692/
+fastaFromBed -fi $genome -bed ${dir}MCF7DHS_consensus_noGATA_without_motifs_123456_78.bed -fo MCF7DHS_consensus_noGATA_without_motifs_123456_78.fasta
+
+rsat create-background-model -i MCF7DHS_consensus_noGATA_without_motifs_123456_78.fasta -o ENCODE.MCF7.DHS.background.txt -out_format oligos -markov 2
+#An oligo file containing k-mers frequencies corresponds to a Markov model of order m=k-1.
+
+
+rsat oligo-analysis -i MCF7DHS_consensus_noGATA_without_motifs_123456_78.fasta -seqtype dna -l 3 -1str -return freq -lth occ_sig none -v 1 -format fasta -sort -o ENCODE.MCF7.DHS.background2.txt
+#-noov	do not allow overlapping matches of the same word
+#-ovlp Count overlapping occurrences of self-overlpping words.
+
+#-1str Strand-sensitive background model
+#	-1str inactivates the summation of occurrences on both strands. Count on single strand
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+head -30 ENCODE.MCF7.DHS.background2.txt 
+
+; oligo-analysis  -i MCF7DHS_consensus_noGATA_without_motifs_123456_78.fasta -seqtype dna -l 3 -1str -return freq -lth occ_sig none -v 1 -format fasta -sort -o ENCODE.MCF7.DHS.background2.txt
+; Citation: van Helden et al. (1998). J Mol Biol 281(5), 827-42. 
+; Program version              	1.169
+; Slow counting mode           
+; Oligomer length              	3
+; Input file                   	MCF7DHS_consensus_noGATA_without_motifs_123456_78.fasta
+; Input format                 	fasta
+; Output file                  	ENCODE.MCF7.DHS.background2.txt
+; Count overlapping matches
+; Counted on a single strand
+; Background model             	Bernoulli
+; Background estimation method 	
+; Sequence type                	DNA
+; Nb of sequences              	57906
+; Sum of sequence lengths      	7677291
+; discarded residues           		 (other letters than ACGT)
+; discarded occurrences        		 (contain discarded residues)
+; nb possible positions        	7561762
+; total oligo occurrences      	7561762
+; alphabet size                	4
+; nb possible oligomers        	64
+; oligomers tested for significance	0
+;
+; column headers
+;	1	seq            	oligomer sequence
+;	2	id             	oligomer identifier
+;	3	obs_freq       	observed relative frequency
+#seq	id	obs_freq
+ctg	ctg	0.0290296097656
+cag	cag	0.0289211694311
 
 ```
+
+The 3mer oligo frequencies stored in ENCODE.MCF7.DHS.background2.txt generated by `rsat oligo-analysis` is the same as the 3mer oligo frequencies stored in file generated by `rsat create-background-model`. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+awk '{print $1, $3}' ENCODE.MCF7.DHS.background.txt | awk '{$1=$1}1' OFS="\t" > ENCODE.MCF7.DHS.background3.txt
+```
+
+
+
+**Perform RSAT-dyad analysis to all five positive controls** \
+
+Prepare the positive control files in fasta format. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MAST_positive_control/
+fastaFromBed -fi $genome -bed ${dir}GATA3_peak_161win_with_motif_1.bed -fo GATA3_peak_161win_with_motif_1.fasta
+fastaFromBed -fi $genome -bed ${dir}GATA3_peak_161win_with_motif_2.bed -fo GATA3_peak_161win_with_motif_2.fasta
+fastaFromBed -fi $genome -bed ${dir}GATA3_peak_161win_with_motif_4.bed -fo GATA3_peak_161win_with_motif_4.fasta
+fastaFromBed -fi $genome -bed ${dir}GATA3_peak_161win_with_motif_5.bed -fo GATA3_peak_161win_with_motif_5.fasta
+fastaFromBed -fi $genome -bed ${dir}GATA3_peak_161win_with_motif_6.bed -fo GATA3_peak_161win_with_motif_6.fasta
+```
+
+
+```{r engine='bash', eval=F, echo=TRUE}
+rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak_161win_with_motif_1.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background3.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+
+#-noov do not allow overlapping matches of the same word
+#-zeroocc
+#-two_tails
+#	-groupsp Group dyads made of the same words (monads) but with different spacings.
+# -2str	count on oth strands; The occurrences of each oligonucleotide are summed on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+
+# -1str	single strand count; only the direct strand is considered for oligonucleotide and dyad occurrence counting.
+# -type dyad_type (dr|ir|any) any	(default)
+```
+
+**Rank the output patterns** \
+
+
+
 
 
 **glk-SVM** \
