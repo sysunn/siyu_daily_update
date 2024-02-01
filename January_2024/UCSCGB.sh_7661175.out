@@ -1,0 +1,18 @@
+plus_GAT (.bed)
+39090736 /labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/hg38.3.3.3plus.36_GAT.bed
+chr1	11159	11162	36	36	+	GAT
+chr1	11462	11465	36	36	+	GAT
+chr1	11521	11524	36	36	+	GAT
+chr1	11569	11572	36	36	+	GAT
+chr1	11651	11654	36	36	+	GAT
+minus_GAT (.bed)
+38717592 /labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/hg38.3.3.3minus.14_GAT.bed
+chr1	10545	10548	14	14	-	GAT
+chr1	11145	11148	14	14	-	GAT
+chr1	11160	11163	14	14	-	GAT
+chr1	11576	11579	14	14	-	GAT
+chr1	11597	11600	14	14	-	GAT
+39090736 hg38.3.3.3.1000.plus.36_GAT_sorted.bed
+38717592 hg38.3.3.3.1000.minus.14_GAT_sorted.bed
+38312401 hg38.3.3.3.1000.plus.36_GAT.bedGraph
+37963744 hg38.3.3.3.1000.minus.14_GAT.bedGraph
