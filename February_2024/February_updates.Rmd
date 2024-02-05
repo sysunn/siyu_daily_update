@@ -82,3 +82,78 @@ brew install bedtools
 
 # Feb 5th
 
+# RSAT - DYAD analysis
+
+In the previous analysis, I ran the RSAT-dyad analysis, using the ENCODE DHS regions as a control for calculating the expected 3mer dyad occurrence, and generated these files with dyad patterns and the corresponding statistics. \
+GATA3_peak_161win_with_motif_1_RSAT_dyad.txt \
+GATA3_peak_161win_with_motif_2_RSAT_dyad.txt \
+GATA3_peak_161win_with_motif_4_RSAT_dyad.txt \
+GATA3_peak_161win_with_motif_5_RSAT_dyad.txt \
+GATA3_peak_161win_with_motif_6_RSAT_dyad.txt \
+
+```{r engine='bash', eval=F, echo=TRUE}
+head -6 GATA3_peak_161win_with_motif_1_RSAT_dyad.txt
+#sequence  	identifier             	expected_freq	occ	exp_occ	ovl_occall_occ	ratio
+#gatn{3}atc	gatn{3}atc|gatn{3}atc	0.0000716460535	  12482	  85.98	36	12518	 145.17
+#agan{4}atc	agan{4}atc|gatn{4}tct	0.0003298219842	  10904	 390.07	4445	15349	  27.95
+#atan{2}atc	atan{2}atc|gatn{2}tat	0.0001616794646	  10453	 196.05	1460	11913	  53.32
+#gatn{4}tca	gatn{4}tca|tgan{4}atc	0.0003742452755	   7872	 442.61	1728	9600	  17.79
+#agan{3}tat	agan{3}tat|atan{3}tct	0.0002979478048	   7425	 357.56	613	8038	  20.77
+
+```
+
+The final column represents the ratio of observed occurrences to expected occurrences, which can serve as a rough 'enrichment score. I plan to extract patterns linked to GAT/ATC and create a bar chart to visually depict their frequencies. \
+
+Example code here: \
+```{r engine='bash', eval=F, echo=TRUE}
+awk -F'\t' '$1 ~ /^gat.*atc/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | wc -l
+#21
+awk -F'\t' '$1 ~ /^gat.*atc/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | sort -k8,8nr | head -5
+gatn{3}atc	gatn{3}atc|gatn{3}atc	0.0000716460535	  12482	  85.98	36	12518	 145.17
+gatn{0}atc	gatn{0}atc|gatn{0}atc	0.0000515638671	    614	  64.15	0	614	   9.57
+gatn{4}atc	gatn{4}atc|gatn{4}atc	0.0000504302144	    545	  59.64	6	551	   9.14
+gatn{16}atc	gatn{16}atc|gatn{16}atc	0.0000944795637	    590	  97.70	9	599	   6.04
+gatn{15}atc	gatn{15}atc|gatn{15}atc	0.0000818438092	    516	  85.70	8	524	   6.02
+```
+
+Automate the analysis so that given any anchor 3mer and the 2nd 3mer, we could extract the relative dyad patterns and make a histogram/barchart: \
+```{r engine='bash', eval=F, echo=TRUE}
+ extract_and_rank <- function(file_path, pattern1, pattern2) {
+  # Read the file
+  data <- read.table(file_path, header = FALSE, sep = "\t")
+
+  # Extract rows with patterns in the first column
+  selected_rows <- data[data$V1 %in% c(pattern1, pattern2), ]
+
+  # Ensure pattern1 always comes first in the result
+  selected_rows <- selected_rows[order(selected_rows$V1 == pattern1, -selected_rows$V8), ]
+
+  return(selected_rows)
+}
+
+# Example usage
+file_path <- "your_file.txt"
+pattern1 <- "gat.*atc"
+pattern2 <- "aga.*atc"
+
+result <- extract_and_rank(file_path, pattern1, pattern2)
+print(result)
+```
+
+
+
+# Comparison between RSAT and customized analysis
+
+For the customized analysis: \
+
+1) combine the plus and minus strand of the anchored GAT; \
+2) the plus/minus second closest GAT should be relative to the anchored GAT's strandedness. \
+
+For example: If I anchor at GAT (despite its strandedness), then my blue trace (label as "-GAT" should be the addition of "+GAT" that anchor at -GAT, and "-GAT" that anchor at +GAT); \
+
+3) the relative frequencies (y axis in plots) should be the actual occurrences of the pattern **subtract** the negative control frequencies. \
+
+
+
+
+
