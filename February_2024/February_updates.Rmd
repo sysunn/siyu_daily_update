@@ -69,7 +69,6 @@ devtools::install_github('andrelmartins/bigWig',
               subdir='bigWig')
 library(bigWig)
 
-install.packages("latticeExtra", quiet = TRUE)
 install.packages("DESeq2", quiet = TRUE)
 install.packages("dplyr", quiet = TRUE)
 ```
@@ -81,7 +80,7 @@ brew install bedtools
 ```
 
 Install `Biostrings` \
-```{r engine='R', eval=T, echo=T}
+```{r engine='R', eval=TRUE, echo=T}
 if (!requireNamespace("Biostrings", quietly = TRUE)) {
   if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -89,6 +88,10 @@ if (!requireNamespace("Biostrings", quietly = TRUE)) {
 }
 ```
 
+Install `latticeExtra` \
+```{r engine='R', eval=TRUE, echo=T}
+install.packages("latticeExtra", quiet = TRUE)
+```
 
 # Feb 5th
 
@@ -361,8 +364,173 @@ For the customized analysis: \
 
 3) Calculate the relative frequencies (y-axis in plots) as the actual occurrences of the pattern minus the frequencies from the DHS negative control. \
 
+```{r engine='R', eval=F, echo=TRUE}
+# define function
+calculate_actual_frequency <- function(data) {
+  # Use table() to create a frequency table
+  actual_frequencies <- table(data)/length(data)
+  result <- data.frame(value = names(actual_frequencies), actual_freq = as.vector(actual_frequencies))
+  return(result)
+}
 
 
+my_motifs = c("motif1", "motif4","motif2", "motif6", "motif5")
+for (motif in my_motifs) {
+  print(motif)
+  #GATA peaks
+  df.plot.GATA = data.frame(matrix(nrow = 0, ncol = 5))     
+  colnames(df.plot.GATA) = c("dis","anchor_status", "query_status","abs.dis", "actual_freq")
+  for (closest_2nd_dis in Sys.glob(file.path(paste0("./closest.2nd*GAT.to.1st*GAT.GATA3.", motif, ".bed")))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), paste0(".GATA3.", motif, ".bed"))[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), paste0(".to.1st.*.GATA3.", motif, ".bed"))[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+    df.plot.GATA = rbind(df.plot.GATA,temp1)
+  }
+  df.plot.GATA$anchor_status = factor(df.plot.GATA$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+  df.plot.GATA$query_status = factor(df.plot.GATA$query_status, levels = c("plus.GAT", "minus.GAT"))
+  uniq.df.plot.GATA=df.plot.GATA[!duplicated(df.plot.GATA), ]
+  
+  
+  #DHS regions
+  df.plot.DHS = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.plot.DHS) = c("dis","anchor_status", "query_status","abs.dis", "actual_freq_neg")
+for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd*GAT.to.1st*GAT.indep.DHS.bed"))) {
+    print(closest_2nd_dis)
+    anchor_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.*.to.1st.')[[1]][2]), ".indep.DHS.bed")[[1]][1]
+    print(anchor_status)
+    query_status =strsplit((strsplit(strsplit(closest_2nd_dis, "/")[[1]][length(strsplit(closest_2nd_dis, "/")[[1]])], 'closest.2nd.')[[1]][2]), ".to.1st.*.indep.DHS.bed")[[1]][1]
+    print(query_status)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], anchor_status, query_status)) 
+    colnames(temp) = c("dis", "anchor_status", "query_status")
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequency = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequency, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+    df.plot.DHS = rbind(df.plot.DHS, temp1)
+}
+    colnames(df.plot.DHS)[5]="actual_freq_DHS"
+    df.plot.DHS$anchor_status = factor(df.plot.DHS$anchor_status, levels = c("plus.GAT", "minus.GAT"))
+    df.plot.DHS$query_status = factor(df.plot.DHS$query_status, levels = c("plus.GAT", "minus.GAT"))
+    uniq.df.plot.DHS=df.plot.DHS[!duplicated(df.plot.DHS), ]
+    #nrow(uniq.df.plot.DHS) #[1] 2859
+  
+  #calculate the relative frequency
+    #by subtraction of actual frequency between GATA3 peaks and DHS regions
+    df.plot=merge(uniq.df.plot.GATA, uniq.df.plot.DHS, by=c("abs.dis", "dis", "anchor_status", "query_status"), all.x = TRUE)
+    df.plot$rel_freq <- ifelse(is.na(df.plot$actual_freq_DHS), NA, df.plot$actual_freq - df.plot$actual_freq_DHS)
+    df.plot$strand_relationship <- ifelse(df.plot$anchor_status == df.plot$query_status,
+                                              "same_strand_GAT", "opposite_strand_GAT")
+    
+    df.plot$strand_relationship = factor(df.plot$strand_relationship, levels = c("same_strand_GAT", "opposite_strand_GAT"))
+    
+library(lattice)
+library(latticeExtra)
+pdf(paste0('xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_', motif, '_compare_to_DHS.pdf'), width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis, 
+         data = df.plot, 
+         groups = strand_relationship,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency relative to DHS regions",
+         main=paste0("GATA3 peak with ", motif),
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+
+png(paste0('xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_', motif, '_compare_to_DHS.png'))
+print(xyplot(rel_freq ~ abs.dis | anchor_status, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = query_status,
+         auto.key = list(space = "right", lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.3),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest GAT to closest GAT",
+         ylab="Frequency relative to DHS regions",
+         main=paste0("GATA3 peak with ", motif),
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c("pink", "skyblue"), lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = "nrd0", kernel="gaussian"),
+                                                        type = "count",
+                                                        col=c("pink","skyblue"), ...)
+                                      panel.xyplot(x, y, 
+                                                   col=c("red","blue"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                      
+  })
+)
+dev.off()
+}
+
+
+```
+
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of GATA3 peak with motif1 relative to the DHS regions: 3mer structure"}
+library(knitr)
+knitr::include_graphics("./xy_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_motif1_compare_to_DHS.png") 
+```
+The plot generated using the above code has double points at the same distance with same strand info. This is because the plus.GAT-minus.GAT and minus.GAT-plus.GAT are both labeled as "opposite_strand_GAT" and the relative frequency is slightly different (although pretty close). \
+
+See the plotting data frame below: \
+
+```{r engine='R', eval=F, echo=TRUE}
+abs.dis dis anchor_status query_status  actual_freq actual_freq_DHS
+1       1   1      plus.GAT    minus.GAT 0.0008025682    0.0008209464
+2       1   1     minus.GAT     plus.GAT 0.0009630046    0.0008557308
+3       2   2      plus.GAT    minus.GAT 0.0119582665    0.0027248432
+4       2   2     minus.GAT     plus.GAT 0.0127598106    0.0026021201
+5       3   3      plus.GAT     plus.GAT 0.0300938929    0.0162763486
+6       3   3      plus.GAT    minus.GAT 0.0760032103    0.1039283157
+       rel_freq strand_relationship
+1 -1.837814e-05 opposite_strand_GAT
+2  1.072738e-04 opposite_strand_GAT
+3  9.233423e-03 opposite_strand_GAT
+4  1.015769e-02 opposite_strand_GAT
+5  1.381754e-02     same_strand_GAT
+6 -2.792511e-02 opposite_strand_GAT
+```
+
+This is not ideal. So I will modify the code: instead of calculating the actual frequency for each files, I will combine the file together, create the label relative to strand info, then calculate the actual frequency. \
 
 <!--
 ```{r engine='R', eval=F, echo=TRUE}
