@@ -7762,23 +7762,55 @@ xyplot(peak_count ~ read_depth, data = data,
 
 -->
 
-## GATA3 structure
--       Homology of two GATA3 zinc fingers -N-zinc sequence, C-zinc sequences, align them. \
+## GATA3 structure and protein-DNA interaction
 
-make sure the full structure of zinc finger; and the specificity of each zinc finger binding to the specific sequences. \
-Sequence Retrieval from Uniprot P23771 · GATA3_HUMAN \
-zinc finger 1: 263-287: CVNCGATSTPLWRRDGTGHYLCNAC[GLY] ; zinc finger 2: 317-341: CANCQTTTTTLWRRNANGDPVCNAC[GLY] \
-NCBI BLAST Alignment: \
+**4HC7: Complex1** \
+Complex1 is showing N terminal ZnFn1 binding to DNA at major groove through hydrogen bond with a R-C, N-A, R-T, R-C; \
+and the C terminal ZnFn2 binding to DNA at major groove through hydrogen bond with a R330K-G, TR330-rvA(T), N-rvT(A), RR-rvA(T), RN-A(HK-rvA(T)); \
 
-```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="NCBI blast for the two zinc finger"}
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="Complex1 GATA3 ZnFn1 binds to DNA cCATC, ZnFn2 binds to DNA GATAA"}
 #library(knitr)
-knitr::include_graphics("./NCBI_Blast.png") 
+knitr::include_graphics("./4HCA_complex1_ZnFn12.png") 
 ```
 
-The two zinc finger of GATA3 have 60% identity. \
 
--       What are the characteristics of the two activation domains? \
--       What are the characteristics of GATA3 zinc fingers? \
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="Complex1 GATA3 potein-DNA interaction"}
+#library(knitr)
+knitr::include_graphics("./4HCA_complex1_GATA3_DNA_interaction.png") 
+```
+
+
+**4HC7: Complex2** \
+Complex2 bottom part is showing N terminal ZnFn1 binding to DNA at major groove through hydrogen bond with a R-A, NA-A, R-T, R-rvC(A); \
+and the C terminal ZnFn2 binding to DNA (GATAA) at major groove through hydrogen bond with a R330K-G, R330-rvA(T), N-rvT(A), R353-rvA(T), H-rvA(T). \
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="Complex2 GATA3 ZnFn2 binds to DNA AATC"}
+#library(knitr)
+knitr::include_graphics("./4HC7_complex2_ZnFn1_dAATC.png") 
+```
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="Complex2 GATA3 ZnFn2 binds to DNA GATAA"}
+#library(knitr)
+knitr::include_graphics("./4HC7_complex2_ZnFn2_dGATAA.png") 
+```
+
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="Complex2 GATA3 potein-DNA interaction"}
+#library(knitr)
+knitr::include_graphics("./4HC7_complex2_GATA3_DNA_interaction.png") 
+```
+
+
+**4HC9: Complex3** \
+Complex 3 is showing N terminal ZnFn1 binding to DNA at major groove through hydrogen bond with a N-dA, R-dT, L-dC interaction. \
+```{r  out.width = "80%", out.height="80%", echo=F, fig.align = "center", fig.cap="Complex3 GATA3 ZnFn1 binds to DNA ATC"}
+#library(knitr)
+knitr::include_graphics("./4HC9_complex3_ZnFn1_dATC.png") 
+```
+
+**Homology of two GATA3 zinc fingers:** \
+
+N finger: The conserved binding element is "GAT/ATC". G or C is mostly bind by Arginine(R) in the beta sheets, A or T has been seen bind by Asparagine(N) and Arginine(R) in alpha helix. \
+C finger: The conserved binding element is "GATAA/TTATC". Conserved amino acids binding to this DNA sequences are Arginine(R), Asparagine(N), lysine(K) and Histidine (H). \
 
 ## Software to search for variable spacing motifs. 
 **RSAT (Regulatory Sequence Analysis Tools)- dyad analysis:** \
@@ -7790,6 +7822,8 @@ module load bedtools
 genome=/home/FCAM/ssun/Genome/hg38.fa
 fastaFromBed -fi $genome -bed with_motifs_1_101bp_mast.bed -fo with_motifs_1_101bp_mast.fasta
 ```
+
+### GATA3 activaton domain
 
 ### install
 
@@ -8029,11 +8063,7 @@ rsat dyad-analysis -o GATA3_peak_161win_with_motif_6_RSAT_dyad.txt -i GATA3_peak
 
 The last column ratio is the observed/expected occurrence ratio. This ratio can be used as a rough indicator of over-representation, but it might overestimate the patterns with a very low number of expected occurrences. \
 
-I will rank the patterns by ratio, and plot the top 15 patterns to a bar plot. \
-```{r engine='bash', eval=F, echo=TRUE}
-
-```
-
+I will rank the patterns by ratio, and first find the patterns associated with GAT/ATC (that appear in both dyad). \
 
 
 
