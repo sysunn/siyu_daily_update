@@ -105,6 +105,9 @@ rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak
 
 
 # -1str	single strand count; only the direct strand is considered for oligonucleotide and dyad occurrence counting.
+# -2str	count on oth strands
+		#The occurrences of each oligonucleotide are summed on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+		
 # -type dyad_type (dr|ir|any) any	(default)
 		#In order to fasten execution, the program can be asked to restrict its analysis to symmetric dyads.
 		#Three types are accepted
@@ -114,6 +117,18 @@ rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak
 		   #any	(default)
 			 #When selecting the option any, the analysis is performed on all non-symmetric dyads as well.
 ```
+
+Refer to the help menu. \
+```{r engine='bash', eval=F, echo=TRUE}
+cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/RSAT/
+source ~/miniconda3/bin/activate
+conda activate rsat
+#rsat --help
+rsat oligo-analysis -h
+rsat create-background-model -h
+rsat dyad-analysis -h
+```
+
 
 Files generated: \
 GATA3_peak_161win_with_motif_1_RSAT_dyad.txt \
@@ -883,7 +898,22 @@ knitr::include_graphics("./xy2_closest_2nd_GAT_to_closest_1st_GAT_to_GATA3_pos_m
 
 # Automate analysis to go through the prioritized 3mers
 
+In previous analysis, we have prioritized some 3mers based on if they are enriched in GATA3 peaks compared to DHS regions. The enrichment is estimated by calculating differences of CDF fraction at a defined "closed" distance (16bp, and 20bp yield the same 3mer cluster). \
+These prioritized 3mer includes "AAA" "TAA" "ATA" "TTA" "AAT" "TAT" "GAT" "ATT" "TTT" “ATC”. \
+
+Here, I want to \
+1) Extract patterns from RSAT analysis that related to these 3mer combination and compare with the above analysis. \
+
+2) Automate customized analysis to go through the prioritized 3mers to measure the 2nd 3mer distance to the anchored 3mer.  \
 
 
+## RSAT-dyad analysis -- prioritized 3mer
+
+## Customized analysis -- prioritized 3mer
+
+### Closest 3mer to peak summits
+Goal: given a 3mer list, we can generate the closest 3mer coordinates to a given sets of peak summits. \
 
 
+### 2nd closest 3mer to the anchor 3mer
+Goal: given the closest 3mer coordinates file, we can loop thorugh a set of 3mer list and generate the 2nd closest 3mer coordinates to the provided closest 3mer coordinates. \
