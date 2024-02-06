@@ -115,6 +115,7 @@ rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak
 			 #When selecting the option any, the analysis is performed on all non-symmetric dyads as well.
 ```
 
+Files generated: \
 GATA3_peak_161win_with_motif_1_RSAT_dyad.txt \
 GATA3_peak_161win_with_motif_2_RSAT_dyad.txt \
 GATA3_peak_161win_with_motif_4_RSAT_dyad.txt \
@@ -134,22 +135,43 @@ head -6 GATA3_peak_161win_with_motif_1_RSAT_dyad.txt
 
 The first column is the sequence pattern RSAT-dyad analysis found. **Notice that the n{x} is the spacing between the elements of the dyad. The spacing is the number of bases between the end of the first element and the start of the second one.. This is different with the way we refer to as "relative distance" anchor at the G of two 3mer.** We will modify this while processing the data. \
 
-The second column is all identifier for that specific patterm. Notice that while running the dyad analysis, we specified the parameter `-1str` to only count the direct strand. Thus, only the main structure and its reverse compliment (for both 3mer) is unquely listed in the result files. This is convenient for downstream analysis. \
+The second column is all identifier for that specific pattern. Notice that while running the dyad analysis, we specified the parameter `-1str` to only count the direct strand. Thus, only the main structure and its reverse compliment (for both 3mer) is unquely listed in the result files. This is convenient for downstream analysis. \
 
-The final column represents the ratio of observed occurrences to expected occurrences, which can serve as a rough 'enrichment score. I plan to extract patterns linked to GAT/ATC and create a bar chart or xyplot to visually depict their frequencies. \
+The final column represents the ratio of observed occurrences to expected occurrences (occ/exp_occ), which can serve as a rough "enrichment score". I plan to extract patterns linked to GAT/ATC and create a bar chart or xyplot to visually depict their frequencies. \
+**Notice that using this ratio may overestimate some patterns** \
 
 ```{r engine='bash', eval=F, echo=TRUE}
 awk -F'\t' '$1 ~ /^gat.*atc/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | wc -l
 #21
-awk -F'\t' '$1 ~ /^gat.*atc/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | sort -k8,8nr | head -5
-gatn{3}atc	gatn{3}atc|gatn{3}atc	0.0000716460535	  12482	  85.98	36	12518	 145.17
-gatn{0}atc	gatn{0}atc|gatn{0}atc	0.0000515638671	    614	  64.15	0	614	   9.57
-gatn{4}atc	gatn{4}atc|gatn{4}atc	0.0000504302144	    545	  59.64	6	551	   9.14
-gatn{16}atc	gatn{16}atc|gatn{16}atc	0.0000944795637	    590	  97.70	9	599	   6.04
-gatn{15}atc	gatn{15}atc|gatn{15}atc	0.0000818438092	    516	  85.70	8	524	   6.02
+
+awk -F'\t' '$1 ~ /^atc.*gat/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt  | wc -l
+#21
 ```
 
 
+
+**In RSAT-dyad analysis, gat-atc and atc-gat means two different structure**. \
+```{r engine='bash', eval=TRUE, echo=TRUE}
+awk -F'\t' '$1 ~ /^gat.*atc/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | sort -k8,8nr
+echo " "
+awk -F'\t' '$1 ~ /^atc.*gat/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | sort -k8,8nr
+```
+
+**Notice that:** \
+1) the x value of n{x} (spacings) in RSAT is defined differently than in the customized analysis. For instance, gatn{3}atc has what we define in customized analysis as a 8bp relative distance between the G in gat and C in atc. \
+2) Notice the second column--"identifier". \
+
+
+**On the other hand, gat-gat and atc-atc means same structure**. \
+```{r engine='bash', eval=TRUE, echo=TRUE}
+awk -F'\t' '$1 ~ /^gat.*gat/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | sort -k8,8nr
+```
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
+awk -F'\t' '$1 ~ /^atc.*atc/' GATA3_peak_161win_with_motif_1_RSAT_dyad.txt | sort -k8,8nr
+```
+
+Extract the pattern info we need. \
 ```{r engine='R', eval=TRUE, echo=TRUE}
 library(Biostrings)
 
@@ -160,12 +182,11 @@ process_and_subset_RSAT <- function(file_path, pattern1, pattern2, number) {
   # Split the first column into components
   components_list <- strsplit(input_data$V1, "n\\{|\\}")
 
-  # Create a new data frame with "first", "dyad_distance", "second", "ratio", and "last_column" columns
   processed_data <- data.frame(
     first = sapply(components_list, function(x) x[1]),
     dyad_distance = as.numeric(sapply(components_list, function(x) x[2])),
     second = sapply(components_list, function(x) x[3]),
-    ratio = input_data$V8
+    ratio = input_data$V8 # ratio
   )
   # patterns to DNAstring
   pattern1<-DNAString(pattern1)
@@ -175,10 +196,20 @@ process_and_subset_RSAT <- function(file_path, pattern1, pattern2, number) {
   rc_pattern2 <- reverseComplement(pattern2)
 
   # Subset the dataframe based on the specified patterns and their reverse complements
-  dyad_structure <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
-  dyad_structure_rc <- processed_data[grepl(rc_pattern1, processed_data$first, ignore.case = TRUE) & grepl(rc_pattern2, processed_data$second, ignore.case = TRUE), ]
-  
-  output_data <- rbind(dyad_structure, dyad_structure_rc)
+  if (pattern1 == pattern2) {
+    # Get the reverse complement of the patterns
+    rc_pattern1 <- reverseComplement(pattern1)
+    rc_pattern2 <- reverseComplement(pattern2)
+
+    # Subset the dataframe based on the specified patterns and their reverse complements
+    dyad_structure <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
+    dyad_structure_rc <- processed_data[grepl(rc_pattern1, processed_data$first, ignore.case = TRUE) & grepl(rc_pattern2, processed_data$second, ignore.case = TRUE), ]
+    
+    output_data <- rbind(dyad_structure, dyad_structure_rc)
+  } else {
+    # If patterns are not the same, only subset based on pattern1 and pattern2
+    output_data <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
+  }
     
   # Order by descending ratio
   output_data <- output_data[order(-output_data$ratio), ]
@@ -212,7 +243,7 @@ unique(df.plot$query_status)
 head(df.plot)
 df.plot$query_status = factor(df.plot$query_status, levels = c("same_strand_GAT", "opposite_strand_GAT"))
 nrow(df.plot)
-#63
+#42
 summary(df.plot)
 ```
 
@@ -229,7 +260,7 @@ library(latticeExtra)
                        #title="2nd 3mer relative to the anchor", cex.title=1),
          aspect = 1,
          xlim=c(0,30),
-         ylim=c(0, 150),
+         ylim=c(0, 200),
          #type = c('p', 'smooth'),
          xlab = "distance (bp) from 2nd closest GAT to closest GAT",
          ylab="RSAT obs/exp Ratio",
@@ -266,12 +297,11 @@ process_and_subset_RSAT <- function(file_path, pattern1, pattern2, number) {
   # Split the first column into components
   components_list <- strsplit(input_data$V1, "n\\{|\\}")
 
-  # Create a new data frame with "first", "dyad_distance", "second", "ratio", and "last_column" columns
   processed_data <- data.frame(
     first = sapply(components_list, function(x) x[1]),
     dyad_distance = as.numeric(sapply(components_list, function(x) x[2])),
     second = sapply(components_list, function(x) x[3]),
-    ratio = input_data$V8
+    ratio = input_data$V8 # ratio
   )
   # patterns to DNAstring
   pattern1<-DNAString(pattern1)
@@ -281,10 +311,20 @@ process_and_subset_RSAT <- function(file_path, pattern1, pattern2, number) {
   rc_pattern2 <- reverseComplement(pattern2)
 
   # Subset the dataframe based on the specified patterns and their reverse complements
-  dyad_structure <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
-  dyad_structure_rc <- processed_data[grepl(rc_pattern1, processed_data$first, ignore.case = TRUE) & grepl(rc_pattern2, processed_data$second, ignore.case = TRUE), ]
-  
-  output_data <- rbind(dyad_structure, dyad_structure_rc)
+  if (pattern1 == pattern2) {
+    # Get the reverse complement of the patterns
+    rc_pattern1 <- reverseComplement(pattern1)
+    rc_pattern2 <- reverseComplement(pattern2)
+
+    # Subset the dataframe based on the specified patterns and their reverse complements
+    dyad_structure <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
+    dyad_structure_rc <- processed_data[grepl(rc_pattern1, processed_data$first, ignore.case = TRUE) & grepl(rc_pattern2, processed_data$second, ignore.case = TRUE), ]
+    
+    output_data <- rbind(dyad_structure, dyad_structure_rc)
+  } else {
+    # If patterns are not the same, only subset based on pattern1 and pattern2
+    output_data <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
+  }
     
   # Order by descending ratio
   output_data <- output_data[order(-output_data$ratio), ]
@@ -329,7 +369,7 @@ print(
                        #title="2nd 3mer relative to the anchor", cex.title=1),
          aspect = 1,
          xlim=c(0,30),
-         ylim=c(0, 150),
+         ylim=c(0, 200),
          #type = c('p', 'smooth'),
          xlab = "distance (bp) from 2nd closest GAT to closest GAT",
          ylab="RSAT obs/exp Ratio",
@@ -352,6 +392,119 @@ dev.off()
 }
 ```
 
+
+### RSAT--motif5
+In the previous analysis, we extracted dyad structures anchored at "GAT." However, we have discussed the sensitivity of RSAT analysis to structures with two reverse-complement dyads. For motif5 analysis, we aim to focus on structures anchored specifically at "ATC" to ensure we identify the correct structure. \
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(Biostrings)
+
+process_and_subset_RSAT <- function(file_path, pattern1, pattern2, number) {
+  # Read the file
+  input_data <- read.table(file_path, header = FALSE, sep = "\t")
+
+  # Split the first column into components
+  components_list <- strsplit(input_data$V1, "n\\{|\\}")
+
+  processed_data <- data.frame(
+    first = sapply(components_list, function(x) x[1]),
+    dyad_distance = as.numeric(sapply(components_list, function(x) x[2])),
+    second = sapply(components_list, function(x) x[3]),
+    ratio = input_data$V8 # ratio
+  )
+  # patterns to DNAstring
+  pattern1<-DNAString(pattern1)
+  pattern2<-DNAString(pattern2)
+  # Get the reverse complement of the patterns
+  rc_pattern1 <- reverseComplement(pattern1)
+  rc_pattern2 <- reverseComplement(pattern2)
+
+  # Subset the dataframe based on the specified patterns and their reverse complements
+  if (pattern1 == pattern2) {
+    # Get the reverse complement of the patterns
+    rc_pattern1 <- reverseComplement(pattern1)
+    rc_pattern2 <- reverseComplement(pattern2)
+
+    # Subset the dataframe based on the specified patterns and their reverse complements
+    dyad_structure <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
+    dyad_structure_rc <- processed_data[grepl(rc_pattern1, processed_data$first, ignore.case = TRUE) & grepl(rc_pattern2, processed_data$second, ignore.case = TRUE), ]
+    
+    output_data <- rbind(dyad_structure, dyad_structure_rc)
+  } else {
+    # If patterns are not the same, only subset based on pattern1 and pattern2
+    output_data <- processed_data[grepl(pattern1, processed_data$first, ignore.case = TRUE) & grepl(pattern2, processed_data$second, ignore.case = TRUE), ]
+  }
+    
+  # Order by descending ratio
+  output_data <- output_data[order(-output_data$ratio), ]
+
+  # Add the relative distance column
+  output_data$relative_distance <- output_data$dyad_distance + number
+
+  return(output_data)
+}
+
+
+ATC_GAT <- process_and_subset_RSAT("./GATA3_peak_161win_with_motif_5_RSAT_dyad.txt", "ATC", "GAT", 1)
+ATC_ATC <- process_and_subset_RSAT("./GATA3_peak_161win_with_motif_5_RSAT_dyad.txt", "ATC", "ATC", 3)
+
+nrow(ATC_GAT)
+head(ATC_GAT)
+nrow(ATC_ATC)
+head(ATC_ATC)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+ATC_ATC$query_status="same_strand_ATC"
+ATC_GAT$query_status="opposite_strand_ATC"
+df.plot=rbind(ATC_ATC, ATC_GAT)
+str(df.plot)
+
+unique(df.plot$query_status)
+
+head(df.plot)
+df.plot$query_status = factor(df.plot$query_status, levels = c("same_strand_ATC", "opposite_strand_ATC"))
+nrow(df.plot)
+#42
+summary(df.plot)
+```
+
+xyplot \
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+pdf(paste0('xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATC_GATA3_peak_with_motif5.pdf'), width=10,height=5)
+print(
+  xyplot(ratio ~ relative_distance,
+         data = df.plot, 
+         groups = query_status,
+         #auto.key=TRUE,
+         #auto.key = list(space = "right", lines=F, points=TRUE, cex = 1),
+         auto.key=list(space="right", points=TRUE),
+                       #title="2nd 3mer relative to the anchor", cex.title=1),
+         aspect = 1,
+         xlim=c(0,30),
+         ylim=c(0, 300),
+         #type = c('p', 'smooth'),
+         xlab = "distance (bp) from 2nd closest ATC to closest ATC",
+         ylab="RSAT obs/exp Ratio",
+         main="GATA3 peak with motif5",
+         between=list(y=1.0),
+         scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.symbol = list(col=c("#8B4513", "#145A8C"), pch=18, lwd=2), strip.background=list(col="grey85")),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+           
+                                      panel.xyplot(x, y, 
+                                                   col=c("#8B4513", "#145A8C"), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      #panel.barchart(x,y, horizontal = FALSE, col=c("red", "blue"), alpha=0.4)
+                                      
+                                      
+  })
+)
+dev.off()
+
+```
 
 
 # Comparison between RSAT and customized analysis
