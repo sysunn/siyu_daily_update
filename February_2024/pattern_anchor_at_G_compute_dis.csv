@@ -1,0 +1,11 @@
+﻿pattern,identifier,anchor,query
+GAT,GAT,3,0
+ATC,ATC,1,2
+ATA,(g)ATA,4,-1
+TAT,TAT(c),0,3
+TTA,TTA(tc),-1,4
+TAA,(ga)TAA,5,-2
+AAT,AAT(c),0,3
+ATT,(g)ATT,4,-1
+AAA,(gat)AAA,6,-3
+TTT,TTT(atc),-2,5
