@@ -1229,7 +1229,7 @@ cat GATA3_peak_161win_with_motif_2_RSAT_dyad.txt | sort -k8,8nr | head -3
 
 **GATA3 peak with motif4** \
 ```{r engine='bash', eval=TRUE, echo=TRUE}
-cat GATA3_peak_161win_with_motif_4_RSAT_dyad.txt | sort -k8,8nr | head -5
+cat GATA3_peak_161win_with_motif_4_RSAT_dyad.txt | sort -k8,8nr | head -8
 ```
 **GATA3 peak with motif5** \
 ```{r engine='bash', eval=TRUE, echo=TRUE}
@@ -1617,15 +1617,377 @@ for (motif in my_motifs) {
 
 ```
 
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of rsat analysis for GATA3 peak with motif12456: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATA_to_GATA3_pos_motif_1_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATA_to_GATA3_pos_motif_2_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATA_to_GATA3_pos_motif_4_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATA_to_GATA3_pos_motif_5_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATA_to_GATA3_pos_motif_6_compare_to_DHS.png") 
+```
+
+It is clear in the enrichment graph that GATA3 peaks with motif1 has an enriched dyad structure of ATAn{2}ATC (relative distance of two zinc fingers is 8bp); GATA3 peaks with motif2 has an enriched dyad structure of ATAn{3}ATC (relative distance of two zinc finger is 9bp). \
+For GATA3 peaks with motif4, ATAn{0}GAT and ATA{4}GAT are enriched. The relative distances of two zinc fingers are at 4bp and 8bp. \
+No remarkable enrichment of dyad structure related to ATA and ATC for GATA3 peaks with motif5 and motif6. \
+
+
 #### ATC-ATC
+Notice that this is anchoring at ATC and looking for ATC on same strand or opposite strand. \
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+library(Biostrings)
+my_motifs = c("motif_1", "motif_4","motif_2", "motif_6", "motif_5")
+Anchor_dyad = c("ATC")
+Query_dyad =c("ATC")
+compute_dis_df=read.csv('pattern_anchor_at_G_compute_dis.csv')
+
+for (motif in my_motifs) {
+  print(motif)
+  rsat_results=paste0("GATA3_peak_161win_with_", motif, "_RSAT_dyad.txt")
+  for (pattern1 in Anchor_dyad){
+    print(pattern1)
+    for (pattern2 in Query_dyad){
+      print(pattern2)
+      number1=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==pattern2, "query"]
+      rc_pattern2=reverseComplement(DNAString(pattern2))
+      print(rc_pattern2)
+      number2=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==as.character(rc_pattern2), "query"]
+        
+      ss <- process_and_subset_RSAT(rsat_results, pattern1, pattern2, number1)
+      os <- process_and_subset_RSAT(rsat_results, pattern1, rc_pattern2, number2)
+      
+      if(nrow(ss) > 0) {
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        } else {
+                        ss <- data.frame(matrix(NA, ncol = ncol(ss), nrow = 1)) # Fill ss dataframe with NA values for all columns
+                        colnames(ss) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        }
+
+      if(nrow(os) > 0) {
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        } else {
+                        os <- data.frame(matrix(NA, ncol = ncol(os), nrow = 1)) # Fill os dataframe with NA values for all columns
+                        colnames(os) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        }
+      
+      df.plot=rbind(ss, os)
+      df.plot$query_status = factor(df.plot$query_status, levels = c(paste0("same_strand_", pattern2), paste0("opposite_strand_", pattern2)))
+      
+      # xy plot
+      png(paste0('xy_RSAT_dyad_closest_2nd_', pattern2, '_to_closest_1st_', pattern1, '_to_GATA3_pos_', motif, '_compare_to_DHS.png'))
+      print(xyplot(ratio ~ relative_distance,
+                   data = df.plot, 
+                   groups = query_status,
+                   auto.key=list(space="right", points=TRUE),
+                   aspect = 1,
+                   xlim=c(-1,30),
+                   ylim=c(0, 500),
+                   xlab = paste0("distance (bp) from 2nd closest ",pattern2, " to closest ", pattern1),
+                   ylab="RSAT obs/exp Ratio",
+                    main=paste0("GATA3 peak with ", motif),
+                   between=list(y=1.0),
+                   scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+                   par.settings = list(superpose.symbol = list(col=c("orange", "darkgreen"), pch=18, lwd=2), strip.background=list(col="grey85")),
+                   panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                              panel.xyplot(x, y, 
+                                                           col=c("orange","darkgreen"), 
+                                                           pch=18, 
+                                                           cex=0.6,...)
+                                              #panel.barchart(x,y, horizontal = FALSE, col=c("red", "blue"), alpha=0.4)
+                                      
+                                      
+                 }))
+     dev.off()
+    }  
+  } 
+}
+
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of rsat analysis for GATA3 peak with motif12456: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATC_to_GATA3_pos_motif_1_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATC_to_GATA3_pos_motif_2_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATC_to_GATA3_pos_motif_4_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATC_to_GATA3_pos_motif_5_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATC_to_closest_1st_ATC_to_GATA3_pos_motif_6_compare_to_DHS.png") 
+```
+As expected, GATA3 peak with motif 1 and motif 2 do not show enrichment for dyad structure made of this pair of 3mer. \
+GATA3 peak with motif4 has enrichment at relative distance 8bp for ATC and same strand ATC; \
+GATA3 peak with motif6 has enrichment at relative distance 9bp for ATC and same strand ATC; \
+GATA3 peak with motif5 has enrichment at relative distance 2bp for ATC and opposite strand ATC. \
+
+These all match with the defined motif structure for each peak set. \
+
+
 #### TAG-ATA
 Unfortunately, **TAG** is not included in our prioritized list. It is ranked even after AGA/TCT. We can include an analysis of this 3-mer here. \
 And in our customized analysis, we might also include TAG/CTA to our prioritized 3mer list. \
 
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+library(Biostrings)
+my_motifs = c("motif_1", "motif_4","motif_2", "motif_6", "motif_5")
+Anchor_dyad = c("TAG")
+Query_dyad =c("ATA")
+compute_dis_df=read.csv('pattern_anchor_at_G_compute_dis.csv')
+
+for (motif in my_motifs) {
+  print(motif)
+  rsat_results=paste0("GATA3_peak_161win_with_", motif, "_RSAT_dyad.txt")
+  for (pattern1 in Anchor_dyad){
+    print(pattern1)
+    for (pattern2 in Query_dyad){
+      print(pattern2)
+      number1=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==pattern2, "query"]
+      rc_pattern2=reverseComplement(DNAString(pattern2))
+      print(rc_pattern2)
+      number2=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==as.character(rc_pattern2), "query"]
+        
+      ss <- process_and_subset_RSAT(rsat_results, pattern1, pattern2, number1)
+      os <- process_and_subset_RSAT(rsat_results, pattern1, rc_pattern2, number2)
+      
+      if(nrow(ss) > 0) {
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        } else {
+                        ss <- data.frame(matrix(NA, ncol = ncol(ss), nrow = 1)) # Fill ss dataframe with NA values for all columns
+                        colnames(ss) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        }
+
+      if(nrow(os) > 0) {
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        } else {
+                        os <- data.frame(matrix(NA, ncol = ncol(os), nrow = 1)) # Fill os dataframe with NA values for all columns
+                        colnames(os) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        }
+      
+      df.plot=rbind(ss, os)
+      df.plot$query_status = factor(df.plot$query_status, levels = c(paste0("same_strand_", pattern2), paste0("opposite_strand_", pattern2)))
+      
+      # xy plot
+      png(paste0('xy_RSAT_dyad_closest_2nd_', pattern2, '_to_closest_1st_', pattern1, '_to_GATA3_pos_', motif, '_compare_to_DHS.png'))
+      print(xyplot(ratio ~ relative_distance,
+                   data = df.plot, 
+                   groups = query_status,
+                   auto.key=list(space="right", points=TRUE),
+                   aspect = 1,
+                   xlim=c(-1,30),
+                   ylim=c(0, 500),
+                   xlab = paste0("distance (bp) from 2nd closest ",pattern2, " to closest ", pattern1),
+                   ylab="RSAT obs/exp Ratio",
+                    main=paste0("GATA3 peak with ", motif),
+                   between=list(y=1.0),
+                   scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+                   par.settings = list(superpose.symbol = list(col=c("orange", "darkgreen"), pch=18, lwd=2), strip.background=list(col="grey85")),
+                   panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                              panel.xyplot(x, y, 
+                                                           col=c("orange","darkgreen"), 
+                                                           pch=18, 
+                                                           cex=0.6,...)
+                                              #panel.barchart(x,y, horizontal = FALSE, col=c("red", "blue"), alpha=0.4)
+                                      
+                                      
+                 }))
+     dev.off()
+    }  
+  } 
+}
+
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of rsat analysis for GATA3 peak with motif12456: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_TAG_to_GATA3_pos_motif_1_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_TAG_to_GATA3_pos_motif_2_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_TAG_to_GATA3_pos_motif_4_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_TAG_to_GATA3_pos_motif_5_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_TAG_to_GATA3_pos_motif_6_compare_to_DHS.png") 
+```
+It is interesting to see that for all peak set, we did not have dyad structure of TAG{}TAT on the same strand. \
+And for TAG-ATA on the same strand, we only see enrichment for GATA3 peaks with motif4 (rsat calculate the ratio is 68.72 ranked the third for tagn{0}ata). The relative distance between two zinc finger is 4. The binding element has to look like this: GATAGATA.  \
+
 #### ATC-ATA
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+library(Biostrings)
+my_motifs = c("motif_1", "motif_4","motif_2", "motif_6", "motif_5")
+Anchor_dyad = c("ATC")
+Query_dyad =c("ATA")
+compute_dis_df=read.csv('pattern_anchor_at_G_compute_dis.csv')
+
+for (motif in my_motifs) {
+  print(motif)
+  rsat_results=paste0("GATA3_peak_161win_with_", motif, "_RSAT_dyad.txt")
+  for (pattern1 in Anchor_dyad){
+    print(pattern1)
+    for (pattern2 in Query_dyad){
+      print(pattern2)
+      number1=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==pattern2, "query"]
+      rc_pattern2=reverseComplement(DNAString(pattern2))
+      print(rc_pattern2)
+      number2=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==as.character(rc_pattern2), "query"]
+        
+      ss <- process_and_subset_RSAT(rsat_results, pattern1, pattern2, number1)
+      os <- process_and_subset_RSAT(rsat_results, pattern1, rc_pattern2, number2)
+      
+      if(nrow(ss) > 0) {
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        } else {
+                        ss <- data.frame(matrix(NA, ncol = ncol(ss), nrow = 1)) # Fill ss dataframe with NA values for all columns
+                        colnames(ss) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        }
+
+      if(nrow(os) > 0) {
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        } else {
+                        os <- data.frame(matrix(NA, ncol = ncol(os), nrow = 1)) # Fill os dataframe with NA values for all columns
+                        colnames(os) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        }
+      
+      df.plot=rbind(ss, os)
+      df.plot$query_status = factor(df.plot$query_status, levels = c(paste0("same_strand_", pattern2), paste0("opposite_strand_", pattern2)))
+      
+      # xy plot
+      png(paste0('xy_RSAT_dyad_closest_2nd_', pattern2, '_to_closest_1st_', pattern1, '_to_GATA3_pos_', motif, '_compare_to_DHS.png'))
+      print(xyplot(ratio ~ relative_distance,
+                   data = df.plot, 
+                   groups = query_status,
+                   auto.key=list(space="right", points=TRUE),
+                   aspect = 1,
+                   xlim=c(-1,30),
+                   ylim=c(0, 500),
+                   xlab = paste0("distance (bp) from 2nd closest ",pattern2, " to closest ", pattern1),
+                   ylab="RSAT obs/exp Ratio",
+                    main=paste0("GATA3 peak with ", motif),
+                   between=list(y=1.0),
+                   scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+                   par.settings = list(superpose.symbol = list(col=c("orange", "darkgreen"), pch=18, lwd=2), strip.background=list(col="grey85")),
+                   panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                              panel.xyplot(x, y, 
+                                                           col=c("orange","darkgreen"), 
+                                                           pch=18, 
+                                                           cex=0.6,...)
+                                              #panel.barchart(x,y, horizontal = FALSE, col=c("red", "blue"), alpha=0.4)
+                                      
+                                      
+                 }))
+     dev.off()
+    }  
+  } 
+}
+
+```
+
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of rsat analysis for GATA3 peak with motif12456: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_ATC_to_GATA3_pos_motif_1_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_ATC_to_GATA3_pos_motif_2_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_ATC_to_GATA3_pos_motif_4_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_ATC_to_GATA3_pos_motif_5_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_ATC_to_GATA3_pos_motif_6_compare_to_DHS.png") 
+```
+In these graph, we also did not see structure of ATC-TAT(opposite strand ATA). And only see one enriched structure for ATC-ATA at relative distance==2bp. This structure must be ATCxGATA, which match with motif5. \
+
+
 #### GAT-ATA
 
+```{r engine='R', eval=TRUE, echo=TRUE}
+library(lattice)
+library(latticeExtra)
+library(Biostrings)
+my_motifs = c("motif_1", "motif_4","motif_2", "motif_6", "motif_5")
+Anchor_dyad = c("GAT")
+Query_dyad =c("ATA")
+compute_dis_df=read.csv('pattern_anchor_at_G_compute_dis.csv')
 
+for (motif in my_motifs) {
+  print(motif)
+  rsat_results=paste0("GATA3_peak_161win_with_", motif, "_RSAT_dyad.txt")
+  for (pattern1 in Anchor_dyad){
+    print(pattern1)
+    for (pattern2 in Query_dyad){
+      print(pattern2)
+      number1=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==pattern2, "query"]
+      rc_pattern2=reverseComplement(DNAString(pattern2))
+      print(rc_pattern2)
+      number2=compute_dis_df[compute_dis_df$pattern==pattern1, "anchor"] + compute_dis_df[compute_dis_df$pattern==as.character(rc_pattern2), "query"]
+        
+      ss <- process_and_subset_RSAT(rsat_results, pattern1, pattern2, number1)
+      os <- process_and_subset_RSAT(rsat_results, pattern1, rc_pattern2, number2)
+      
+      if(nrow(ss) > 0) {
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        } else {
+                        ss <- data.frame(matrix(NA, ncol = ncol(ss), nrow = 1)) # Fill ss dataframe with NA values for all columns
+                        colnames(ss) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        ss$query_status <- paste0("same_strand_", pattern2)
+                        }
+
+      if(nrow(os) > 0) {
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        } else {
+                        os <- data.frame(matrix(NA, ncol = ncol(os), nrow = 1)) # Fill os dataframe with NA values for all columns
+                        colnames(os) <- c("first", "dyad_distance", "second", "ratio","relative_distance")
+                        os$query_status <- paste0("opposite_strand_", pattern2)
+                        }
+      
+      df.plot=rbind(ss, os)
+      df.plot$query_status = factor(df.plot$query_status, levels = c(paste0("same_strand_", pattern2), paste0("opposite_strand_", pattern2)))
+      
+      # xy plot
+      png(paste0('xy_RSAT_dyad_closest_2nd_', pattern2, '_to_closest_1st_', pattern1, '_to_GATA3_pos_', motif, '_compare_to_DHS.png'))
+      print(xyplot(ratio ~ relative_distance,
+                   data = df.plot, 
+                   groups = query_status,
+                   auto.key=list(space="right", points=TRUE),
+                   aspect = 1,
+                   xlim=c(-1,30),
+                   ylim=c(0, 500),
+                   xlab = paste0("distance (bp) from 2nd closest ",pattern2, " to closest ", pattern1),
+                   ylab="RSAT obs/exp Ratio",
+                    main=paste0("GATA3 peak with ", motif),
+                   between=list(y=1.0),
+                   scales = list(x = list(rot = 45, at = seq(from = 0, to = 50, by = 5))),
+                   par.settings = list(superpose.symbol = list(col=c("orange", "darkgreen"), pch=18, lwd=2), strip.background=list(col="grey85")),
+                   panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = "grey90")
+                                              panel.xyplot(x, y, 
+                                                           col=c("orange","darkgreen"), 
+                                                           pch=18, 
+                                                           cex=0.6,...)
+                                              #panel.barchart(x,y, horizontal = FALSE, col=c("red", "blue"), alpha=0.4)
+                                      
+                                      
+                 }))
+     dev.off()
+    }  
+  } 
+}
+
+```
+
+```{r  fig.align = "center", out.width="80%", out.height="80%", echo=F, fig.align = "center", fig.cap="xy plot of rsat analysis for GATA3 peak with motif12456: 3mer structure"}
+#library(knitr)
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_GAT_to_GATA3_pos_motif_1_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_GAT_to_GATA3_pos_motif_2_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_GAT_to_GATA3_pos_motif_4_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_GAT_to_GATA3_pos_motif_5_compare_to_DHS.png") 
+knitr::include_graphics("./xy_RSAT_dyad_closest_2nd_ATA_to_closest_1st_GAT_to_GATA3_pos_motif_6_compare_to_DHS.png") 
+```
+
+Notice that we again did not see dyad structures of GAT-TAT(opposite stand ATA), but has identified enriched structure of GAT-ATA for GATA3 peaks with motif4 and motif6. \
+
+For GATA3 peaks with motif4, we see gatn{6}ata and gatn{2}ata enriched. The relative distance between two zinc fingers is 8bp and 4bp. The 8bp one match with moyif4, the 4bp one match with GATAGATA. \
+For GATA3 peaks with motif6, we see gatn{7}ata enriched, the relative distance between two zinc fingers is 9bp. This match with motif6 PWMs. \
 
 **For the added 2 pairs of 3mer**: \
 
@@ -1639,11 +2001,128 @@ CTA	CTA(tc)	-1	4
 ```
 
 
+
+### Summary
+
+Overall, RSAT-dyad analysis proves effective in identifying enriched binding elements within a set of peak regions, with proper controls and parameter settings. \
+
+Enriched dyad structures can be discerned through various combinations of 3-mers. Establishing the relative distance between zinc fingers serves as a valuable method to determine if a structure arises from the same binding element. \
+
+
+
 ## Customized analysis -- prioritized 3mer
 
 ### Closest 3mer to peak summits
-Goal: given a 3mer list, we can generate the closest 3mer coordinates to a given sets of peak summits. \
+
+**Goal: given a prioritized 3mer list, we can generate the closest 3mer coordinates to a given sets of peak summits.** \
+
+240208_closestBed.R: \
+
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer) \
+```{r engine='R', eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+# closestBed function
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+dir1="/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/"
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MAST_positive_control/"
+dir3="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/ENCODE_DHS_GSE29692/"
+my_motifs = c("motif_1", "motif_4","motif_2", "motif_6", "motif_5")
+prioritized_triplets = c("AAA", "TAA" ,"ATA" ,"TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+library(bigWig)
+
+for (triplet in prioritized_triplets){
+  print(triplet)
+  # 3mer genome coordinates
+  plus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,"hg38.3.3.3plus.*_",triplet, ".bed"))), sep="\t", header=FALSE)
+  minus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,"hg38.3.3.3minus.*_",triplet ,".bed"))), sep="\t", header=FALSE)
+  for (motif in my_motifs){
+    print(motif)
+    # peak summits
+    GATA3_peak_summits=center.bed(read.table(paste0(dir2, "GATA3_peak_161win_with_",motif, ".bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+    # consensus neg
+    indep.DHS.control.consensus=center.bed(read.table(paste0(dir3, "MCF7DHS_consensus_noGATA_without_motifs_123456_78.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+    
+    # closestBed--1st closest plus
+    
+    ##
+    closest.1st.plus.triplet.to.peak=bedTools.closest(bed1 = GATA3_peak_summits[,1:3], bed2 = plus.triplet.file, opt.string = '-d -t first')
+    write.table(closest.1st.plus.triplet.to.peak,file= paste0('closest.1st.plus.',triplet,'.to.GATA3.with.', motif,'.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+    
+    ##
+    closest.1st.plus.triplet.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = plus.triplet.file, opt.string = '-d -t first')
+    write.table(closest.1st.plus.triplet.to.indep.DHS.control.consensus,file= paste0('closest.1st.plus.',triplet,'.to.indep.DHS.control.consensus.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+
+
+     # closestBed--1st closest minus
+     
+     ##
+     closest.1st.minus.triplet.to.peak=bedTools.closest(bed1 = GATA3_peak_summits[,1:3], bed2 =minus.triplet.file, opt.string = '-d -t first')
+     write.table(closest.1st.minus.triplet.to.peak,file= paste0('closest.1st.minus.',triplet,'.to.GATA3.with.', motif,'.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+     
+     ##
+     closest.1st.minus.triplet.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = minus.triplet.file, opt.string = '-d -t first')
+    write.table(closest.1st.minus.triplet.to.indep.DHS.control.consensus,file= paste0('closest.1st.minus.',triplet,'.to.indep.DHS.control.consensus.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+
+  }
+  
+}
+```
+
+runR.sh \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240208_closestBed.R
+```
 
 
 ### 2nd closest 3mer to the anchor 3mer
-Goal: given the closest 3mer coordinates file, we can loop thorugh a set of 3mer list and generate the 2nd closest 3mer coordinates to the provided closest 3mer coordinates. \
+**Goal: given the closest 3mer coordinates file, we can loop through a set of 3mer list and generate the 2nd closest 3mer coordinates to the provided closest 3mer coordinates.** \
+
+
