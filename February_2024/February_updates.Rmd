@@ -2123,6 +2123,87 @@ Rscript 240208_closestBed.R
 
 
 ### 2nd closest 3mer to the anchor 3mer
-**Goal: given the closest 3mer coordinates file, we can loop through a set of 3mer list and generate the 2nd closest 3mer coordinates to the provided closest 3mer coordinates.** \
+**Overall Goal: given the closest 3mer coordinates file, we can loop through a set of 3mer list and generate the 2nd closest 3mer coordinates to the provided closest 3mer coordinates.** \
 
+#### For each 3mer genome coordinates, remove the identified closest 3mer on the same strand 
+
+**Remove the first closest GAT with `bedtools subtract`** \
+Subtract the 1st closest GAT from all.GAT, then find the closest 2nd GAT to the closest 1st GAT. \
+`-f` Requiring a minimal overlap fraction before subtracting. Here we define `-f 1.00` to make sure of a 100% overlap between two file before subtracting. \
+`-s` Enforcing same “strandedness” while scanning for features in `-b file` that should be subtracted from `-a file`. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=remove_1st_3mer.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o remove_1st_3mer.sh_%j.out
+#SBATCH -e remove_1st_3mer.sh_%j.err
+
+
+input_dir1=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+input_dir2=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/
+
+#output_dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/
+
+my_motifs=("motif_1" "motif_2" "motif_4" "motif_5" "motif_6")
+prioritized_triplets=("AAA" "TAA" "ATA" "TTA" "AAT" "TAT" "GAT" "ATT" "TTT" "ATC" "AGA" "TCT" "TAG" "CTA")
+
+# Use a for loop to iterate over the 
+module load bedtools 
+for triplet in "${prioritized_triplets[@]}"
+do
+  echo $triplet
+  
+  for motif in "${my_motifs[@]}"
+  do
+    echo $motif
+    # plus
+    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed > hg38.3.3.3plus.${triplet}.sorted.bed
+    awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.plus.${triplet}.to.GATA3.with.${motif}.bed  | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
+    bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.${triplet}_without_1st_plus_${triplet}_to_GATA3_with_${motif}.bed
+    rm hg38.3.3.3plus.${triplet}.sorted.bed
+    rm closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
+    
+    # minus
+    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed > hg38.3.3.3minus.${triplet}.sorted.bed
+    awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.minus.${triplet}.to.GATA3.with.${motif}.bed  | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
+    bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.${triplet}_without_1st_minus_${triplet}_to_GATA3_with_${motif}.bed
+    rm hg38.3.3.3minus.${triplet}.sorted.bed
+    rm closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
+  done
+done
+
+# independent DHS control
+for triplet in "${prioritized_triplets[@]}"
+do
+  echo $triplet
+  # plus
+  sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed > hg38.3.3.3plus.${triplet}.sorted.bed
+  awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+  bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_indep_DHS_control.bed
+   rm hg38.3.3.3plus.${triplet}.sorted.bed
+   rm closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+   
+  # minus
+  sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed > hg38.3.3.3minus.${triplet}.sorted.bed
+  awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+  bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.36_GAT_without_1st_minus_GAT_to_indep_DHS_control.bed
+   rm hg38.3.3.3minus.${triplet}.sorted.bed
+   rm closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+done
+
+```
+
+#### find the closest 2nd 3mer to peak summits
+
+**Notice that the relative distance here need to be carefully defined according to different 3mer**. \
+
+#### plot the enrichement frequencies with xy plots
 
