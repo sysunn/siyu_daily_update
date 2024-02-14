@@ -1233,9 +1233,20 @@ cat GATA3_peak_161win_with_motif_4_RSAT_dyad.txt | sort -k8,8nr | head -8
 ```
 **GATA3 peak with motif5** \
 ```{r engine='bash', eval=TRUE, echo=TRUE}
-cat GATA3_peak_161win_with_motif_5_RSAT_dyad.txt | sort -k8,8nr | head -5
+cat GATA3_peak_161win_with_motif_5_RSAT_dyad.txt | sort -k8,8nr | head -10
 
 ```
+
+```{r engine='bash', eval=TRUE, echo=TRUE}
+awk -F'\t' '$1 ~ /^gat.*gat/' GATA3_peak_161win_with_motif_5_RSAT_dyad.txt | head
+awk -F'\t' '$1 ~ /^atc.*atc/' GATA3_peak_161win_with_motif_5_RSAT_dyad.txt | head
+echo ""
+awk -F'\t' '$1 ~ /^gat.*atc/' GATA3_peak_161win_with_motif_5_RSAT_dyad.txt | head
+
+echo ""
+awk -F'\t' '$1 ~ /^atc.*gat/' GATA3_peak_161win_with_motif_5_RSAT_dyad.txt | head
+```
+
 **GATA3 peak with motif6** \
 ```{r engine='bash', eval=TRUE, echo=TRUE}
 cat GATA3_peak_161win_with_motif_6_RSAT_dyad.txt | sort -k8,8nr | head -3
@@ -2204,6 +2215,32 @@ done
 #### find the closest 2nd 3mer to peak summits
 
 **Notice that the relative distance here need to be carefully defined according to different 3mer**. \
+Customized analysis [priority]: \
+Identify redundant spaced 3mers, avoid showing duplicated results. \
+```{r engine='R', eval=F, echo=TRUE}
+prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+pairs <- combn(prioritized_triplets, 2)
+
+for (i in 1:ncol(pairs)) {
+  print(pairs[,i])
+}
+```
+
+It appears unnecessary to plot the opposite strand 3mer relative to the anchored 3mer, as all opposite strand 3mers will convey redundant information already represented by the same strand's reverse complement 3mers. \
+
+Additionally, in our calculation of relative distances, it's essential to account for the upstream and downstream orientation of the 3mers. For example, (gat)AAA-TTA(tc) and TTA(tc)-(gat)AAA represent distinct configurations. \
+
+Automate analysis on all prioritized 3mers.  \
+```{r engine='bash', eval=F, echo=TRUE}
+```
+
+Make minimal plots to communicate results.
+Summarize the analysis steps and present these steps at the next meeting.
+RSAT:
+Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence?
+Combine results regardless of upstream or downstream orientation.
+
 
 #### plot the enrichement frequencies with xy plots
 
