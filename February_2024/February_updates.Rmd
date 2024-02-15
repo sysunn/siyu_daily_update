@@ -2224,8 +2224,22 @@ It is important to list all unique combinations of spaced 3-mers so that we do n
 Additionally, in our calculation of relative distances, it's essential to account for the upstream and downstream orientation of the 3mers. For example, (gat)AAA-TTA(tc) and TTA(tc)-(gat)AAA represent distinct configurations. \
 
 ```{r engine='R', eval=TRUE, echo=TRUE}
-# Load Biostrings package
-library(Biostrings)
+# function to convert the plus strand 6mer to its reverse compliment then convert to same strand
+convert_plus_strand_6mer <- function(sequence) {
+  # Define a dictionary to store complementary base pairs
+  complement <- c("A" = "T", "T" = "A", "G" = "C", "C" = "G")
+  
+  # Reverse the input sequence
+  reversed_sequence <- rev(strsplit(sequence, "")[[1]])
+  
+  # Get the complementary bases
+  complementary_sequence <- sapply(reversed_sequence, function(base) complement[base])
+  
+  # Combine the complementary bases into a string
+  converted_sequence <- paste(complementary_sequence, collapse = "")
+  
+  return(converted_sequence)
+}
 
 # List of prioritized triplets
 prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
@@ -2238,15 +2252,12 @@ for (i in 1:length(prioritized_triplets)) {
     pair <- c(prioritized_triplets[i], prioritized_triplets[j])
     # Combine triplets to form a 6mer
     sixmer <- paste(pair, collapse = "")
-  
-    # Create DNAString object
-    sixmer_DNAString <- DNAString(sixmer)
     
     # Find reverse complement of the 6mer
-    reverse_complement_sixmer <- reverseComplement(sixmer_DNAString)
+    converted_reverse_complement_sixmer <- convert_plus_strand_6mer(sixmer)
   
     # Check if the reverse complement exists in the 6mer itself
-   if (!as.character(reverse_complement_sixmer)  %in% non_redundant_6mers) {
+   if (!converted_reverse_complement_sixmer  %in% non_redundant_6mers) {
       non_redundant_6mers <- c(non_redundant_6mers, list(sixmer))
     }
   }
@@ -2259,7 +2270,13 @@ df <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
 nrow(df)
 ```
 
-There are 105 combinations of 3mer pairs, these pairs are unique when all of them are considered to be on the same strand. \
+The above R code aims to generate non-redundant 6-mers from prioritized triplets and then creating a dataframe to represent them. \
+
+First, we define a convert_plus_strand_6mer function to reverse the input DNA sequence, finds the complementary bases for each base, and then combines them into a string representing the reverse complement. \
+Then we perform a nested loop, which iterates through each pair of prioritized triplets. \
+For each pair, it concatenates them to form a 6-mer, and then finds the reverse complement of the 6-mer using the convert_plus_strand_6mer function. If the reverse complement is already in non_redundant_6mers, we do not include the 6mer to the final output. \
+
+Through running this code, we identified 105 combinations of 3mer pairs. These pairs are unique while considering them to be on the same strand. \
 
 **Notice that the relative distance here need to be carefully defined according to different 3mer**. \
 I am using the bigWig package to anchor at the specific G/C base for each 3mer. The `fiveprime.bed()` defines the anchor point based on the strand information: \
@@ -2281,6 +2298,8 @@ read.csv('pattern_anchor_at_GorC_for_bigWig_pkg.csv')
 Automate analysis on all prioritized 3mers: find the closest 2nd 3mer. \
 
 Anchor at plus strand closest 3mer, find the 2nd closest plus strand 3mer relative to the closest 3mer. \
+
+240215_closestBed.R \
 ```{r engine='R', eval=F, echo=TRUE}
 #!/usr/bin/env Rscript
 
@@ -2322,24 +2341,41 @@ bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/
 
 #library(lattice)
 #library(latticeExtra)
-library(Biostrings)
+#library(Biostrings)
 library(bigWig)
 
+# function to convert the plus strand 6mer to its reverse compliment then convert to same strand
+convert_plus_strand_6mer <- function(sequence) {
+  complement <- c("A" = "T", "T" = "A", "G" = "C", "C" = "G")
+  reversed_sequence <- rev(strsplit(sequence, "")[[1]])
+  complementary_sequence <- sapply(reversed_sequence, function(base) complement[base])
+  converted_sequence <- paste(complementary_sequence, collapse = "")
+  return(converted_sequence)
+}
+
+# List of prioritized triplets
 prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
 
+# List to store non-redundant 6mers
 non_redundant_6mers <- list()
+# Loop through each pair of triplets
 for (i in 1:length(prioritized_triplets)) {
   for (j in 1:length(prioritized_triplets)) {
     pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
     sixmer <- paste(pair, collapse = "")
-    sixmer_DNAString <- DNAString(sixmer)
-    reverse_complement_sixmer <- reverseComplement(sixmer_DNAString)
-   if (!as.character(reverse_complement_sixmer)  %in% non_redundant_6mers) {
+    
+    # Find reverse complement of the 6mer
+    converted_reverse_complement_sixmer <- convert_plus_strand_6mer(sixmer)
+  
+    # Check if the reverse complement exists in non_redundant_6mers list
+   if (!converted_reverse_complement_sixmer  %in% non_redundant_6mers) {
       non_redundant_6mers <- c(non_redundant_6mers, list(sixmer))
     }
   }
 }
 
+# Create data frame with first 3 bases and last 3 bases
 first_3_bases <- substr(non_redundant_6mers, 1, 3)
 last_3_bases <- substr(non_redundant_6mers, 4, 6)
 df <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
@@ -2391,6 +2427,27 @@ for (i in 1:nrow(df)){
   }
 ```
 
+runR.sh \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240215_closestBed.R
+```
+
+**coherence check**:
+check some coordinates on UCSC genome browser, making sure that we are anchoring at the correct G/C. \
 
 #### plot the enrichement frequencies with xy plots
 Make minimal plots to communicate results. \
@@ -2406,3 +2463,7 @@ Summarize the analysis steps and present these steps at the next meeting. \
 RSAT:
 Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence?
 Combine results regardless of upstream or downstream orientation.
+
+
+## GATA3 peaks without motifs
+
