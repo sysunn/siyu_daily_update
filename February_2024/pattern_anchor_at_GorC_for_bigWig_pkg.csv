@@ -1,0 +1,15 @@
+﻿pattern,identifier,plus_upstream,plus_downstream,minus_upstream,minus_downstream
+GAT,GAT,0,0,-1,1
+ATC,ATC,-2,2,-3,3
+ATA,(g)ATA,1,-1,0,0
+TAT,TAT(c),-3,3,-4,4
+TTA,TTA(tc),-4,4,-5,5
+TAA,(ga)TAA,2,-2,1,-1
+AAT,AAT(c),-3,3,-4,4
+ATT,(g)ATT,1,-1,0,0
+AAA,(gat)AAA,3,-3,2,-2
+TTT,TTT(atc),-5,5,-6,6
+AGA,AGA(t),-1,1,-2,2
+TCT,(a)TCT,-1,1,-2,2
+TAG,(ga)TAG,2,-2,1,-1
+CTA,CTA(tc),-4,4,-5,5
