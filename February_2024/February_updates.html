@@ -800,7 +800,7 @@ brew install bedtools</code></pre>
 <pre><code>## also installing the dependencies &#39;bitops&#39;, &#39;zlibbioc&#39;, &#39;RCurl&#39;, &#39;GenomeInfoDbData&#39;, &#39;BiocGenerics&#39;, &#39;S4Vectors&#39;, &#39;IRanges&#39;, &#39;XVector&#39;, &#39;GenomeInfoDb&#39;, &#39;crayon&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpzUjlc6/downloaded_packages</code></pre>
+##  /tmp/RtmpjXST8N/downloaded_packages</code></pre>
 <pre><code>## installing the source package &#39;GenomeInfoDbData&#39;</code></pre>
 <pre><code>## Old packages: &#39;cluster&#39;, &#39;foreign&#39;, &#39;lattice&#39;, &#39;MASS&#39;, &#39;Matrix&#39;, &#39;mgcv&#39;,
 ##   &#39;nlme&#39;, &#39;rpart&#39;, &#39;survival&#39;</code></pre>
@@ -3390,14 +3390,14 @@ do
   # plus
   sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed &gt; hg38.3.3.3plus.${triplet}.sorted.bed
   awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
-  bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3plus.36_GAT_without_1st_plus_GAT_to_indep_DHS_control.bed
+  bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3plus.36_${triplet}_without_1st_plus_${triplet}_to_indep_DHS_control.bed
    rm hg38.3.3.3plus.${triplet}.sorted.bed
    rm closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
    
   # minus
   sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed &gt; hg38.3.3.3minus.${triplet}.sorted.bed
   awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
-  bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3minus.36_GAT_without_1st_minus_GAT_to_indep_DHS_control.bed
+  bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3minus.36_${triplet}_without_1st_minus_${triplet}_to_indep_DHS_control.bed
    rm hg38.3.3.3minus.${triplet}.sorted.bed
    rm closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
 done
@@ -3405,32 +3405,221 @@ done
 </div>
 <div id="find-the-closest-2nd-3mer-to-peak-summits" class="section level4" number="5.2.2.2">
 <h4><span class="header-section-number">5.2.2.2</span> find the closest 2nd 3mer to peak summits</h4>
-<p><strong>Notice that the relative distance here need to be carefully defined according to different 3mer</strong>.<br />
-Customized analysis [priority]:<br />
-Identify redundant spaced 3mers, avoid showing duplicated results.<br />
+<p><strong>Identify redundant spaced 3mers, avoid showing duplicated results.</strong><br />
 </p>
-<pre class="r watch-out"><code>prioritized_triplets &lt;- c(&quot;AAA&quot;, &quot;TAA&quot;, &quot;ATA&quot;, &quot;TTA&quot;, &quot;AAT&quot;, &quot;TAT&quot;, &quot;GAT&quot;, &quot;ATT&quot;, &quot;TTT&quot;, &quot;ATC&quot;, &quot;AGA&quot;, &quot;TCT&quot;, &quot;TAG&quot;, &quot;CTA&quot;)
-
-pairs &lt;- combn(prioritized_triplets, 2)
-
-for (i in 1:ncol(pairs)) {
-  print(pairs[,i])
-}</code></pre>
-<p>It appears unnecessary to plot the opposite strand 3mer relative to the anchored 3mer, as all opposite strand 3mers will convey redundant information already represented by the same strand’s reverse complement 3mers.<br />
+<p>In our prioritized list, we have 14 unique 3mers, which can be described as 7 pairs consisting of a 3mer and its reverse complement.<br />
+Pairing them individually would yield 196 combinations. However, this approach conveys redundant information already captured by their same strand’s reverse complement. For instance, the plus strand ATC-TTT is equivalent to plus strand AAA-GAT, and AAA-AAA is equivalent to TTT-TTT on the same strand.<br />
+</p>
+<p>It is important to list all unique combinations of spaced 3-mers so that we do not show redundant information in the downstream analysis.<br />
 </p>
 <p>Additionally, in our calculation of relative distances, it’s essential to account for the upstream and downstream orientation of the 3mers. For example, (gat)AAA-TTA(tc) and TTA(tc)-(gat)AAA represent distinct configurations.<br />
 </p>
-<p>Automate analysis on all prioritized 3mers.<br />
+<pre class="r watch-out"><code># Load Biostrings package
+library(Biostrings)
+
+# List of prioritized triplets
+prioritized_triplets &lt;- c(&quot;AAA&quot;, &quot;TAA&quot;, &quot;ATA&quot;, &quot;TTA&quot;, &quot;AAT&quot;, &quot;TAT&quot;, &quot;GAT&quot;, &quot;ATT&quot;, &quot;TTT&quot;, &quot;ATC&quot;, &quot;AGA&quot;, &quot;TCT&quot;, &quot;TAG&quot;, &quot;CTA&quot;)
+
+# List to store non-redundant 6mers
+non_redundant_6mers &lt;- list()
+# Loop through each pair of triplets
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair &lt;- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer &lt;- paste(pair, collapse = &quot;&quot;)
+  
+    # Create DNAString object
+    sixmer_DNAString &lt;- DNAString(sixmer)
+    
+    # Find reverse complement of the 6mer
+    reverse_complement_sixmer &lt;- reverseComplement(sixmer_DNAString)
+  
+    # Check if the reverse complement exists in the 6mer itself
+   if (!as.character(reverse_complement_sixmer)  %in% non_redundant_6mers) {
+      non_redundant_6mers &lt;- c(non_redundant_6mers, list(sixmer))
+    }
+  }
+}
+
+# Create dataframe with first 3 bases and last 3 bases
+first_3_bases &lt;- substr(non_redundant_6mers, 1, 3)
+last_3_bases &lt;- substr(non_redundant_6mers, 4, 6)
+df &lt;- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+nrow(df)</code></pre>
+<pre><code>## [1] 105</code></pre>
+<p>There are 105 combinations of 3mer pairs, these pairs are unique when all of them are considered to be on the same strand.<br />
 </p>
-<pre class="bash watch-out"><code></code></pre>
-<p>Make minimal plots to communicate results.
-Summarize the analysis steps and present these steps at the next meeting.
-RSAT:
-Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence?
-Combine results regardless of upstream or downstream orientation.</p>
+<p><strong>Notice that the relative distance here need to be carefully defined according to different 3mer</strong>.<br />
+I am using the bigWig package to anchor at the specific G/C base for each 3mer. The <code>fiveprime.bed()</code> defines the anchor point based on the strand information:<br />
+<strong>If <code>strand = &#39;+&#39;</code> while using fiveprime.bed</strong><br />
+anchor point = original <code>start</code><br />
+start = anchor point - <code>upstreamwindow</code><br />
+end = anchor point + 1 + <code>downstreamwindow</code><br />
+<strong>If <code>strand = &#39;-&#39;</code> while using fiveprime.bed</strong><br />
+anchor point = original <code>end</code><br />
+start = anchor point - <code>downstreamwindow</code><br />
+end = anchor point + 1 + <code>upstreamwindow</code><br />
+</p>
+<p>I have defined the upstream/downstream window value for each 3mer in the prioritized set, in this .csv file:<br />
+</p>
+<pre class="r watch-out"><code>#pattern_anchor_at_GorC_for_bigWig_pkg.csv
+read.csv(&#39;pattern_anchor_at_GorC_for_bigWig_pkg.csv&#39;)</code></pre>
+<pre><code>##    pattern identifier plus_upstream plus_downstream minus_upstream
+## 1      GAT        GAT             0               0             -1
+## 2      ATC        ATC            -2               2             -3
+## 3      ATA     (g)ATA             1              -1              0
+## 4      TAT     TAT(c)            -3               3             -4
+## 5      TTA    TTA(tc)            -4               4             -5
+## 6      TAA    (ga)TAA             2              -2              1
+## 7      AAT     AAT(c)            -3               3             -4
+## 8      ATT     (g)ATT             1              -1              0
+## 9      AAA   (gat)AAA             3              -3              2
+## 10     TTT   TTT(atc)            -5               5             -6
+## 11     AGA     AGA(t)            -1               1             -2
+## 12     TCT     (a)TCT            -1               1             -2
+## 13     TAG    (ga)TAG             2              -2              1
+## 14     CTA    CTA(tc)            -4               4             -5
+##    minus_downstream
+## 1                 1
+## 2                 3
+## 3                 0
+## 4                 4
+## 5                 5
+## 6                -1
+## 7                 4
+## 8                 0
+## 9                -2
+## 10                6
+## 11                2
+## 12                2
+## 13               -1
+## 14                5</code></pre>
+<p>Automate analysis on all prioritized 3mers: find the closest 2nd 3mer.<br />
+</p>
+<p>Anchor at plus strand closest 3mer, find the 2nd closest plus strand 3mer relative to the closest 3mer.<br />
+</p>
+<pre class="r watch-out"><code>#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/bedtools2/bin/closestBed&quot;,bed1,bed2,opt.string=&quot;&quot;) {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= &#39;a.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  write.table(bed2,file= &#39;b.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;a.file.bed&#39;, &#39;&gt; a.file.sorted.bed&#39;)
+  cat(command1,&quot;\n&quot;) #sort -k1,1 -k2,2n a.file.bed &gt; a.file.sorted.bed
+  try(system(command1))
+  command2=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;b.file.bed&#39;, &#39;&gt; b.file.sorted.bed&#39;)
+  cat(command2,&quot;\n&quot;)
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,&quot;-a&quot;,&#39;a.file.sorted.bed&#39;,&quot;-b&quot;,&#39;b.file.sorted.bed&#39;,&quot;&gt;&quot;,&#39;out.file.bed&#39;,sep=&quot; &quot;)
+  cat(command,&quot;\n&quot;)
+  try(system(command))
+  
+  res=read.table(&#39;out.file.bed&#39;,header=F, comment.char=&#39;&#39;)
+  
+  # remove intermediate files
+  command3=paste(&#39;rm&#39;, &#39;a.file.bed&#39;, &#39;b.file.bed&#39;, &#39;a.file.sorted.bed&#39;, &#39;b.file.sorted.bed&#39;, &#39;out.file.bed&#39;)
+  cat(command3,&quot;\n&quot;)
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), &#39;dis&#39; )
+  return(res)
+}
+
+
+#library(lattice)
+#library(latticeExtra)
+library(Biostrings)
+library(bigWig)
+
+prioritized_triplets &lt;- c(&quot;AAA&quot;, &quot;TAA&quot;, &quot;ATA&quot;, &quot;TTA&quot;, &quot;AAT&quot;, &quot;TAT&quot;, &quot;GAT&quot;, &quot;ATT&quot;, &quot;TTT&quot;, &quot;ATC&quot;, &quot;AGA&quot;, &quot;TCT&quot;, &quot;TAG&quot;, &quot;CTA&quot;)
+
+non_redundant_6mers &lt;- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair &lt;- c(prioritized_triplets[i], prioritized_triplets[j])
+    sixmer &lt;- paste(pair, collapse = &quot;&quot;)
+    sixmer_DNAString &lt;- DNAString(sixmer)
+    reverse_complement_sixmer &lt;- reverseComplement(sixmer_DNAString)
+   if (!as.character(reverse_complement_sixmer)  %in% non_redundant_6mers) {
+      non_redundant_6mers &lt;- c(non_redundant_6mers, list(sixmer))
+    }
+  }
+}
+
+first_3_bases &lt;- substr(non_redundant_6mers, 1, 3)
+last_3_bases &lt;- substr(non_redundant_6mers, 4, 6)
+df &lt;- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+dir1=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/&quot;
+dir2=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/&quot;
+my_motifs = c(&quot;motif_1&quot;, &quot;motif_2&quot;,&quot;motif_4&quot;, &quot;motif_5&quot;, &quot;motif_6&quot;)
+win=read.csv(paste0(dir2, &#39;pattern_anchor_at_GorC_for_bigWig_pkg.csv&#39;))
+
+# GATA3 peaks with motif1,2,4,5,6
+for (motif in my_motifs) {
+  print(motif)
+  for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir1, &quot;closest.1st.plus.&quot;,pattern1, &quot;.to.GATA3.with.&quot;, motif, &quot;.bed&quot;), header=FALSE), upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, &quot;hg38.3.3.3plus.&quot;, pattern2, &quot;_without_1st_plus_&quot;, pattern2, &quot;_to_GATA3_with_&quot;, motif,&quot;.bed&quot;), sep=&quot;\t&quot;, header=FALSE), upstreamWindow = win[win$pattern==pattern2, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern2, &quot;plus_downstream&quot;])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.with.motif=bedTools.closest(bed1 = closest_plus_3mer_to_GATA3_peak_summits[,1:3], bed2 = plus.3mer.file, opt.string = &#39;-d -t first&#39;)
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.with.motif, file= paste0(&quot;closest.2nd.plus.&quot;, pattern2, &quot;.to.1st.plus.&quot;, pattern1, &quot;.GATA3.with.&quot;, motif, &quot;.bed&quot;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  }
+}
+
+# DHS regions
+for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_DHS=fiveprime.bed(read.table(paste0(dir1, &quot;closest.1st.plus.&quot;, pattern1, &quot;.to.indep.DHS.control.consensus.bed&quot;), header=FALSE), upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, &quot;hg38.3.3.3plus.36_&quot;, pattern2, &quot;_without_1st_plus_&quot;, pattern2, &quot;_to_indep_DHS_control.bed&quot;), sep=&quot;\t&quot;, header=FALSE), upstreamWindow = win[win$pattern==pattern2, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern2, &quot;plus_downstream&quot;])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.DHS=bedTools.closest(bed1 = closest_plus_3mer_to_DHS[,1:3], bed2 = plus.3mer.file, opt.string = &#39;-d -t first&#39;)
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.DHS, file= paste0(&quot;closest.2nd.plus.&quot;, pattern2, &quot;.to.1st.plus.&quot;, pattern1, &quot;.indep.DHS.control.bed&quot;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  }</code></pre>
 </div>
 <div id="plot-the-enrichement-frequencies-with-xy-plots" class="section level4" number="5.2.2.3">
 <h4><span class="header-section-number">5.2.2.3</span> plot the enrichement frequencies with xy plots</h4>
+<p>Make minimal plots to communicate results.<br />
+</p>
+<p>For each peak set, (5 positive GATA3 peak sets and one DHS independent regions), there are 105 unique 3mer pairs with different relative distances.<br />
+</p>
+<p>A density plot will have 105 traces for each peak set.<br />
+</p>
+<p>Summarize the analysis steps and present these steps at the next meeting.<br />
+</p>
+<p>RSAT:
+Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence?
+Combine results regardless of upstream or downstream orientation.</p>
 </div>
 </div>
 </div>
