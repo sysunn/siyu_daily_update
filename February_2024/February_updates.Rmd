@@ -118,6 +118,31 @@ rsat dyad-analysis -o GATA3_peak_161win_with_motif_1_RSAT_dyad.txt -i GATA3_peak
 			 #When selecting the option any, the analysis is performed on all non-symmetric dyads as well.
 ```
 
+
+The input .fasta file has 12470 sequences, the output .txt file identified 43680 patterns. \
+
+## coherence check -- single input sequence
+If we only input one sequence, what will the output look like? \
+
+```{r engine='bash', eval=F, echo=TRUE}
+source ~/miniconda3/bin/activate
+conda activate rsat
+cat test_single_input.fasta
+#>chr10:100072622-100072723
+#CAGATTTTATCATTTATTTGCTCATGTATTCACTCACTCATTAGGTCatctatttagtcaaccaacatttacttaagtccttctctattcagagctctcag
+
+rsat dyad-analysis -o test_single_input_RSAT_dyad.txt -i test_single_input.fasta -format FastA -l 3 -sp 0-20 -expfreq ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+```
+
+For this single sequence input, it generates 25662 patterns. \
+
+And if we look for cat-tca pattern, it identifies several cat-tca 3mer pair with different spacings. This is different than our customized analysis. In customized analysis, for each provided sequence, we only find one specific pattern that are closest to the peak summit. If I am looking for cat-tca pattern, then it will only give my one output. \
+```{r engine='bash', eval=TRUE, echo=TRUE}
+#head test_single_input_RSAT_dyad.txt
+awk -F'\t' '$1 ~ /^cat.*tca/' test_single_input_RSAT_dyad.txt | sort -k8,8nr
+```
+
+
 Refer to the help menu. \
 ```{r engine='bash', eval=F, echo=TRUE}
 cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/RSAT/
@@ -2449,7 +2474,7 @@ Rscript 240215_closestBed.R
 **coherence check**:
 check some coordinates on UCSC genome browser, making sure that we are anchoring at the correct G/C. \
 
-#### plot the enrichement frequencies with xy plots
+#### plot the enrichement frequencies 
 Make minimal plots to communicate results. \
 
 For each peak set, (5 positive GATA3 peak sets and one DHS independent regions), there are 105 unique 3mer pairs with different relative distances. \
@@ -2460,9 +2485,9 @@ A density plot will have 105 traces for each peak set. \
 Summarize the analysis steps and present these steps at the next meeting. \
 
 
-RSAT:
-Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence?
-Combine results regardless of upstream or downstream orientation.
+RSAT: \
+Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence? -- yes, see the coherence check section under RSAT. \
+Combine results regardless of upstream or downstream orientation. \
 
 
 ## GATA3 peaks without motifs
