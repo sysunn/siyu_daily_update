@@ -731,7 +731,13 @@ function toggle_visibility(id1) {
 <li><a href="#closest-3mer-to-peak-summits" id="toc-closest-3mer-to-peak-summits"><span class="toc-section-number">5.2.1</span> Closest 3mer to peak summits</a></li>
 <li><a href="#nd-closest-3mer-to-the-anchor-3mer" id="toc-nd-closest-3mer-to-the-anchor-3mer"><span class="toc-section-number">5.2.2</span> 2nd closest 3mer to the anchor 3mer</a></li>
 </ul></li>
-<li><a href="#gata3-peaks-without-motifs" id="toc-gata3-peaks-without-motifs"><span class="toc-section-number">5.3</span> GATA3 peaks without motifs</a></li>
+<li><a href="#gata3-peaks-without-motifs" id="toc-gata3-peaks-without-motifs"><span class="toc-section-number">5.3</span> GATA3 peaks without motifs</a>
+<ul>
+<li><a href="#gat-gatatc" id="toc-gat-gatatc"><span class="toc-section-number">5.3.1</span> GAT-GAT/ATC</a></li>
+<li><a href="#gatatc-single-site" id="toc-gatatc-single-site"><span class="toc-section-number">5.3.2</span> GAT/ATC single site</a></li>
+</ul></li>
+<li><a href="#gata3-peaks-without-motifsquantiles" id="toc-gata3-peaks-without-motifsquantiles"><span class="toc-section-number">5.4</span> GATA3 peaks without motifs–quantiles</a></li>
+<li><a href="#rsat-for-gata3-peaks-without-motifs" id="toc-rsat-for-gata3-peaks-without-motifs"><span class="toc-section-number">5.5</span> RSAT for GATA3 peaks without motifs</a></li>
 </ul></li>
 </ul>
 </div>
@@ -804,10 +810,10 @@ brew install bedtools</code></pre>
 <pre><code>## also installing the dependencies &#39;bitops&#39;, &#39;zlibbioc&#39;, &#39;RCurl&#39;, &#39;GenomeInfoDbData&#39;, &#39;BiocGenerics&#39;, &#39;S4Vectors&#39;, &#39;IRanges&#39;, &#39;XVector&#39;, &#39;GenomeInfoDb&#39;, &#39;crayon&#39;</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /tmp/RtmpEu1e1X/downloaded_packages</code></pre>
+##  /tmp/Rtmp9W9mnp/downloaded_packages</code></pre>
 <pre><code>## installing the source package &#39;GenomeInfoDbData&#39;</code></pre>
-<pre><code>## Old packages: &#39;cluster&#39;, &#39;foreign&#39;, &#39;lattice&#39;, &#39;MASS&#39;, &#39;Matrix&#39;, &#39;mgcv&#39;,
-##   &#39;nlme&#39;, &#39;rpart&#39;, &#39;survival&#39;</code></pre>
+<pre><code>## Old packages: &#39;boot&#39;, &#39;cluster&#39;, &#39;foreign&#39;, &#39;lattice&#39;, &#39;MASS&#39;, &#39;Matrix&#39;,
+##   &#39;mgcv&#39;, &#39;nlme&#39;, &#39;rpart&#39;, &#39;survival&#39;</code></pre>
 <p>Install <code>latticeExtra</code><br />
 </p>
 <pre class="r watch-out"><code>install.packages(&quot;latticeExtra&quot;, quiet = TRUE)</code></pre>
@@ -3512,6 +3518,8 @@ For each pair, it concatenates them to form a 6-mer, and then finds the reverse 
 </p>
 <p>Through running this code, we identified 105 combinations of 3mer pairs. These pairs are unique while considering them to be on the same strand.<br />
 </p>
+<p><em>However</em>, when considering the identification of 3mer combinations on both the plus and minus strands, it’s crucial to account for these combinations. If we limit our focus solely to 3mer-3mer pairs on the same strand, specifically the plus strand, each of the 196 combinations will be distinct from one another.<br />
+</p>
 <p><strong>Notice that the relative distance here need to be carefully defined according to different 3mer</strong>.<br />
 I am using the bigWig package to anchor at the specific G/C base for each 3mer. The <code>fiveprime.bed()</code> defines the anchor point based on the strand information:<br />
 <strong>If <code>strand = &#39;+&#39;</code> while using fiveprime.bed</strong><br />
@@ -3606,42 +3614,28 @@ bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/be
 #library(Biostrings)
 library(bigWig)
 
-# function to convert the plus strand 6mer to its reverse compliment then convert to same strand
-convert_plus_strand_6mer &lt;- function(sequence) {
-  complement &lt;- c(&quot;A&quot; = &quot;T&quot;, &quot;T&quot; = &quot;A&quot;, &quot;G&quot; = &quot;C&quot;, &quot;C&quot; = &quot;G&quot;)
-  reversed_sequence &lt;- rev(strsplit(sequence, &quot;&quot;)[[1]])
-  complementary_sequence &lt;- sapply(reversed_sequence, function(base) complement[base])
-  converted_sequence &lt;- paste(complementary_sequence, collapse = &quot;&quot;)
-  return(converted_sequence)
-}
-
 # List of prioritized triplets
 prioritized_triplets &lt;- c(&quot;AAA&quot;, &quot;TAA&quot;, &quot;ATA&quot;, &quot;TTA&quot;, &quot;AAT&quot;, &quot;TAT&quot;, &quot;GAT&quot;, &quot;ATT&quot;, &quot;TTT&quot;, &quot;ATC&quot;, &quot;AGA&quot;, &quot;TCT&quot;, &quot;TAG&quot;, &quot;CTA&quot;)
 
 # List to store non-redundant 6mers
-non_redundant_6mers &lt;- list()
-# Loop through each pair of triplets
+all_6mers &lt;- list()
 for (i in 1:length(prioritized_triplets)) {
   for (j in 1:length(prioritized_triplets)) {
     pair &lt;- c(prioritized_triplets[i], prioritized_triplets[j])
     # Combine triplets to form a 6mer
     sixmer &lt;- paste(pair, collapse = &quot;&quot;)
+    all_6mers &lt;- c(all_6mers, list(sixmer))
     
-    # Find reverse complement of the 6mer
-    converted_reverse_complement_sixmer &lt;- convert_plus_strand_6mer(sixmer)
-  
-    # Check if the reverse complement exists in non_redundant_6mers list
-   if (!converted_reverse_complement_sixmer  %in% non_redundant_6mers) {
-      non_redundant_6mers &lt;- c(non_redundant_6mers, list(sixmer))
-    }
   }
 }
 
 # Create data frame with first 3 bases and last 3 bases
-first_3_bases &lt;- substr(non_redundant_6mers, 1, 3)
-last_3_bases &lt;- substr(non_redundant_6mers, 4, 6)
+first_3_bases &lt;- substr(all_6mers, 1, 3)
+last_3_bases &lt;- substr(all_6mers, 4, 6)
 df &lt;- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
 
+
+# nested loop
 dir1=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/&quot;
 dir2=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/&quot;
 my_motifs = c(&quot;motif_1&quot;, &quot;motif_2&quot;,&quot;motif_4&quot;, &quot;motif_5&quot;, &quot;motif_6&quot;)
@@ -3655,7 +3649,7 @@ for (motif in my_motifs) {
     pattern2=df[i,2]
     # anchor position: closest +/- pattern1 relative to G/C
     print(pattern1)
-    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir1, &quot;closest.1st.plus.&quot;,pattern1, &quot;.to.GATA3.with.&quot;, motif, &quot;.bed&quot;), header=FALSE), upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir1, &quot;closest.1st.plus.&quot;,pattern1, &quot;.to.GATA3.with.&quot;, motif, &quot;.bed&quot;), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
   
     # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
     print(pattern2)
@@ -3675,7 +3669,7 @@ for (i in 1:nrow(df)){
     pattern2=df[i,2]
     # anchor position: closest +/- pattern1 relative to G/C
     print(pattern1)
-    closest_plus_3mer_to_DHS=fiveprime.bed(read.table(paste0(dir1, &quot;closest.1st.plus.&quot;, pattern1, &quot;.to.indep.DHS.control.consensus.bed&quot;), header=FALSE), upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+    closest_plus_3mer_to_DHS=fiveprime.bed(read.table(paste0(dir1, &quot;closest.1st.plus.&quot;, pattern1, &quot;.to.indep.DHS.control.consensus.bed&quot;), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
   
     # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
     print(pattern2)
@@ -3693,7 +3687,7 @@ for (i in 1:nrow(df)){
 #SBATCH --job-name=runR.sh     # name for job
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -c 8
+#SBATCH -c 16
 #SBATCH -p general
 #SBATCH --qos=general
 #SBATCH --mem=200G
@@ -3704,17 +3698,226 @@ for (i in 1:nrow(df)){
 
 module load R/4.1.2
 Rscript 240215_closestBed.R</code></pre>
+<!--
+
+```{.r .watch-out}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  cat(command2,"\n")
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'b.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+
+#library(lattice)
+#library(latticeExtra)
+#library(Biostrings)
+library(bigWig)
+
+# function to convert the plus strand 6mer to its reverse compliment then convert to same strand
+convert_plus_strand_6mer <- function(sequence) {
+  complement <- c("A" = "T", "T" = "A", "G" = "C", "C" = "G")
+  reversed_sequence <- rev(strsplit(sequence, "")[[1]])
+  complementary_sequence <- sapply(reversed_sequence, function(base) complement[base])
+  converted_sequence <- paste(complementary_sequence, collapse = "")
+  return(converted_sequence)
+}
+
+# List of prioritized triplets
+prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+# List to store non-redundant 6mers
+non_redundant_6mers <- list()
+# Loop through each pair of triplets
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer <- paste(pair, collapse = "")
+    
+    # Find reverse complement of the 6mer
+    converted_reverse_complement_sixmer <- convert_plus_strand_6mer(sixmer)
+  
+    # Check if the reverse complement exists in non_redundant_6mers list
+   if (!converted_reverse_complement_sixmer  %in% non_redundant_6mers) {
+      non_redundant_6mers <- c(non_redundant_6mers, list(sixmer))
+    }
+  }
+}
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases <- substr(non_redundant_6mers, 1, 3)
+last_3_bases <- substr(non_redundant_6mers, 4, 6)
+df <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+dir1="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/"
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/"
+my_motifs = c("motif_1", "motif_2","motif_4", "motif_5", "motif_6")
+win=read.csv(paste0(dir2, 'pattern_anchor_at_GorC_for_bigWig_pkg.csv'))
+
+# GATA3 peaks with motif1,2,4,5,6
+for (motif in my_motifs) {
+  print(motif)
+  for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir1, "closest.1st.plus.",pattern1, ".to.GATA3.with.", motif, ".bed"), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, "plus_upstream"] , downstreamWindow = win[win$pattern==pattern1, "plus_downstream"])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, "hg38.3.3.3plus.", pattern2, "_without_1st_plus_", pattern2, "_to_GATA3_with_", motif,".bed"), sep="\t", header=FALSE), upstreamWindow = win[win$pattern==pattern2, "plus_upstream"] , downstreamWindow = win[win$pattern==pattern2, "plus_downstream"])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.with.motif=bedTools.closest(bed1 = closest_plus_3mer_to_GATA3_peak_summits[,1:3], bed2 = plus.3mer.file, opt.string = '-d -t first')
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.with.motif, file= paste0("closest.2nd.plus.", pattern2, ".to.1st.plus.", pattern1, ".GATA3.with.", motif, ".bed"), quote=F,sep="\t",col.names=F,row.names=F)
+  }
+}
+
+# DHS regions
+for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_DHS=fiveprime.bed(read.table(paste0(dir1, "closest.1st.plus.", pattern1, ".to.indep.DHS.control.consensus.bed"), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, "plus_upstream"] , downstreamWindow = win[win$pattern==pattern1, "plus_downstream"])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, "hg38.3.3.3plus.36_", pattern2, "_without_1st_plus_", pattern2, "_to_indep_DHS_control.bed"), sep="\t", header=FALSE), upstreamWindow = win[win$pattern==pattern2, "plus_upstream"] , downstreamWindow = win[win$pattern==pattern2, "plus_downstream"])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.DHS=bedTools.closest(bed1 = closest_plus_3mer_to_DHS[,1:3], bed2 = plus.3mer.file, opt.string = '-d -t first')
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.DHS, file= paste0("closest.2nd.plus.", pattern2, ".to.1st.plus.", pattern1, ".indep.DHS.control.bed"), quote=F,sep="\t",col.names=F,row.names=F)
+  }
+```
+
+runR.sh \
+
+```{.bash .watch-out}
+#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240215_closestBed.R
+```
+
+
+```{.r .watch-out}
+convert_plus_strand_6mer <- function(sequence) {
+  complement <- c("A" = "T", "T" = "A", "G" = "C", "C" = "G")
+  reversed_sequence <- rev(strsplit(sequence, "")[[1]])
+  complementary_sequence <- sapply(reversed_sequence, function(base) complement[base])
+  converted_sequence <- paste(complementary_sequence, collapse = "")
+  return(converted_sequence)
+}
+
+# List of prioritized triplets
+prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+# List to store non-redundant 6mers
+non_redundant_6mers <- list()
+# Loop through each pair of triplets
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer <- paste(pair, collapse = "")
+    
+    # Find reverse complement of the 6mer
+    converted_reverse_complement_sixmer <- convert_plus_strand_6mer(sixmer)
+  
+    # Check if the reverse complement exists in non_redundant_6mers list
+   if (!converted_reverse_complement_sixmer  %in% non_redundant_6mers) {
+      non_redundant_6mers <- c(non_redundant_6mers, list(sixmer))
+    }
+  }
+}
+
+
+all_6mers <- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer <- paste(pair, collapse = "")
+    all_6mers <- c(all_6mers, list(sixmer))
+    
+  }
+}
+
+unique_to_all_6mers <- setdiff(all_6mers, non_redundant_6mers)
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases <- substr(unique_to_all_6mers, 1, 3)
+last_3_bases <- substr(unique_to_all_6mers, 4, 6)
+df2 <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+```
+
+-->
 <p><strong>coherence check</strong>:
 check some coordinates on UCSC genome browser, making sure that we are anchoring at the correct G/C.<br />
+</p>
+<p>For some 3mers, we are empirically determine a relative G/C considering the GATA3 PWMs. So it is normal to see that some of the anchorred positions are not exactly an G or an C.<br />
 </p>
 </div>
 <div id="plot-the-enrichement-frequencies" class="section level4" number="5.2.2.3">
 <h4><span class="header-section-number">5.2.2.3</span> plot the enrichement frequencies</h4>
 <p>Make minimal plots to communicate results.<br />
 </p>
-<p>For each peak set, (5 positive GATA3 peak sets and one DHS independent regions), there are 105 unique 3mer pairs with different relative distances.<br />
+<p>For each peak set, (5 positive GATA3 peak sets and one DHS independent regions), there are 196 unique 3mer pairs with different relative distances.<br />
+Since these 3mer pairs are prioritized based on their potential enrichment in GATA3 peak sets, they might convey similar enrichment information. Thus we could plot bw plots at different distances, showing which distance they all prefer.<br />
 </p>
 <p>A density plot will have 105 traces for each peak set.<br />
+</p>
+<p>Or you anchor at 1st closest GAT, for instance, then plot traces of 2nd closest 3mer relative to this GAT<br />
+</p>
+<p>A heatmap with 14 3mer as x and y axies, and color code the density at different distances.<br />
 </p>
 <p>Summarize the analysis steps and present these steps at the next meeting.<br />
 </p>
@@ -3727,6 +3930,1593 @@ Combine results regardless of upstream or downstream orientation.<br />
 </div>
 <div id="gata3-peaks-without-motifs" class="section level2" number="5.3">
 <h2><span class="header-section-number">5.3</span> GATA3 peaks without motifs</h2>
+<div id="gat-gatatc" class="section level3" number="5.3.1">
+<h3><span class="header-section-number">5.3.1</span> GAT-GAT/ATC</h3>
+<p>without_motifs_123456_78_161bp_mast.bed<br />
+37308 peaks.<br />
+</p>
+<p>step1: find the 3mer coordinates (on hg38 genome) that are closest to each peak summit with <code>closestBed</code>.<br />
+step2: remove the closest 3mer coordinates from the whole genome 3mer coordinates on the same strand with <code>bedtools subtract</code>.<br />
+step3: find the second closest 3mer relative to the closest one.<br />
+</p>
+<p>My list of 3mer: GAT, ATC.<br />
+</p>
+<div id="step1" class="section level4" number="5.3.1.1">
+<h4><span class="header-section-number">5.3.1.1</span> STEP1:</h4>
+<p>240218_closestBed.R:<br />
+</p>
+<p>(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218)<br />
+</p>
+<pre class="r watch-out"><code>#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+# closestBed function
+bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/bedtools2/bin/closestBed&quot;,bed1,bed2,opt.string=&quot;&quot;) {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= &#39;a.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  write.table(bed2,file= &#39;b.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;a.file.bed&#39;, &#39;&gt; a.file.sorted.bed&#39;)
+  cat(command1,&quot;\n&quot;) #sort -k1,1 -k2,2n a.file.bed &gt; a.file.sorted.bed
+  try(system(command1))
+  command2=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;b.file.bed&#39;, &#39;&gt; b.file.sorted.bed&#39;)
+  cat(command2,&quot;\n&quot;)
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,&quot;-a&quot;,&#39;a.file.sorted.bed&#39;,&quot;-b&quot;,&#39;b.file.sorted.bed&#39;,&quot;&gt;&quot;,&#39;out.file.bed&#39;,sep=&quot; &quot;)
+  cat(command,&quot;\n&quot;)
+  try(system(command))
+  
+  res=read.table(&#39;out.file.bed&#39;,header=F, comment.char=&#39;&#39;)
+  
+  # remove intermediate files
+  command3=paste(&#39;rm&#39;, &#39;a.file.bed&#39;, &#39;b.file.bed&#39;, &#39;a.file.sorted.bed&#39;, &#39;b.file.sorted.bed&#39;, &#39;out.file.bed&#39;)
+  cat(command3,&quot;\n&quot;)
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), &#39;dis&#39; )
+  return(res)
+}
+
+dir1=&quot;/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/&quot;
+dir2=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/&quot;
+dir3=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/ENCODE_DHS_GSE29692/&quot;
+
+prioritized_triplets = c(&quot;GAT&quot;, &quot;ATC&quot;)
+library(bigWig)
+
+for (triplet in prioritized_triplets){
+  print(triplet)
+  # 3mer genome coordinates
+  plus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,&quot;hg38.3.3.3plus.*_&quot;,triplet, &quot;.bed&quot;))), sep=&quot;\t&quot;, header=FALSE)
+  minus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,&quot;hg38.3.3.3minus.*_&quot;,triplet ,&quot;.bed&quot;))), sep=&quot;\t&quot;, header=FALSE)
+
+    # peak summits
+    GATA3_peak_summits=center.bed(read.table(paste0(dir2, &quot;without_motifs_123456_78_161bp_mast.bed&quot;), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+    # consensus neg
+    indep.DHS.control.consensus=center.bed(read.table(paste0(dir3, &quot;MCF7DHS_consensus_noGATA_without_motifs_123456_78.bed&quot;), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+    
+    # closestBed--1st closest plus
+    
+    ##
+    closest.1st.plus.triplet.to.peak=bedTools.closest(bed1 = GATA3_peak_summits[,1:3], bed2 = plus.triplet.file, opt.string = &#39;-d -t first&#39;)
+    write.table(closest.1st.plus.triplet.to.peak,file= paste0(&#39;closest.1st.plus.&#39;,triplet,&#39;.to.GATA3_without_motifs_123456_78_161bp_mast.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+    
+    ##
+    closest.1st.plus.triplet.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = plus.triplet.file, opt.string = &#39;-d -t first&#39;)
+    write.table(closest.1st.plus.triplet.to.indep.DHS.control.consensus,file= paste0(&#39;closest.1st.plus.&#39;,triplet,&#39;.to.indep.DHS.control.consensus.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+
+     # closestBed--1st closest minus
+     
+     ##
+     closest.1st.minus.triplet.to.peak=bedTools.closest(bed1 = GATA3_peak_summits[,1:3], bed2 =minus.triplet.file, opt.string = &#39;-d -t first&#39;)
+     write.table(closest.1st.minus.triplet.to.peak,file= paste0(&#39;closest.1st.minus.&#39;,triplet,&#39;.to.GATA3_without_motifs_123456_78_161bp_mast.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+     
+     ##
+     closest.1st.minus.triplet.to.indep.DHS.control.consensus=bedTools.closest(bed1 = indep.DHS.control.consensus[,1:3], bed2 = minus.triplet.file, opt.string = &#39;-d -t first&#39;)
+    write.table(closest.1st.minus.triplet.to.indep.DHS.control.consensus,file= paste0(&#39;closest.1st.minus.&#39;,triplet,&#39;.to.indep.DHS.control.consensus.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+
+  
+}</code></pre>
+<p>runR.sh<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240218_closestBed.R</code></pre>
+</div>
+<div id="step2-remove-the-closest-3mer-coordinates-from-the-whole-genome-3mer-coordinates-on-the-same-strand-with-bedtools-subtract." class="section level4" number="5.3.1.2">
+<h4><span class="header-section-number">5.3.1.2</span> STEP2: remove the closest 3mer coordinates from the whole genome 3mer coordinates on the same strand with <code>bedtools subtract</code>.</h4>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=remove_1st_3mer.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o remove_1st_3mer.sh_%j.out
+#SBATCH -e remove_1st_3mer.sh_%j.err
+
+
+input_dir1=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+input_dir2=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/
+
+
+prioritized_triplets=(&quot;GAT&quot; &quot;ATC&quot;)
+
+# Use a for loop to iterate over the 
+module load bedtools 
+for triplet in &quot;${prioritized_triplets[@]}&quot;
+do
+  echo $triplet
+  
+    # plus
+    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed &gt; hg38.3.3.3plus.${triplet}.sorted.bed
+    awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.bed  | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed
+    bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3plus.${triplet}_without_1st_plus_${triplet}_to_GATA3_without_motifs_123456_78_161bp_mast.bed
+    rm hg38.3.3.3plus.${triplet}.sorted.bed
+    rm closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed
+    
+    # minus
+    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed &gt; hg38.3.3.3minus.${triplet}.sorted.bed
+    awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.minus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.bed  | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.minus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed
+    bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3minus.${triplet}_without_1st_minus_${triplet}_to_GATA3_without_motifs_123456_78_161bp_mast.bed
+    rm hg38.3.3.3minus.${triplet}.sorted.bed
+    rm closest.1st.minus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed
+
+done
+
+# independent DHS control
+for triplet in &quot;${prioritized_triplets[@]}&quot;
+do
+  echo $triplet
+  # plus
+  sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed &gt; hg38.3.3.3plus.${triplet}.sorted.bed
+  awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+  bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3plus.36_${triplet}_without_1st_plus_${triplet}_to_indep_DHS_control.bed
+   rm hg38.3.3.3plus.${triplet}.sorted.bed
+   rm closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+   
+  # minus
+  sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed &gt; hg38.3.3.3minus.${triplet}.sorted.bed
+  awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.bed | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+  bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3minus.36_${triplet}_without_1st_minus_${triplet}_to_indep_DHS_control.bed
+   rm hg38.3.3.3minus.${triplet}.sorted.bed
+   rm closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
+done
+</code></pre>
+</div>
+<div id="step3" class="section level4" number="5.3.1.3">
+<h4><span class="header-section-number">5.3.1.3</span> STEP3</h4>
+<p>240218_closestBed2.R<br />
+</p>
+<pre class="r watch-out"><code>#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/bedtools2/bin/closestBed&quot;,bed1,bed2,opt.string=&quot;&quot;) {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= &#39;a.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  write.table(bed2,file= &#39;b.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;a.file.bed&#39;, &#39;&gt; a.file.sorted.bed&#39;)
+  cat(command1,&quot;\n&quot;) #sort -k1,1 -k2,2n a.file.bed &gt; a.file.sorted.bed
+  try(system(command1))
+  command2=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;b.file.bed&#39;, &#39;&gt; b.file.sorted.bed&#39;)
+  cat(command2,&quot;\n&quot;)
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,&quot;-a&quot;,&#39;a.file.sorted.bed&#39;,&quot;-b&quot;,&#39;b.file.sorted.bed&#39;,&quot;&gt;&quot;,&#39;out.file.bed&#39;,sep=&quot; &quot;)
+  cat(command,&quot;\n&quot;)
+  try(system(command))
+  
+  res=read.table(&#39;out.file.bed&#39;,header=F, comment.char=&#39;&#39;)
+  
+  # remove intermediate files
+  command3=paste(&#39;rm&#39;, &#39;a.file.bed&#39;, &#39;b.file.bed&#39;, &#39;a.file.sorted.bed&#39;, &#39;b.file.sorted.bed&#39;, &#39;out.file.bed&#39;)
+  cat(command3,&quot;\n&quot;)
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), &#39;dis&#39; )
+  return(res)
+}
+
+
+#library(lattice)
+#library(latticeExtra)
+#library(Biostrings)
+library(bigWig)
+
+# List of prioritized triplets
+prioritized_triplets &lt;- c(&quot;GAT&quot;, &quot;ATC&quot;)
+
+# List to store non-redundant 6mers
+all_6mers &lt;- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair &lt;- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer &lt;- paste(pair, collapse = &quot;&quot;)
+    all_6mers &lt;- c(all_6mers, list(sixmer))
+    
+  }
+}
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases &lt;- substr(all_6mers, 1, 3)
+last_3_bases &lt;- substr(all_6mers, 4, 6)
+df &lt;- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+
+# nested loop
+
+dir=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/&quot;
+
+win=read.csv(paste0(&#39;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/pattern_anchor_at_GorC_for_bigWig_pkg.csv&#39;))
+
+# GATA3 peaks with motif1,2,4,5,6
+  for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir, &quot;closest.1st.plus.&quot;, pattern1, &quot;.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir, &quot;hg38.3.3.3plus.&quot;, pattern2, &quot;_without_1st_plus_&quot;, pattern2, &quot;_to_GATA3_without_motifs_123456_78_161bp_mast.bed&quot;), sep=&quot;\t&quot;, header=FALSE), upstreamWindow = win[win$pattern==pattern2, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern2, &quot;plus_downstream&quot;])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.without.motif=bedTools.closest(bed1 = closest_plus_3mer_to_GATA3_peak_summits[,1:3], bed2 = plus.3mer.file, opt.string = &#39;-d -t first&#39;)
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.without.motif, file= paste0(&quot;closest.2nd.plus.&quot;, pattern2, &quot;.to.1st.plus.&quot;, pattern1, &quot;.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  }
+
+
+# DHS regions
+for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_DHS=fiveprime.bed(read.table(paste0(dir, &quot;closest.1st.plus.&quot;, pattern1, &quot;.to.indep.DHS.control.consensus.bed&quot;), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir, &quot;hg38.3.3.3plus.36_&quot;, pattern2, &quot;_without_1st_plus_&quot;, pattern2, &quot;_to_indep_DHS_control.bed&quot;), sep=&quot;\t&quot;, header=FALSE), upstreamWindow = win[win$pattern==pattern2, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern2, &quot;plus_downstream&quot;])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.DHS=bedTools.closest(bed1 = closest_plus_3mer_to_DHS[,1:3], bed2 = plus.3mer.file, opt.string = &#39;-d -t first&#39;)
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.DHS, file= paste0(&quot;closest.2nd.plus.&quot;, pattern2, &quot;.to.1st.plus.&quot;, pattern1, &quot;.indep.DHS.control.bed&quot;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  }</code></pre>
+<p>runR.sh<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240218_closestBed2.R</code></pre>
+<p><strong>coherence check</strong><br />
+</p>
+<pre class="bash watch-out"><code>wc -l closest.2nd.plus.ATC.to.1st.plus.ATC.GATA3_without_motifs_123456_78_161bp_mast.bed
+#37308 closest.2nd.plus.ATC.to.1st.plus.ATC.GATA3_without_motifs_123456_78_161bp_mast.bed
+
+wc -l ../without_motifs_123456_78_161bp_mast.bed
+#37308 ../without_motifs_123456_78_161bp_mast.bed
+</code></pre>
+<p>Also randomly selected a few coordinates and checked on UCSC genome browser to check the bases.<br />
+</p>
+</div>
+<div id="plots" class="section level4" number="5.3.1.4">
+<h4><span class="header-section-number">5.3.1.4</span> Plots</h4>
+<pre class="bash watch-out"><code>ls closest.2nd*.bed</code></pre>
+<pre><code>## closest.2nd.plus.ATC.to.1st.plus.ATC.GATA3.without.motifs.quantile1.bed
+## closest.2nd.plus.ATC.to.1st.plus.ATC.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.2nd.plus.ATC.to.1st.plus.ATC.indep.DHS.control.bed
+## closest.2nd.plus.ATC.to.1st.plus.GAT.GATA3.without.motifs.quantile1.bed
+## closest.2nd.plus.ATC.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.2nd.plus.ATC.to.1st.plus.GAT.indep.DHS.control.bed
+## closest.2nd.plus.GAT.to.1st.plus.ATC.GATA3.without.motifs.quantile1.bed
+## closest.2nd.plus.GAT.to.1st.plus.ATC.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.2nd.plus.GAT.to.1st.plus.ATC.indep.DHS.control.bed
+## closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.without.motifs.quantile1.bed
+## closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.2nd.plus.GAT.to.1st.plus.GAT.indep.DHS.control.bed</code></pre>
+<p><strong>density plot</strong><br />
+<strong>xy plot</strong><br />
+</p>
+<p>GATA3 peaks without motifs:<br />
+</p>
+<pre class="r watch-out"><code>calculate_actual_frequency &lt;- function(data) {
+  # Use table() to create a frequency table
+  actual_frequencies &lt;- table(data)/length(data)
+  result &lt;- data.frame(value = names(actual_frequencies), actual_freq = as.vector(actual_frequencies))
+  return(result)
+}
+
+
+df.peak.nomotif = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.peak.nomotif) = c(&quot;dis&quot;,&quot;anchor_3mer&quot;, &quot;query_3mer&quot;,&quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_2nd_dis in Sys.glob(file.path(&quot;./closest.2nd.plus*.to.1st.plus.*.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;))) {
+    print(closest_2nd_dis)
+    anchor_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.*.to.1st.plus.&#39;)[[1]][2]), &quot;.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;)[[1]][1]
+    print(anchor_3mer)
+    query_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.&#39;)[[1]][2]), &quot;.to.1st.plus.*.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;)[[1]][1]
+    print(query_3mer)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char=&#39;&#39;)[,11], anchor_3mer, query_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;anchor_3mer&quot;, &quot;query_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.peak.nomotif = rbind(df.peak.nomotif,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.ATC.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.ATC.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.peak.nomotif)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    149232 obs. of  5 variables:
+##  $ abs.dis    : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ dis        : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ anchor_3mer: chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ query_3mer : chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ actual_freq: num  0.0143 0.0143 0.0143 0.0143 0.0143 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.peak.nomotif$anchor_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>unique(df.peak.nomotif$query_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.peak.nomotif)</code></pre>
+<pre><code>## [1] 149232</code></pre>
+<pre class="r watch-out"><code>head(df.peak.nomotif)</code></pre>
+<pre><code>##   abs.dis dis anchor_3mer query_3mer actual_freq
+## 1       3   3         ATC        ATC  0.01434009
+## 2       3   3         ATC        ATC  0.01434009
+## 3       3   3         ATC        ATC  0.01434009
+## 4       3   3         ATC        ATC  0.01434009
+## 5       3   3         ATC        ATC  0.01434009
+## 6       3   3         ATC        ATC  0.01434009</code></pre>
+<pre class="r watch-out"><code>df.peak.nomotif$status=&quot;GATA3_peak_without_motifs&quot;</code></pre>
+<p>DHS regions (neg ctrl):<br />
+</p>
+<pre class="r watch-out"><code>df.ctrl = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.ctrl) = c(&quot;dis&quot;,&quot;anchor_3mer&quot;, &quot;query_3mer&quot;,&quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_2nd_dis in Sys.glob(file.path(&quot;./closest.2nd.plus*.to.1st.plus.*.indep.DHS.control.bed&quot;))) {
+    print(closest_2nd_dis)
+    anchor_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.*.to.1st.plus.&#39;)[[1]][2]), &quot;.indep.DHS.control.bed&quot;)[[1]][1]
+    print(anchor_3mer)
+    query_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.&#39;)[[1]][2]), &quot;.to.1st.plus.*.indep.DHS.control.bed&quot;)[[1]][1]
+    print(query_3mer)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char=&#39;&#39;)[,11], anchor_3mer, query_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;anchor_3mer&quot;, &quot;query_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.ctrl = rbind(df.ctrl,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.ATC.indep.DHS.control.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.GAT.indep.DHS.control.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.ATC.indep.DHS.control.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.GAT.indep.DHS.control.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.ctrl)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    231624 obs. of  5 variables:
+##  $ abs.dis    : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ dis        : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ anchor_3mer: chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ query_3mer : chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ actual_freq: num  0.0162 0.0162 0.0162 0.0162 0.0162 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.ctrl$anchor_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>unique(df.ctrl$query_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.ctrl)</code></pre>
+<pre><code>## [1] 231624</code></pre>
+<pre class="r watch-out"><code>head(df.ctrl)</code></pre>
+<pre><code>##   abs.dis dis anchor_3mer query_3mer actual_freq
+## 1       3   3         ATC        ATC  0.01619867
+## 2       3   3         ATC        ATC  0.01619867
+## 3       3   3         ATC        ATC  0.01619867
+## 4       3   3         ATC        ATC  0.01619867
+## 5       3   3         ATC        ATC  0.01619867
+## 6       3   3         ATC        ATC  0.01619867</code></pre>
+<pre class="r watch-out"><code>df.ctrl$status=&quot;MCF7_DHS_regions&quot;</code></pre>
+<pre class="r watch-out"><code>df.plot=rbind(df.peak.nomotif, df.ctrl)
+df.plot$pattern = paste0(df.plot$anchor_3mer, &quot;-&quot;, df.plot$query_3mer)
+
+df.plot$pattern = factor(df.plot$pattern, levels = c(&quot;ATC-ATC&quot;, &quot;GAT-ATC&quot;, &quot;ATC-GAT&quot;, &quot;GAT-GAT&quot;))
+df.plot$status = factor(df.plot$status, levels = c(&quot;GATA3_peak_without_motifs&quot;, &quot;MCF7_DHS_regions&quot;))
+
+nrow(df.plot)</code></pre>
+<pre><code>## [1] 380856</code></pre>
+<pre class="r watch-out"><code>nrow(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>## [1] 4993</code></pre>
+<pre class="r watch-out"><code>summary(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>##     abs.dis             dis          anchor_3mer         query_3mer       
+##  Min.   :    1.0   Min.   :    1.0   Length:4993        Length:4993       
+##  1st Qu.:  158.0   1st Qu.:  158.0   Class :character   Class :character  
+##  Median :  314.0   Median :  314.0   Mode  :character   Mode  :character  
+##  Mean   :  341.1   Mean   :  341.1                                        
+##  3rd Qu.:  473.0   3rd Qu.:  473.0                                        
+##  Max.   :17669.0   Max.   :17669.0                                        
+##   actual_freq                              status        pattern    
+##  Min.   :1.727e-05   GATA3_peak_without_motifs:2610   ATC-ATC:1216  
+##  1st Qu.:5.361e-05   MCF7_DHS_regions         :2383   GAT-ATC:1321  
+##  Median :2.763e-04                                    ATC-GAT:1280  
+##  Mean   :1.602e-03                                    GAT-GAT:1176  
+##  3rd Qu.:1.831e-03                                                  
+##  Max.   :1.161e-01</code></pre>
+<pre class="r watch-out"><code>library(lattice)
+library(latticeExtra)
+pdf(&#39;xy_closest_2nd_3mer_to_closest_1st_3mer_to_GATA3_peaks_without_motifs.pdf&#39;, width=15,height=5)
+print(
+  xyplot(actual_freq ~ abs.dis | pattern, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = status,
+         auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.15),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Frequency&quot;,
+         #main=&quot;Independent DHS Regions&quot;,
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c(&quot;red&quot;, &quot;black&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=c(&quot;pink&quot;,&quot;grey&quot;), ...)
+                                    panel.xyplot(x, y, 
+                                                   col=c(&quot;red&quot;,&quot;black&quot;), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>We can also demonstrate the relative enrichment by subtracting the actual frequency of GATA3 peaks from that of the DHS regions at each relative distance.<br />
+</p>
+<pre class="r watch-out"><code># GATA3 peaks
+uniq.df.peak.nomotif=df.peak.nomotif[!duplicated(df.peak.nomotif), 1:5]
+  
+#DHS regions
+uniq.df.ctrl=df.ctrl[!duplicated(df.ctrl), 1:5]
+colnames(uniq.df.ctrl)[5]=&quot;actual_freq_DHS&quot;
+  
+#calculate the relative frequency
+  #by subtraction of actual frequency between GATA3 peaks and DHS regions
+df.plot2=merge(uniq.df.peak.nomotif, uniq.df.ctrl, by=c(&quot;abs.dis&quot;, &quot;dis&quot;, &quot;anchor_3mer&quot;, &quot;query_3mer&quot;), all.x = TRUE)
+df.plot2$rel_freq &lt;- ifelse(is.na(df.plot2$actual_freq_DHS), NA, df.plot2$actual_freq - df.plot2$actual_freq_DHS)
+df.plot2$pattern = paste0(df.plot2$anchor_3mer, &quot;-&quot;, df.plot2$query_3mer)
+    
+df.plot2$pattern = factor(df.plot2$pattern, levels = c(&quot;ATC-ATC&quot;, &quot;GAT-ATC&quot;, &quot;ATC-GAT&quot;, &quot;GAT-GAT&quot;))
+    
+library(lattice)
+library(latticeExtra)
+pdf(paste0(&#39;xy_closest_2nd_3mer_to_closest_1st_3mer_to_GATA3_peaks_without_motifs_compare_to_DHS.pdf&#39;), width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | pattern, 
+         data = df.plot2, 
+         #groups = pattern,
+         #auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.1),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Relative Frequency (GATA3 peaks - DHS regions)&quot;,
+         #main=paste0(&quot;GATA3 peak with &quot;, motif),
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         #par.settings = list(superpose.line = list(col=c(&quot;pink&quot;, &quot;skyblue&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 15, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot2, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=&quot;pink&quot;, ...)
+                                      panel.xyplot(x, y, 
+                                                   col=&quot;red&quot;, 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>It seems that these peaks have fewer enriched spaced-3mers; however, they could still be enriched by single sites as GATA binding elements.<br />
+</p>
+</div>
+</div>
+<div id="gatatc-single-site" class="section level3" number="5.3.2">
+<h3><span class="header-section-number">5.3.2</span> GAT/ATC single site</h3>
+<pre class="bash watch-out"><code>ls closest.1st*.bed
+head closest.1st.minus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+wc -l closest.1st.minus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+wc -l closest.1st.minus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed</code></pre>
+<pre><code>## closest.1st.minus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.1st.minus.ATC.to.GATA3_without_motifs_quantile1.bed
+## closest.1st.minus.ATC.to.indep.DHS.control.consensus.bed
+## closest.1st.minus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.1st.minus.GAT.to.GATA3_without_motifs_quantile1.bed
+## closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed
+## closest.1st.plus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.1st.plus.ATC.to.GATA3_without_motifs_quantile1.bed
+## closest.1st.plus.ATC.to.indep.DHS.control.consensus.bed
+## closest.1st.plus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+## closest.1st.plus.GAT.to.GATA3_without_motifs_quantile1.bed
+## closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed
+## chr1 827380  827381  chr1    827302  827305  36  36  -   ATC 76
+## chr1 916769  916770  chr1    916719  916722  36  36  -   ATC 48
+## chr1 924853  924854  chr1    924740  924743  36  36  -   ATC 111
+## chr1 966653  966654  chr1    966718  966721  36  36  -   ATC 65
+## chr1 999508  999509  chr1    999577  999580  36  36  -   ATC 69
+## chr1 1000536 1000537 chr1    1000627 1000630 36  36  -   ATC 91
+## chr1 1001891 1001892 chr1    1001937 1001940 36  36  -   ATC 46
+## chr1 1013265 1013266 chr1    1013247 1013250 36  36  -   ATC 16
+## chr1 1013580 1013581 chr1    1013584 1013587 36  36  -   ATC 4
+## chr1 1020187 1020188 chr1    1020330 1020333 36  36  -   ATC 143
+##    37308 closest.1st.minus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed
+##    37308 closest.1st.minus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed</code></pre>
+<p><strong>xy plot</strong><br />
+</p>
+<p>GATA3 peaks without motifs:<br />
+</p>
+<pre class="r watch-out"><code>calculate_actual_frequency &lt;- function(data) {
+  # Use table() to create a frequency table
+  actual_frequencies &lt;- table(data)/length(data)
+  result &lt;- data.frame(value = names(actual_frequencies), actual_freq = as.vector(actual_frequencies))
+  return(result)
+}
+
+
+df.peak.nomotif = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.peak.nomotif) = c(&quot;dis&quot;,&quot;closest_3mer&quot;, &quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_1st_dis in Sys.glob(file.path(&quot;./closest.1st.*.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;))) {
+    print(closest_1st_dis)
+    closest_3mer =strsplit((strsplit(strsplit(closest_1st_dis, &quot;/&quot;)[[1]][length(strsplit(closest_1st_dis, &quot;/&quot;)[[1]])], &#39;closest.1st.&#39;)[[1]][2]), &quot;.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;)[[1]][1]
+    print(closest_3mer)
+    
+    temp = as.data.frame(cbind(read.table(closest_1st_dis, header=F, comment.char=&#39;&#39;)[,11], closest_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;closest_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.peak.nomotif = rbind(df.peak.nomotif,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.1st.minus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;minus.ATC&quot;
+## [1] &quot;./closest.1st.minus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;minus.GAT&quot;
+## [1] &quot;./closest.1st.plus.ATC.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;plus.ATC&quot;
+## [1] &quot;./closest.1st.plus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed&quot;
+## [1] &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.peak.nomotif)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    149232 obs. of  4 variables:
+##  $ abs.dis     : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ dis         : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ closest_3mer: chr  &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; ...
+##  $ actual_freq : num  0.0386 0.0386 0.0386 0.0386 0.0386 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.peak.nomotif$closest_3mer)</code></pre>
+<pre><code>## [1] &quot;minus.ATC&quot; &quot;minus.GAT&quot; &quot;plus.ATC&quot;  &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.peak.nomotif)</code></pre>
+<pre><code>## [1] 149232</code></pre>
+<pre class="r watch-out"><code>head(df.peak.nomotif)</code></pre>
+<pre><code>##   abs.dis dis closest_3mer actual_freq
+## 1       0   0    minus.ATC  0.03857082
+## 2       0   0    minus.ATC  0.03857082
+## 3       0   0    minus.ATC  0.03857082
+## 4       0   0    minus.ATC  0.03857082
+## 5       0   0    minus.ATC  0.03857082
+## 6       0   0    minus.ATC  0.03857082</code></pre>
+<pre class="r watch-out"><code>df.peak.nomotif$status=&quot;GATA3_peak_without_motifs&quot;</code></pre>
+<p>DHS regions (neg ctrl):<br />
+</p>
+<pre class="r watch-out"><code>df.ctrl = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.ctrl) = c(&quot;dis&quot;,&quot;closest_3mer&quot;, &quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_1st_dis in Sys.glob(file.path(&quot;./closest.1st.*.to.indep.DHS.control.consensus.bed&quot;))) {
+    print(closest_1st_dis)
+    closest_3mer =strsplit((strsplit(strsplit(closest_1st_dis, &quot;/&quot;)[[1]][length(strsplit(closest_1st_dis, &quot;/&quot;)[[1]])], &#39;closest.1st.&#39;)[[1]][2]), &quot;.to.indep.DHS.control.consensus.bed&quot;)[[1]][1]
+    print(closest_3mer)
+  
+    temp = as.data.frame(cbind(read.table(closest_1st_dis, header=F, comment.char=&#39;&#39;)[,11], closest_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;closest_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.ctrl = rbind(df.ctrl,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.1st.minus.ATC.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;minus.ATC&quot;
+## [1] &quot;./closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;minus.GAT&quot;
+## [1] &quot;./closest.1st.plus.ATC.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;plus.ATC&quot;
+## [1] &quot;./closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.ctrl)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    231624 obs. of  4 variables:
+##  $ abs.dis     : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ dis         : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ closest_3mer: chr  &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; ...
+##  $ actual_freq : num  0.0262 0.0262 0.0262 0.0262 0.0262 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.ctrl$closest_3mer)</code></pre>
+<pre><code>## [1] &quot;minus.ATC&quot; &quot;minus.GAT&quot; &quot;plus.ATC&quot;  &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.ctrl)</code></pre>
+<pre><code>## [1] 231624</code></pre>
+<pre class="r watch-out"><code>head(df.ctrl)</code></pre>
+<pre><code>##   abs.dis dis closest_3mer actual_freq
+## 1       0   0    minus.ATC   0.0262149
+## 2       0   0    minus.ATC   0.0262149
+## 3       0   0    minus.ATC   0.0262149
+## 4       0   0    minus.ATC   0.0262149
+## 5       0   0    minus.ATC   0.0262149
+## 6       0   0    minus.ATC   0.0262149</code></pre>
+<pre class="r watch-out"><code>df.ctrl$status=&quot;MCF7_DHS_regions&quot;</code></pre>
+<pre class="r watch-out"><code>df.plot=rbind(df.peak.nomotif, df.ctrl)
+
+df.plot$closest_3mer = factor(df.plot$closest_3mer, levels = c(&quot;plus.GAT&quot;, &quot;minus.ATC&quot; , &quot;minus.GAT&quot;, &quot;plus.ATC&quot;))
+df.plot$status = factor(df.plot$status, levels = c(&quot;GATA3_peak_without_motifs&quot;, &quot;MCF7_DHS_regions&quot;))
+
+nrow(df.plot)</code></pre>
+<pre><code>## [1] 380856</code></pre>
+<pre class="r watch-out"><code>nrow(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>## [1] 8545</code></pre>
+<pre class="r watch-out"><code>summary(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>##     abs.dis            dis            closest_3mer   actual_freq       
+##  Min.   :     0   Min.   :     0   plus.GAT :2124   Min.   :1.727e-05  
+##  1st Qu.:   267   1st Qu.:   267   minus.ATC:2141   1st Qu.:1.727e-05  
+##  Median :  1028   Median :  1028   minus.GAT:2151   Median :1.727e-05  
+##  Mean   : 28226   Mean   : 28226   plus.ATC :2129   Mean   :9.362e-04  
+##  3rd Qu.: 19605   3rd Qu.: 19605                    3rd Qu.:1.900e-04  
+##  Max.   :890240   Max.   :890240                    Max.   :3.860e-02  
+##                        status    
+##  GATA3_peak_without_motifs:2454  
+##  MCF7_DHS_regions         :6091  
+##                                  
+##                                  
+##                                  
+## </code></pre>
+<pre class="r watch-out"><code>library(lattice)
+library(latticeExtra)
+pdf(&#39;xy_closest_1st_3mer_to_peaks_without_motifs.pdf&#39;, width=15,height=5)
+print(
+  xyplot(actual_freq ~ abs.dis | closest_3mer, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = status,
+         auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.15),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Frequency&quot;,
+         #main=&quot;Independent DHS Regions&quot;,
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c(&quot;red&quot;, &quot;black&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=c(&quot;pink&quot;,&quot;grey&quot;), ...)
+                                    panel.xyplot(x, y, 
+                                                   col=c(&quot;red&quot;,&quot;black&quot;), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>Again, we can demonstrate the relative enrichment of closest 3mer by subtracting the actual frequency of GATA3 peaks from that of the DHS regions at each relative distance.<br />
+</p>
+<pre class="r watch-out"><code># GATA3 peaks
+uniq.df.peak.nomotif=df.peak.nomotif[!duplicated(df.peak.nomotif), 1:4]
+  
+#DHS regions
+uniq.df.ctrl=df.ctrl[!duplicated(df.ctrl), 1:4]
+colnames(uniq.df.ctrl)[4]=&quot;actual_freq_DHS&quot;
+  
+#calculate the relative frequency
+  #by subtraction of actual frequency between GATA3 peaks and DHS regions
+df.plot2=merge(uniq.df.peak.nomotif, uniq.df.ctrl, by=c(&quot;abs.dis&quot;, &quot;dis&quot;, &quot;closest_3mer&quot;), all.x = TRUE)
+df.plot2$rel_freq &lt;- ifelse(is.na(df.plot2$actual_freq_DHS), NA, df.plot2$actual_freq - df.plot2$actual_freq_DHS)
+df.plot2$closest_3mer = factor(df.plot2$closest_3mer, levels = c(&quot;plus.GAT&quot;, &quot;minus.ATC&quot; , &quot;minus.GAT&quot;, &quot;plus.ATC&quot;))
+
+    
+library(lattice)
+library(latticeExtra)
+pdf(paste0(&#39;xy_closest_1st_3mer_GATA3_peaks_without_motifs_compare_to_DHS.pdf&#39;), width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | closest_3mer, 
+         data = df.plot2, 
+         #groups = pattern,
+         #auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.1),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Relative Frequency (GATA3 peaks - DHS regions)&quot;,
+         #main=paste0(&quot;GATA3 peak with &quot;, motif),
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         #par.settings = list(superpose.line = list(col=c(&quot;pink&quot;, &quot;skyblue&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(0, 15, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot2, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=&quot;pink&quot;, ...)
+                                      panel.xyplot(x, y, 
+                                                   col=&quot;red&quot;, 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>We can observe the enrichment, but the frequency of this enrichment is low. This could be attributed to some low-intensity peaks that are not bound by GATA3; they were labeled as GATA3 peaks because the MACS3 peak calling software identified peaks based on the p-value we set. These peaks could saturate the enrichment frequency because they increase the denominator when calculating the frequency.<br />
+</p>
+<p>When we divide these GATA3 peaks (without motifs) into five quantiles based on their intensity, it becomes evident that peaks with higher intensity also exhibit stronger enrichment in observing GAT/ATC close to the peak summit.<br />
+</p>
+</div>
+</div>
+<div id="gata3-peaks-without-motifsquantiles" class="section level2" number="5.4">
+<h2><span class="header-section-number">5.4</span> GATA3 peaks without motifs–quantiles</h2>
+<p>We have divided the GATA3 peaks without motifs into 5 quantiles based on the ranked intensity in January_updates 3.2.2. We have previously made CDF plots to visualize the enrichment.<br />
+</p>
+<p>quantile0.2_summits.bed<br />
+quantile0.6_summits.bed<br />
+quantile1_summits.bed<br />
+quantile0.4_summits.bed<br />
+quantile0.8_summits.bed<br />
+</p>
+<div id="step1-1" class="section level4" number="5.4.0.1">
+<h4><span class="header-section-number">5.4.0.1</span> STEP1:</h4>
+<p>240218_closestBed3.R:<br />
+</p>
+<p>(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/quantiles)<br />
+</p>
+<pre class="r watch-out"><code>#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+# closestBed function
+bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/bedtools2/bin/closestBed&quot;,bed1,bed2,opt.string=&quot;&quot;) {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= &#39;a.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  write.table(bed2,file= &#39;b.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;a.file.bed&#39;, &#39;&gt; a.file.sorted.bed&#39;)
+  cat(command1,&quot;\n&quot;) #sort -k1,1 -k2,2n a.file.bed &gt; a.file.sorted.bed
+  try(system(command1))
+  command2=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;b.file.bed&#39;, &#39;&gt; b.file.sorted.bed&#39;)
+  cat(command2,&quot;\n&quot;)
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,&quot;-a&quot;,&#39;a.file.sorted.bed&#39;,&quot;-b&quot;,&#39;b.file.sorted.bed&#39;,&quot;&gt;&quot;,&#39;out.file.bed&#39;,sep=&quot; &quot;)
+  cat(command,&quot;\n&quot;)
+  try(system(command))
+  
+  res=read.table(&#39;out.file.bed&#39;,header=F, comment.char=&#39;&#39;)
+  
+  # remove intermediate files
+  command3=paste(&#39;rm&#39;, &#39;a.file.bed&#39;, &#39;b.file.bed&#39;, &#39;a.file.sorted.bed&#39;, &#39;b.file.sorted.bed&#39;, &#39;out.file.bed&#39;)
+  cat(command3,&quot;\n&quot;)
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), &#39;dis&#39; )
+  return(res)
+}
+
+dir1=&quot;/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/&quot;
+dir2=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/&quot;
+#dir3=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/ENCODE_DHS_GSE29692/&quot;
+
+prioritized_triplets = c(&quot;GAT&quot;, &quot;ATC&quot;)
+library(bigWig)
+
+quantiles = c(&quot;quantile1&quot;, &quot;quantile0.8&quot;,&quot;quantile0.6&quot;,&quot;quantile0.4&quot;,&quot;quantile0.2&quot;)
+
+  for (triplet in prioritized_triplets){
+  print(triplet)
+  # 3mer genome coordinates
+  plus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,&quot;hg38.3.3.3plus.*_&quot;,triplet, &quot;.bed&quot;))), sep=&quot;\t&quot;, header=FALSE)
+  minus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,&quot;hg38.3.3.3minus.*_&quot;,triplet ,&quot;.bed&quot;))), sep=&quot;\t&quot;, header=FALSE)
+
+  for (quantile in quantiles) {
+    print(quantile)
+    # peak summits
+    GATA3_peak_summits=center.bed(read.table(paste0(dir2, quantile, &quot;_summits.bed&quot;), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+   
+    # closestBed--1st closest plus
+    closest.1st.plus.triplet.to.peak=bedTools.closest(bed1 = GATA3_peak_summits[,1:3], bed2 = plus.triplet.file, opt.string = &#39;-d -t first&#39;)
+    write.table(closest.1st.plus.triplet.to.peak,file= paste0(&#39;closest.1st.plus.&#39;,triplet,&#39;.to.GATA3_without_motifs_&#39;, quantile, &#39;.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+    
+     # closestBed--1st closest minus
+     closest.1st.minus.triplet.to.peak=bedTools.closest(bed1 = GATA3_peak_summits[,1:3], bed2 =minus.triplet.file, opt.string = &#39;-d -t first&#39;)
+     write.table(closest.1st.minus.triplet.to.peak,file= paste0(&#39;closest.1st.minus.&#39;,triplet,&#39;.to.GATA3_without_motifs_&#39;, quantile, &#39;.bed&#39;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+     
+  }
+}</code></pre>
+<p>runR.sh<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240218_closestBed3.R</code></pre>
+</div>
+<div id="step2-remove-the-closest-3mer-coordinates-from-the-whole-genome-3mer-coordinates-on-the-same-strand-with-bedtools-subtract.-1" class="section level4" number="5.4.0.2">
+<h4><span class="header-section-number">5.4.0.2</span> STEP2: remove the closest 3mer coordinates from the whole genome 3mer coordinates on the same strand with <code>bedtools subtract</code>.</h4>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=remove_1st_3mer.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o remove_1st_3mer.sh_%j.out
+#SBATCH -e remove_1st_3mer.sh_%j.err
+
+
+input_dir1=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+input_dir2=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/quantiles/
+
+
+prioritized_triplets=(&quot;GAT&quot; &quot;ATC&quot;)
+quantiles=(&quot;quantile1&quot; &quot;quantile0.8&quot; &quot;quantile0.6&quot; &quot;quantile0.4&quot; &quot;quantile0.2&quot;)
+
+
+# Use a for loop to iterate over the list
+module load bedtools 
+for triplet in &quot;${prioritized_triplets[@]}&quot;
+do
+  echo $triplet
+  
+  for quantile in &quot;${quantiles[@]}&quot;
+  do
+    echo $quantile
+    # plus
+    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed &gt; hg38.3.3.3plus.${triplet}.sorted.bed
+    awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.plus.${triplet}.to.GATA3_without_motifs_${quantile}.bed  | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.plus.${triplet}.to.GATA3_without_motifs_${quantile}.uniq.sorted.bed
+    bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.GATA3_without_motifs_${quantile}.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3plus.${triplet}_without_1st_plus_${triplet}_to_GATA3_without_motifs_${quantile}.bed
+    rm hg38.3.3.3plus.${triplet}.sorted.bed
+    rm closest.1st.plus.${triplet}.to.GATA3_without_motifs_${quantile}.uniq.sorted.bed
+    
+    # minus
+    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed &gt; hg38.3.3.3minus.${triplet}.sorted.bed
+    awk &#39;{print $4, $5, $6, $7, $8, $9, $10}&#39; ${input_dir2}closest.1st.minus.${triplet}.to.GATA3_without_motifs_${quantile}.bed  | awk &#39;{$1=$1}1&#39; OFS=&quot;\t&quot; | uniq | sort -k1,1 -k2,2n &gt; closest.1st.minus.${triplet}.to.GATA3_without_motifs_${quantile}.uniq.sorted.bed
+    bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.GATA3_without_motifs_${quantile}.uniq.sorted.bed -f 1.00 -s &gt; hg38.3.3.3minus.${triplet}_without_1st_minus_${triplet}_to_GATA3_without_motifs_${quantile}.bed
+    rm hg38.3.3.3minus.${triplet}.sorted.bed
+    rm closest.1st.minus.${triplet}.to.GATA3_without_motifs_${quantile}.uniq.sorted.bed
+  done
+done
+</code></pre>
+</div>
+<div id="step3-1" class="section level4" number="5.4.0.3">
+<h4><span class="header-section-number">5.4.0.3</span> STEP3</h4>
+<p>240218_closestBed4.R<br />
+</p>
+<pre class="r watch-out"><code>#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest &lt;- function(functionstring=&quot;/home/FCAM/ssun/packages/bedtools2/bin/closestBed&quot;,bed1,bed2,opt.string=&quot;&quot;) {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= &#39;a.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  write.table(bed2,file= &#39;b.file.bed&#39;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;a.file.bed&#39;, &#39;&gt; a.file.sorted.bed&#39;)
+  cat(command1,&quot;\n&quot;) #sort -k1,1 -k2,2n a.file.bed &gt; a.file.sorted.bed
+  try(system(command1))
+  command2=paste(&#39;sort -k1,1 -k2,2n&#39;, &#39;b.file.bed&#39;, &#39;&gt; b.file.sorted.bed&#39;)
+  cat(command2,&quot;\n&quot;)
+  try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,&quot;-a&quot;,&#39;a.file.sorted.bed&#39;,&quot;-b&quot;,&#39;b.file.sorted.bed&#39;,&quot;&gt;&quot;,&#39;out.file.bed&#39;,sep=&quot; &quot;)
+  cat(command,&quot;\n&quot;)
+  try(system(command))
+  
+  res=read.table(&#39;out.file.bed&#39;,header=F, comment.char=&#39;&#39;)
+  
+  # remove intermediate files
+  command3=paste(&#39;rm&#39;, &#39;a.file.bed&#39;, &#39;b.file.bed&#39;, &#39;a.file.sorted.bed&#39;, &#39;b.file.sorted.bed&#39;, &#39;out.file.bed&#39;)
+  cat(command3,&quot;\n&quot;)
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), &#39;dis&#39; )
+  return(res)
+}
+
+
+#library(lattice)
+#library(latticeExtra)
+#library(Biostrings)
+library(bigWig)
+
+# List of prioritized triplets
+prioritized_triplets &lt;- c(&quot;GAT&quot;, &quot;ATC&quot;)
+
+# List to store non-redundant 6mers
+all_6mers &lt;- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair &lt;- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer &lt;- paste(pair, collapse = &quot;&quot;)
+    all_6mers &lt;- c(all_6mers, list(sixmer))
+    
+  }
+}
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases &lt;- substr(all_6mers, 1, 3)
+last_3_bases &lt;- substr(all_6mers, 4, 6)
+df &lt;- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+
+# nested loop
+dir=&quot;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/quantiles/&quot;
+quantiles = c(&quot;quantile1&quot;, &quot;quantile0.8&quot;,&quot;quantile0.6&quot;,&quot;quantile0.4&quot;,&quot;quantile0.2&quot;)
+win=read.csv(paste0(&#39;/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/pattern_anchor_at_GorC_for_bigWig_pkg.csv&#39;))
+
+# GATA3 peaks without motifs
+for (quantile in quantiles) {
+  print(quantile)
+  for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir, &quot;closest.1st.plus.&quot;, pattern1, &quot;.to.GATA3_without_motifs_&quot;, quantile, &quot;.bed&quot;), header=FALSE)[,4:11], upstreamWindow = win[win$pattern==pattern1, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern1, &quot;plus_downstream&quot;])
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir, &quot;hg38.3.3.3plus.&quot;, pattern2, &quot;_without_1st_plus_&quot;, pattern2, &quot;_to_GATA3_without_motifs_&quot;, quantile, &quot;.bed&quot;), sep=&quot;\t&quot;, header=FALSE), upstreamWindow = win[win$pattern==pattern2, &quot;plus_upstream&quot;] , downstreamWindow = win[win$pattern==pattern2, &quot;plus_downstream&quot;])
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.without.motif=bedTools.closest(bed1 = closest_plus_3mer_to_GATA3_peak_summits[,1:3], bed2 = plus.3mer.file, opt.string = &#39;-d -t first&#39;)
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.without.motif, file= paste0(&quot;closest.2nd.plus.&quot;, pattern2, &quot;.to.1st.plus.&quot;, pattern1, &quot;.GATA3.without.motifs.&quot;, quantile, &quot;.bed&quot;), quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)
+  }
+}</code></pre>
+<p>runR.sh<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240218_closestBed4.R</code></pre>
+</div>
+<div id="spaced-3mer-plots" class="section level4" number="5.4.0.4">
+<h4><span class="header-section-number">5.4.0.4</span> spaced 3mer plots</h4>
+<p>CDF plots already made.<br />
+</p>
+<p><strong>xy plots</strong><br />
+GATA3 peaks without motifs in quantile 1:<br />
+</p>
+<pre class="r watch-out"><code>calculate_actual_frequency &lt;- function(data) {
+  # Use table() to create a frequency table
+  actual_frequencies &lt;- table(data)/length(data)
+  result &lt;- data.frame(value = names(actual_frequencies), actual_freq = as.vector(actual_frequencies))
+  return(result)
+}
+
+
+df.peak.nomotif = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.peak.nomotif) = c(&quot;dis&quot;,&quot;anchor_3mer&quot;, &quot;query_3mer&quot;,&quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_2nd_dis in Sys.glob(file.path(&quot;./closest.2nd.plus*.to.1st.plus.*.GATA3.without.motifs.quantile1.bed&quot;))) {
+    print(closest_2nd_dis)
+    anchor_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.*.to.1st.plus.&#39;)[[1]][2]), &quot;.GATA3.without.motifs.quantile1.bed&quot;)[[1]][1]
+    print(anchor_3mer)
+    query_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.&#39;)[[1]][2]), &quot;.to.1st.plus.*.GATA3.without.motifs.quantile1.bed&quot;)[[1]][1]
+    print(query_3mer)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char=&#39;&#39;)[,11], anchor_3mer, query_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;anchor_3mer&quot;, &quot;query_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.peak.nomotif = rbind(df.peak.nomotif,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.ATC.GATA3.without.motifs.quantile1.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.GAT.GATA3.without.motifs.quantile1.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.ATC.GATA3.without.motifs.quantile1.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3.without.motifs.quantile1.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.peak.nomotif)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    29848 obs. of  5 variables:
+##  $ abs.dis    : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ dis        : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ anchor_3mer: chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ query_3mer : chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ actual_freq: num  0.0178 0.0178 0.0178 0.0178 0.0178 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.peak.nomotif$anchor_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>unique(df.peak.nomotif$query_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.peak.nomotif)</code></pre>
+<pre><code>## [1] 29848</code></pre>
+<pre class="r watch-out"><code>head(df.peak.nomotif)</code></pre>
+<pre><code>##   abs.dis dis anchor_3mer query_3mer actual_freq
+## 1       3   3         ATC        ATC  0.01782364
+## 2       3   3         ATC        ATC  0.01782364
+## 3       3   3         ATC        ATC  0.01782364
+## 4       3   3         ATC        ATC  0.01782364
+## 5       3   3         ATC        ATC  0.01782364
+## 6       3   3         ATC        ATC  0.01782364</code></pre>
+<pre class="r watch-out"><code>df.peak.nomotif$status=&quot;GATA3_peak_without_motifs_quantile1&quot;</code></pre>
+<p>DHS regions (neg ctrl):<br />
+</p>
+<pre class="r watch-out"><code>df.ctrl = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.ctrl) = c(&quot;dis&quot;,&quot;anchor_3mer&quot;, &quot;query_3mer&quot;,&quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_2nd_dis in Sys.glob(file.path(&quot;./closest.2nd.plus*.to.1st.plus.*.indep.DHS.control.bed&quot;))) {
+    print(closest_2nd_dis)
+    anchor_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.*.to.1st.plus.&#39;)[[1]][2]), &quot;.indep.DHS.control.bed&quot;)[[1]][1]
+    print(anchor_3mer)
+    query_3mer =strsplit((strsplit(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]][length(strsplit(closest_2nd_dis, &quot;/&quot;)[[1]])], &#39;closest.2nd.plus.&#39;)[[1]][2]), &quot;.to.1st.plus.*.indep.DHS.control.bed&quot;)[[1]][1]
+    print(query_3mer)
+    temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char=&#39;&#39;)[,11], anchor_3mer, query_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;anchor_3mer&quot;, &quot;query_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.ctrl = rbind(df.ctrl,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.ATC.indep.DHS.control.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.ATC.to.1st.plus.GAT.indep.DHS.control.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.ATC.indep.DHS.control.bed&quot;
+## [1] &quot;ATC&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;./closest.2nd.plus.GAT.to.1st.plus.GAT.indep.DHS.control.bed&quot;
+## [1] &quot;GAT&quot;
+## [1] &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.ctrl)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    231624 obs. of  5 variables:
+##  $ abs.dis    : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ dis        : int  3 3 3 3 3 3 3 3 3 3 ...
+##  $ anchor_3mer: chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ query_3mer : chr  &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; &quot;ATC&quot; ...
+##  $ actual_freq: num  0.0162 0.0162 0.0162 0.0162 0.0162 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.ctrl$anchor_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>unique(df.ctrl$query_3mer)</code></pre>
+<pre><code>## [1] &quot;ATC&quot; &quot;GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.ctrl)</code></pre>
+<pre><code>## [1] 231624</code></pre>
+<pre class="r watch-out"><code>head(df.ctrl)</code></pre>
+<pre><code>##   abs.dis dis anchor_3mer query_3mer actual_freq
+## 1       3   3         ATC        ATC  0.01619867
+## 2       3   3         ATC        ATC  0.01619867
+## 3       3   3         ATC        ATC  0.01619867
+## 4       3   3         ATC        ATC  0.01619867
+## 5       3   3         ATC        ATC  0.01619867
+## 6       3   3         ATC        ATC  0.01619867</code></pre>
+<pre class="r watch-out"><code>df.ctrl$status=&quot;MCF7_DHS_regions&quot;</code></pre>
+<pre class="r watch-out"><code>df.plot=rbind(df.peak.nomotif, df.ctrl)
+df.plot$pattern = paste0(df.plot$anchor_3mer, &quot;-&quot;, df.plot$query_3mer)
+
+df.plot$pattern = factor(df.plot$pattern, levels = c(&quot;ATC-ATC&quot;, &quot;GAT-ATC&quot;, &quot;ATC-GAT&quot;, &quot;GAT-GAT&quot;))
+df.plot$status = factor(df.plot$status, levels = c(&quot;GATA3_peak_without_motifs_quantile1&quot;, &quot;MCF7_DHS_regions&quot;))
+
+nrow(df.plot)</code></pre>
+<pre><code>## [1] 261472</code></pre>
+<pre class="r watch-out"><code>nrow(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>## [1] 3836</code></pre>
+<pre class="r watch-out"><code>summary(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>##     abs.dis             dis          anchor_3mer         query_3mer       
+##  Min.   :    1.0   Min.   :    1.0   Length:3836        Length:3836       
+##  1st Qu.:  121.0   1st Qu.:  121.0   Class :character   Class :character  
+##  Median :  242.0   Median :  242.0   Mode  :character   Mode  :character  
+##  Mean   :  284.3   Mean   :  284.3                                        
+##  3rd Qu.:  391.0   3rd Qu.:  391.0                                        
+##  Max.   :17669.0   Max.   :17669.0                                        
+##   actual_freq                                        status        pattern    
+##  Min.   :1.727e-05   GATA3_peak_without_motifs_quantile1:1453   ATC-ATC: 922  
+##  1st Qu.:1.307e-04   MCF7_DHS_regions                   :2383   GAT-ATC:1023  
+##  Median :4.663e-04                                              ATC-GAT: 999  
+##  Mean   :2.086e-03                                              GAT-GAT: 892  
+##  3rd Qu.:2.680e-03                                                            
+##  Max.   :1.182e-01</code></pre>
+<pre class="r watch-out"><code>library(lattice)
+library(latticeExtra)
+pdf(&#39;xy_closest_2nd_3mer_to_closest_1st_3mer_to_GATA3_peaks_without_motifs_quantile1.pdf&#39;, width=15,height=5)
+print(
+  xyplot(actual_freq ~ abs.dis | pattern, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = status,
+         auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.15),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Frequency&quot;,
+         #main=&quot;Independent DHS Regions&quot;,
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c(&quot;red&quot;, &quot;black&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=c(&quot;pink&quot;,&quot;grey&quot;), ...)
+                                    panel.xyplot(x, y, 
+                                                   col=c(&quot;red&quot;,&quot;black&quot;), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>Relative enrichment by subtracting the actual frequency of GATA3 peaks from that of the DHS regions at each relative distance.<br />
+</p>
+<pre class="r watch-out"><code># GATA3 peaks
+uniq.df.peak.nomotif=df.peak.nomotif[!duplicated(df.peak.nomotif), 1:5]
+  
+#DHS regions
+uniq.df.ctrl=df.ctrl[!duplicated(df.ctrl), 1:5]
+colnames(uniq.df.ctrl)[5]=&quot;actual_freq_DHS&quot;
+  
+#calculate the relative frequency
+  #by subtraction of actual frequency between GATA3 peaks and DHS regions
+df.plot2=merge(uniq.df.peak.nomotif, uniq.df.ctrl, by=c(&quot;abs.dis&quot;, &quot;dis&quot;, &quot;anchor_3mer&quot;, &quot;query_3mer&quot;), all.x = TRUE)
+df.plot2$rel_freq &lt;- ifelse(is.na(df.plot2$actual_freq_DHS), NA, df.plot2$actual_freq - df.plot2$actual_freq_DHS)
+df.plot2$pattern = paste0(df.plot2$anchor_3mer, &quot;-&quot;, df.plot2$query_3mer)
+    
+df.plot2$pattern = factor(df.plot2$pattern, levels = c(&quot;ATC-ATC&quot;, &quot;GAT-ATC&quot;, &quot;ATC-GAT&quot;, &quot;GAT-GAT&quot;))
+    
+library(lattice)
+library(latticeExtra)
+pdf(paste0(&#39;xy_closest_2nd_3mer_to_closest_1st_3mer_to_GATA3_peaks_without_motifs_quantile1_compare_to_DHS.pdf&#39;), width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | pattern, 
+         data = df.plot2, 
+         #groups = pattern,
+         #auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.1),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Relative Frequency (GATA3 peaks - DHS regions)&quot;,
+         #main=paste0(&quot;GATA3 peak with &quot;, motif),
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         #par.settings = list(superpose.line = list(col=c(&quot;pink&quot;, &quot;skyblue&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 15, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot2, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=&quot;pink&quot;, ...)
+                                      panel.xyplot(x, y, 
+                                                   col=&quot;red&quot;, 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      panel.abline(h=0.04, col = &quot;red&quot;)
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+</div>
+<div id="single-3mer-plots" class="section level4" number="5.4.0.5">
+<h4><span class="header-section-number">5.4.0.5</span> single 3mer plots</h4>
+<p><strong>xy plot</strong><br />
+</p>
+<p>GATA3 peaks without motifs:<br />
+</p>
+<pre class="r watch-out"><code>calculate_actual_frequency &lt;- function(data) {
+  # Use table() to create a frequency table
+  actual_frequencies &lt;- table(data)/length(data)
+  result &lt;- data.frame(value = names(actual_frequencies), actual_freq = as.vector(actual_frequencies))
+  return(result)
+}
+
+
+df.peak.nomotif = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.peak.nomotif) = c(&quot;dis&quot;,&quot;closest_3mer&quot;, &quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_1st_dis in Sys.glob(file.path(&quot;./closest.1st.*.to.GATA3_without_motifs_quantile1.bed&quot;))) {
+    print(closest_1st_dis)
+    closest_3mer =strsplit((strsplit(strsplit(closest_1st_dis, &quot;/&quot;)[[1]][length(strsplit(closest_1st_dis, &quot;/&quot;)[[1]])], &#39;closest.1st.&#39;)[[1]][2]), &quot;.to.GATA3_without_motifs_quantile1.bed&quot;)[[1]][1]
+    print(closest_3mer)
+    
+    temp = as.data.frame(cbind(read.table(closest_1st_dis, header=F, comment.char=&#39;&#39;)[,11], closest_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;closest_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.peak.nomotif = rbind(df.peak.nomotif,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.1st.minus.ATC.to.GATA3_without_motifs_quantile1.bed&quot;
+## [1] &quot;minus.ATC&quot;
+## [1] &quot;./closest.1st.minus.GAT.to.GATA3_without_motifs_quantile1.bed&quot;
+## [1] &quot;minus.GAT&quot;
+## [1] &quot;./closest.1st.plus.ATC.to.GATA3_without_motifs_quantile1.bed&quot;
+## [1] &quot;plus.ATC&quot;
+## [1] &quot;./closest.1st.plus.GAT.to.GATA3_without_motifs_quantile1.bed&quot;
+## [1] &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.peak.nomotif)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    29848 obs. of  4 variables:
+##  $ abs.dis     : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ dis         : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ closest_3mer: chr  &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; ...
+##  $ actual_freq : num  0.0531 0.0531 0.0531 0.0531 0.0531 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.peak.nomotif$closest_3mer)</code></pre>
+<pre><code>## [1] &quot;minus.ATC&quot; &quot;minus.GAT&quot; &quot;plus.ATC&quot;  &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.peak.nomotif)</code></pre>
+<pre><code>## [1] 29848</code></pre>
+<pre class="r watch-out"><code>head(df.peak.nomotif)</code></pre>
+<pre><code>##   abs.dis dis closest_3mer actual_freq
+## 1       0   0    minus.ATC  0.05306888
+## 2       0   0    minus.ATC  0.05306888
+## 3       0   0    minus.ATC  0.05306888
+## 4       0   0    minus.ATC  0.05306888
+## 5       0   0    minus.ATC  0.05306888
+## 6       0   0    minus.ATC  0.05306888</code></pre>
+<pre class="r watch-out"><code>df.peak.nomotif$status=&quot;GATA3_peak_without_motifs_quantile1&quot;</code></pre>
+<p>DHS regions (neg ctrl):<br />
+</p>
+<pre class="r watch-out"><code>df.ctrl = data.frame(matrix(nrow = 0, ncol = 5))     
+colnames(df.ctrl) = c(&quot;dis&quot;,&quot;closest_3mer&quot;, &quot;abs.dis&quot;, &quot;actual_freq&quot;)
+for (closest_1st_dis in Sys.glob(file.path(&quot;./closest.1st.*.to.indep.DHS.control.consensus.bed&quot;))) {
+    print(closest_1st_dis)
+    closest_3mer =strsplit((strsplit(strsplit(closest_1st_dis, &quot;/&quot;)[[1]][length(strsplit(closest_1st_dis, &quot;/&quot;)[[1]])], &#39;closest.1st.&#39;)[[1]][2]), &quot;.to.indep.DHS.control.consensus.bed&quot;)[[1]][1]
+    print(closest_3mer)
+  
+    temp = as.data.frame(cbind(read.table(closest_1st_dis, header=F, comment.char=&#39;&#39;)[,11], closest_3mer)) 
+    colnames(temp) = c(&quot;dis&quot;, &quot;closest_3mer&quot;)
+    temp$dis=as.integer(temp$dis)
+    temp$abs.dis=abs(temp$dis)
+    actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+    temp1= merge(temp, actual_frequencies, by.x = &quot;abs.dis&quot;, by.y = &quot;value&quot;, all.x = TRUE)
+    df.ctrl = rbind(df.ctrl,temp1)
+}</code></pre>
+<pre><code>## [1] &quot;./closest.1st.minus.ATC.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;minus.ATC&quot;
+## [1] &quot;./closest.1st.minus.GAT.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;minus.GAT&quot;
+## [1] &quot;./closest.1st.plus.ATC.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;plus.ATC&quot;
+## [1] &quot;./closest.1st.plus.GAT.to.indep.DHS.control.consensus.bed&quot;
+## [1] &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>str(df.ctrl)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    231624 obs. of  4 variables:
+##  $ abs.dis     : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ dis         : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ closest_3mer: chr  &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; &quot;minus.ATC&quot; ...
+##  $ actual_freq : num  0.0262 0.0262 0.0262 0.0262 0.0262 ...</code></pre>
+<pre class="r watch-out"><code>unique(df.ctrl$closest_3mer)</code></pre>
+<pre><code>## [1] &quot;minus.ATC&quot; &quot;minus.GAT&quot; &quot;plus.ATC&quot;  &quot;plus.GAT&quot;</code></pre>
+<pre class="r watch-out"><code>nrow(df.ctrl)</code></pre>
+<pre><code>## [1] 231624</code></pre>
+<pre class="r watch-out"><code>head(df.ctrl)</code></pre>
+<pre><code>##   abs.dis dis closest_3mer actual_freq
+## 1       0   0    minus.ATC   0.0262149
+## 2       0   0    minus.ATC   0.0262149
+## 3       0   0    minus.ATC   0.0262149
+## 4       0   0    minus.ATC   0.0262149
+## 5       0   0    minus.ATC   0.0262149
+## 6       0   0    minus.ATC   0.0262149</code></pre>
+<pre class="r watch-out"><code>df.ctrl$status=&quot;MCF7_DHS_regions&quot;</code></pre>
+<pre class="r watch-out"><code>df.plot=rbind(df.peak.nomotif, df.ctrl)
+
+df.plot$closest_3mer = factor(df.plot$closest_3mer, levels = c(&quot;plus.GAT&quot;, &quot;minus.ATC&quot; , &quot;minus.GAT&quot;, &quot;plus.ATC&quot;))
+df.plot$status = factor(df.plot$status, levels = c(&quot;GATA3_peak_without_motifs_quantile1&quot;, &quot;MCF7_DHS_regions&quot;))
+
+nrow(df.plot)</code></pre>
+<pre><code>## [1] 261472</code></pre>
+<pre class="r watch-out"><code>nrow(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>## [1] 7243</code></pre>
+<pre class="r watch-out"><code>summary(df.plot[!duplicated(df.plot), ])</code></pre>
+<pre><code>##     abs.dis            dis            closest_3mer   actual_freq       
+##  Min.   :     0   Min.   :     0   plus.GAT :1800   Min.   :1.727e-05  
+##  1st Qu.:   230   1st Qu.:   230   minus.ATC:1812   1st Qu.:1.727e-05  
+##  Median :  1596   Median :  1596   minus.GAT:1822   Median :1.727e-05  
+##  Mean   : 28008   Mean   : 28008   plus.ATC :1809   Mean   :1.105e-03  
+##  3rd Qu.: 21026   3rd Qu.: 21026                    3rd Qu.:2.418e-04  
+##  Max.   :734060   Max.   :734060                    Max.   :5.307e-02  
+##                                  status    
+##  GATA3_peak_without_motifs_quantile1:1152  
+##  MCF7_DHS_regions                   :6091  
+##                                            
+##                                            
+##                                            
+## </code></pre>
+<pre class="r watch-out"><code>library(lattice)
+library(latticeExtra)
+pdf(&#39;xy_closest_1st_3mer_to_peaks_without_motifs_quantile1.pdf&#39;, width=15,height=5)
+print(
+  xyplot(actual_freq ~ abs.dis | closest_3mer, 
+         #data = df.plot[!duplicated(df.plot), ],
+         data = df.plot, 
+         groups = status,
+         auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.15),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Frequency&quot;,
+         #main=&quot;Independent DHS Regions&quot;,
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         par.settings = list(superpose.line = list(col=c(&quot;red&quot;, &quot;black&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(1, 10, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=c(&quot;pink&quot;,&quot;grey&quot;), ...)
+                                    panel.xyplot(x, y, 
+                                                   col=c(&quot;red&quot;,&quot;black&quot;), 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>Again, we can demonstrate the relative enrichment of closest 3mer by subtracting the actual frequency of GATA3 peaks from that of the DHS regions at each relative distance.<br />
+</p>
+<pre class="r watch-out"><code># GATA3 peaks
+uniq.df.peak.nomotif=df.peak.nomotif[!duplicated(df.peak.nomotif), 1:4]
+  
+#DHS regions
+uniq.df.ctrl=df.ctrl[!duplicated(df.ctrl), 1:4]
+colnames(uniq.df.ctrl)[4]=&quot;actual_freq_DHS&quot;
+  
+#calculate the relative frequency
+  #by subtraction of actual frequency between GATA3 peaks and DHS regions
+df.plot2=merge(uniq.df.peak.nomotif, uniq.df.ctrl, by=c(&quot;abs.dis&quot;, &quot;dis&quot;, &quot;closest_3mer&quot;), all.x = TRUE)
+df.plot2$rel_freq &lt;- ifelse(is.na(df.plot2$actual_freq_DHS), NA, df.plot2$actual_freq - df.plot2$actual_freq_DHS)
+df.plot2$closest_3mer = factor(df.plot2$closest_3mer, levels = c(&quot;plus.GAT&quot;, &quot;minus.ATC&quot; , &quot;minus.GAT&quot;, &quot;plus.ATC&quot;))
+
+    
+library(lattice)
+library(latticeExtra)
+pdf(paste0(&#39;xy_closest_1st_3mer_GATA3_peaks_without_motifs_quantile1_compare_to_DHS.pdf&#39;), width=15,height=5)
+print(xyplot(rel_freq ~ abs.dis | closest_3mer, 
+         data = df.plot2, 
+         #groups = pattern,
+         #auto.key = list(space = &quot;right&quot;, lines=TRUE, points=FALSE, cex = 1),
+         aspect = 1,
+         xlim=c(0,50),
+         ylim=c(0, 0.1),
+         layout=c(4,1),
+         #type = c(&#39;p&#39;, &#39;smooth&#39;),
+         xlab = &quot;relative distance (bp) between zinc finger (anchor at G/C)&quot;,
+         ylab=&quot;Relative Frequency (GATA3 peaks - DHS regions)&quot;,
+         #main=paste0(&quot;GATA3 peak with &quot;, motif),
+         between=list(y=1.0),
+         scales = list(x = list(relation=&quot;free&quot;, rot = 45, at = seq(from = 0, to = 50, by = 5))),
+         #par.settings = list(superpose.line = list(col=c(&quot;pink&quot;, &quot;skyblue&quot;), lwd=2), strip.background=list(col=&quot;grey85&quot;)),
+         panel = function(x,y,...) {panel.abline(v=c(seq(0, 15, 1)), col = &quot;grey90&quot;)
+                                    panel.densityplot(x, data = df.plot2, 
+                                                        from=0, 
+                                                        to=50, 
+                                                        lty = c(1),
+                                                        lwd=2, 
+                                                        darg=list(bw = &quot;nrd0&quot;, kernel=&quot;gaussian&quot;),
+                                                        type = &quot;count&quot;,
+                                                        col=&quot;pink&quot;, ...)
+                                      panel.xyplot(x, y, 
+                                                   col=&quot;red&quot;, 
+                                                   pch=18, 
+                                                   cex=0.6,...)
+                                      
+                                      
+  })
+)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+</div>
+</div>
+<div id="rsat-for-gata3-peaks-without-motifs" class="section level2" number="5.5">
+<h2><span class="header-section-number">5.5</span> RSAT for GATA3 peaks without motifs</h2>
+<p>Input fasta: GATA3 peaks without motifs 12345678:<br />
+</p>
+<p>(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/RSAT/peak_161_without_motifs_12345678)<br />
+</p>
+<pre class="bash watch-out"><code>module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/
+fastaFromBed -fi $genome -bed ${dir}without_motifs_123456_78_161bp_mast.bed -fo without_motifs_123456_78_161bp_mast.fasta</code></pre>
+<p>Use the previously made background file.<br />
+</p>
+<pre class="bash watch-out"><code>source ~/miniconda3/bin/activate
+conda activate rsat
+rsat dyad-analysis -o GATA3_peaks_without_motifs_123456_78_161win_mast_RSAT_dyad.txt -i without_motifs_123456_78_161bp_mast.fasta -format FastA -l 3 -sp 0-20 -expfreq ../ENCODE.MCF7.DHS.background4.txt -return exp_occ,occ,ratio -sort -seqtype dna 
+
+
+# -1str single strand count; only the direct strand is considered for oligonucleotide and dyad occurrence counting.
+# -2str count on oth strands
+        #The occurrences of each oligonucleotide are summed on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+        
+# -type dyad_type (dr|ir|any) any   (default)
+        #In order to fasten execution, the program can be asked to restrict its analysis to symmetric dyads.
+        #Three types are accepted
+           #dr  direct repeats: the second element is the same as the first one
+           #ir  inverted repeats: the second element is the reverse complement of the first one.
+           #rep  repeats: direct and inverted repeats are evaluated
+           #any (default)
+             #When selecting the option any, the analysis is performed on all non-symmetric dyads as well.</code></pre>
+<p>View the top patterns ranked by obs/exp ratio:<br />
+</p>
+<pre class="bash watch-out"><code>cat GATA3_peaks_without_motifs_123456_78_161win_mast_RSAT_dyad.txt | sort -k8,8nr | head</code></pre>
+<pre><code>## agan{0}taa   agan{0}taa|ttan{0}tct   0.0000096090146    1258   55.24 0   1258      22.77
+## agan{0}tta   agan{0}tta|taan{0}tct   0.0001052931460    2453  605.36 22  2475       4.05
+## cttn{0}atc   cttn{0}atc|gatn{0}aag   0.0000784961757    1618  451.29 1   1619       3.59
+## gatn{0}aac   gatn{0}aac|gttn{0}atc   0.0000457443231     894  263.00 0   894    3.40
+## atcn{9}atc   atcn{9}atc|gatn{9}gat   0.0002062495205    3746 1105.62 298 4044       3.39
+## ccgn{0}ccg   ccgn{0}ccg|cggn{0}cgg   0.0003669019521    6932 2109.41 1088    8020       3.29
+## gatn{10}ata  gatn{10}ata|tatn{10}atc 0.0001643987710    2878  874.66 142 3020       3.29
+## gatn{11}ata  gatn{11}ata|tatn{11}atc 0.0001563266321    2714  825.43 78  2792       3.29
+## attn{0}atc   attn{0}atc|gatn{0}aat   0.0000619849111    1141  356.37 0   1141       3.20
+## atcn{10}atc  atcn{10}atc|gatn{10}gat 0.0002081405868    3470 1107.39 178 3648       3.13</code></pre>
+<p>The top significant pattern is a single site AGATAA.<br />
+</p>
 </div>
 </div>
 
