@@ -1,0 +1,63 @@
+---
+title: \sf GATA3_ChIP_T2T
+header-includes:
+- \usepackage{color}
+- \usepackage{float}
+- \DeclareUnicodeCharacter{2212}{-}
+date: "February 20, 2024"
+output:
+  bookdown::html_document2:
+    toc: true
+fontsize: 14pt
+geometry: margin=1in
+---
+
+```{css, echo=FALSE}
+body .main-container {
+  max-width: 1200px !important;
+  width: 1200px !important;
+}
+body {
+  max-width: 1200px !important;
+}
+
+pre {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightcyan;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.revision {
+  background-color: #FFF4F2;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.highlighted
+{
+   color:red;
+}
+
+.highlighted2
+{
+   color:blue;
+}
+```
+
+```{r engine='R', eval=TRUE, echo=F}
+knitr::opts_chunk$set(class.source = "watch-out")
+```
+
+
+# Install required packages
