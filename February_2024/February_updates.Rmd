@@ -2682,6 +2682,62 @@ A heatmap, y axies is all peaks ranked by intensity, then plot the 1st 3mer and 
 Summarize the analysis steps and present these steps at the next meeting. \
 
 
+**Heatmap** \
+
+"heatmap_test.txt" stores a subset of data with distance info from closest +GAT for peaks with motif1 summit, and distance info from 2nd to 1st closest GAT for peaks with motif1. \
+```{r engine='R', eval=TRUE, echo=TRUE}
+df <- read.table("heatmap_test.txt", header=T)[,c(1,3)]
+
+create_matrix=function(df, dis.bound){
+  df.in.bound=df[!(rowSums(df > dis.bound | df < -dis.bound) > 0), ]
+  nrows=nrow(df.in.bound)
+  df.in.bound=df.in.bound[order(rank(-abs(df.in.bound[,1]))), ]
+  matrix=matrix(0, nrow = nrows, ncol =(2*dis.bound+1))
+  for (i in 1:nrow(df.in.bound)){
+    distance1=df.in.bound[i, 1]
+    distance2=df.in.bound[i, 2]
+    index1=distance1+dis.bound
+    index2=distance2+dis.bound
+    matrix[i, index1]=1
+    matrix[i, index2]=0.6
+  }
+  return(matrix)
+}
+
+mat=create_matrix(df, 100)
+```
+
+```{r engine='R', eval=TRUE, echo=TRUE}
+mat_df <- as.data.frame(as.table(mat))
+names(mat_df) <- c( "Peak", "Distance", "Value")
+
+# Plot
+#pdf("test_heatmap_spaced_GAT_distance_to_peak_summit.pdf")
+#print(
+levelplot(Value ~ Distance * Peak, data = mat_df,
+          col.regions = colorRampPalette(c( "white","blue", "red")),
+          aspect=2,
+          at = seq(0, 1, length=150),
+          axes = FALSE,
+          sub="",
+          colorkey = FALSE,
+          region = TRUE,
+          scales = list(draw = FALSE),
+          xlab = "Distance to peak summit", ylab = "GATA3 Peaks with motif1", main = "closest GAT (red) and 2nd closest GAT (blue) Distances to peak summit",
+          newpage = FALSE,
+          panel = function(...) {panel.levelplot(...)
+            panel.abline(v=100, col = "black")}
+         )
+#)
+#dev.off()
+```
+
+
+
+
+
+
+
 RSAT: \
 Confirm how the software counts the observed spaced 3mer. Will they count twice if seeing 2 spaced 3mer at different locus on one sequence? -- yes, see the coherence check section under RSAT. \
 Combine results regardless of upstream or downstream orientation. \
