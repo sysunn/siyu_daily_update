@@ -2161,6 +2161,72 @@ Rscript 240208_closestBed.R
 ### 2nd closest 3mer to the anchor 3mer
 **Overall Goal: given the closest 3mer coordinates file, we can loop through a set of 3mer list and generate the 2nd closest 3mer coordinates to the provided closest 3mer coordinates.** \
 
+#### sort the 3mer genome coordinates
+sort_3mer_cor.sh
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=sort_3mer_cor.sh
+#SBATCH -N 1                  
+#SBATCH -n 1                 
+#SBATCH -c 4                  
+#SBATCH -p general           
+#SBATCH --qos=general       
+#SBATCH --mem=32G               
+#SBATCH --mail-type=ALL 
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o sort_3mer_cor.sh_%j.out
+#SBATCH -e sort_3mer_cor.sh_%j.err
+
+hostname
+name=XXXXXX
+
+input_dir1=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+
+sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3${name}.bed > hg38.3.3.3${name}.sorted.bed
+
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+file=sort_3mer_cor.sh
+
+for i in hg38.3.3.3*.bed 
+do
+    nm=$(echo $i | awk -F"/" '{print $NF}' | awk -F"hg38.3.3.3" '{print $2}' | awk -F".bed" '{print $1}')
+    echo $nm
+    sed -e "s/XXXXXX/${nm}/g" "$file" > sort_hg38.3.3.3${nm}.sh
+    sbatch sort_hg38.3.3.3${nm}.sh
+    sleep 1
+done
+```
+
+#### check if `bedtools subtract` change the internal order of file
+
+```{r engine='bash', eval=F, echo=TRUE}
+#ls /labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/*.sorted.bed
+#subset a test file
+awk '$1 == "chr4"' /labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/hg38.3.3.3plus.36_GAT.sorted.bed > hg38.3.3.3plus.36_GAT_subset_chr4.sorted.bed
+
+wc -l hg38.3.3.3plus.36_GAT_subset_chr4.sorted.bed #2583363
+
+wc -l /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest.1st.plus.GAT.to.GATA3.with.motif_1.bed #12470
+
+awk '{print $4, $5, $6, $7, $8, $9, $10}' /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest.1st.plus.GAT.to.GATA3.with.motif_1.bed  | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.GAT.to.GATA3.with.motif_1.uniq.sorted.bed
+
+wc -l closest.1st.plus.GAT.to.GATA3.with.motif_1.uniq.sorted.bed #12461 #less than the original file because original file has two different peaks assigned with same closest 3mer coordinates
+
+module load bedtools 
+
+bedtools subtract -a hg38.3.3.3plus.36_GAT_subset_chr4.sorted.bed -b closest.1st.plus.GAT.to.GATA3.with.motif_1.uniq.sorted.bed -f 1.00 -s > substract_output.bed #2582612
+
+sort -k1,1 -k2,2n substract_output.bed > substract_output.sorted.bed
+
+diff substract_output.bed substract_output.sorted.bed
+# no output printed on the screen, the two file are the same. 
+
+```
+
+`bedtools subtract` does not change the order of the input files. \
+
 #### For each 3mer genome coordinates, remove the identified closest 3mer on the same strand 
 
 **Remove the first closest GAT with `bedtools subtract`** \
@@ -2201,17 +2267,17 @@ do
   do
     echo $motif
     # plus
-    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed > hg38.3.3.3plus.${triplet}.sorted.bed
     awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.plus.${triplet}.to.GATA3.with.${motif}.bed  | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
-    bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.${triplet}_without_1st_plus_${triplet}_to_GATA3_with_${motif}.bed
-    rm hg38.3.3.3plus.${triplet}.sorted.bed
+    
+    bedtools subtract -a ${input_dir1}hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.${triplet}_without_1st_plus_${triplet}_to_GATA3_with_${motif}.bed
+    
     rm closest.1st.plus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
     
     # minus
-    sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed > hg38.3.3.3minus.${triplet}.sorted.bed
     awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.minus.${triplet}.to.GATA3.with.${motif}.bed  | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
-    bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.${triplet}_without_1st_minus_${triplet}_to_GATA3_with_${motif}.bed
-    rm hg38.3.3.3minus.${triplet}.sorted.bed
+    
+    bedtools subtract -a ${input_dir1}hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.${triplet}_without_1st_minus_${triplet}_to_GATA3_with_${motif}.bed
+  
     rm closest.1st.minus.${triplet}.to.GATA3.with.${motif}.uniq.sorted.bed
   done
 done
@@ -2221,17 +2287,17 @@ for triplet in "${prioritized_triplets[@]}"
 do
   echo $triplet
   # plus
-  sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3plus*${triplet}.bed > hg38.3.3.3plus.${triplet}.sorted.bed
   awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
-  bedtools subtract -a hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.36_${triplet}_without_1st_plus_${triplet}_to_indep_DHS_control.bed
-   rm hg38.3.3.3plus.${triplet}.sorted.bed
+  
+  bedtools subtract -a ${input_dir1}hg38.3.3.3plus.${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.36_${triplet}_without_1st_plus_${triplet}_to_indep_DHS_control.bed
+  
    rm closest.1st.plus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
    
   # minus
-  sort -k1,1 -k2,2n ${input_dir1}hg38.3.3.3minus*${triplet}.bed > hg38.3.3.3minus.${triplet}.sorted.bed
   awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.bed | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
-  bedtools subtract -a hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.36_${triplet}_without_1st_minus_${triplet}_to_indep_DHS_control.bed
-   rm hg38.3.3.3minus.${triplet}.sorted.bed
+  
+  bedtools subtract -a ${input_dir1}hg38.3.3.3minus.${triplet}.sorted.bed -b closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3minus.36_${triplet}_without_1st_minus_${triplet}_to_indep_DHS_control.bed
+
    rm closest.1st.minus.${triplet}.to.indep.DHS.control.consensus.uniq.sorted.bed
 done
 
@@ -2326,6 +2392,8 @@ read.csv('pattern_anchor_at_GorC_for_bigWig_pkg.csv')
 Automate analysis on all prioritized 3mers: find the closest 2nd 3mer. \
 
 Anchor at plus strand closest 3mer, find the 2nd closest plus strand 3mer relative to the closest 3mer. \
+
+<!--
 
 240215_closestBed.R \
 
@@ -2459,6 +2527,259 @@ runR.sh \
 
 module load R/4.1.2
 Rscript 240215_closestBed.R
+```
+-->
+
+
+240225_closestBed.R \
+
+```{r engine='R', eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest.mod <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.sorted.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  #command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  #cat(command2,"\n")
+  #try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+library(bigWig)
+
+# List of prioritized triplets
+prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+# List to store non-redundant 6mers
+all_6mers <- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer <- paste(pair, collapse = "")
+    all_6mers <- c(all_6mers, list(sixmer))
+    
+  }
+}
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases <- substr(all_6mers, 1, 3)
+last_3_bases <- substr(all_6mers, 4, 6)
+df <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+
+# nested loop
+dir1="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/"
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/"
+
+
+motif="XXXXXX"
+
+  for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- 3mer, anchor at the first letter base
+    print(pattern1)
+    closest_plus_3mer_to_GATA3_peak_summits=fiveprime.bed(read.table(paste0(dir1, "closest.1st.plus.", pattern1, ".to.GATA3.with.", motif, ".bed"), header=FALSE)[,4:11], upstreamWindow = 0, downstreamWindow = 0)
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - anchor at the first letter base
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, "hg38.3.3.3plus.", pattern2, "_without_1st_plus_", pattern2, "_to_GATA3_with_", motif,".bed"), sep="\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.with.motif=bedTools.closest.mod(bed1 = closest_plus_3mer_to_GATA3_peak_summits[,1:3], bed2 = plus.3mer.file, opt.string = '-d -t first')
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.GATA3.with.motif, file= paste0("closest.2nd.plus.", pattern2, ".to.1st.plus.", pattern1, ".GATA3.with.", motif, ".bed"), quote=F,sep="\t",col.names=F,row.names=F)
+  }
+```
+
+
+runR.sh \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=runR_XXXXXX.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=64G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR_XXXXXX.sh_%j.out
+#SBATCH -e runR_XXXXXX.sh_%j.err
+
+hostname
+name=XXXXXX
+
+mkdir GATA3_peak_with_${name}
+cd GATA3_peak_with_${name}
+
+module load R/4.1.2
+Rscript ../240225_closestBed_${name}.R
+```
+
+parallel running: \
+```{r engine='bash', eval=F, echo=TRUE}
+r_file=240225_closestBed.R
+sh_file=runR.sh
+
+my_motifs=("motif_1" "motif_2" "motif_4" "motif_5" "motif_6")
+
+for nm in "${my_motifs[@]}"
+do
+    echo $nm
+    sed -e "s/XXXXXX/${nm}/g" "$r_file" > 240225_closestBed_${nm}.R
+done
+
+for nm in "${my_motifs[@]}"
+do
+    echo $nm
+    sed -e "s/XXXXXX/${nm}/g" "$sh_file" > runR_${nm}.sh
+    sbatch runR_${nm}.sh
+    sleep 1
+done
+```
+
+
+
+240225_closestBed_DHS.R \
+
+```{r engine='R', eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest.mod <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.sorted.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  #command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  #cat(command2,"\n")
+  #try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+library(bigWig)
+
+# List of prioritized triplets
+prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+# List to store non-redundant 6mers
+all_6mers <- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer <- paste(pair, collapse = "")
+    all_6mers <- c(all_6mers, list(sixmer))
+    
+  }
+}
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases <- substr(all_6mers, 1, 3)
+last_3_bases <- substr(all_6mers, 4, 6)
+df <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+
+# nested loop
+dir1="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/"
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/closest_other_3mer/closest_2nd_other_3mer/"
+
+
+# DHS regions
+for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 relative to G/C
+    print(pattern1)
+    closest_plus_3mer_to_DHS=fiveprime.bed(read.table(paste0(dir1, "closest.1st.plus.", pattern1, ".to.indep.DHS.control.consensus.bed"), header=FALSE)[,4:11], upstreamWindow = 0, downstreamWindow = 0)
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) - relative to G/C
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, "hg38.3.3.3plus.36_", pattern2, "_without_1st_plus_", pattern2, "_to_indep_DHS_control.bed"), sep="\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer.DHS=bedTools.closest.mod(bed1 = closest_plus_3mer_to_DHS[,1:3], bed2 = plus.3mer.file, opt.string = '-d -t first')
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer.DHS, file= paste0("closest.2nd.plus.", pattern2, ".to.1st.plus.", pattern1, ".indep.DHS.control.bed"), quote=F,sep="\t",col.names=F,row.names=F)
+  }
+```
+
+
+runR_DHS.sh \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=runR_DHS.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR_DHS.sh_%j.out
+#SBATCH -e runR_DHS.sh_%j.err
+
+hostname
+mkdir DHS
+cd DHS
+
+module load R/4.1.2
+Rscript ../240225_closestBed_DHS.R
 ```
 
 <!--
@@ -2674,13 +2995,108 @@ Since these 3mer pairs are prioritized based on their potential enrichment in GA
 
 A density plot will have 105 traces for each peak set. \
 
-Or you anchor at 1st closest GAT, for instance, then plot traces of 2nd closest 3mer relative to this GAT \
+Or anchor at 1st closest GAT, for instance, then plot traces of 2nd closest 3mer relative to this GAT \
+```{r engine='bash', eval=F, echo=TRUE}
+ls *to.1st.plus.GAT.GATA3.with.motif_1.bed
+wc -l *to.1st.plus.GAT.GATA3.with.motif_1.bed
+```
+Some files, for example, closest.2nd.plus.AAA.to.1st.plus.GAT.GATA3.with.motif_1.bed has less than my peak sets number, because our anchoring method made some of the coordinates out of chromatin bound. A way to fix this, is to anchor at actual position, then apply modifications on the distance value to reflect the relative distance. \
+
+But the above method has one drawback, which is it might generate some regions where we think there is a relative G/C but actually they are out of bound. \
+
+```{r engine='R', eval=F, echo=TRUE}
+ls *to.1st.plus.GAT.indep.DHS.control.bed
+```
+
+
+Prepare data: \
+```{r engine='R', eval=F, echo=TRUE}
+calculate_actual_frequency <- function(data) {
+  # Use table() to create a frequency table
+  actual_frequencies <- table(data)/length(data)
+  result <- data.frame(value = names(actual_frequencies), actual_freq = as.vector(actual_frequencies))
+  return(result)
+}
+
+
+#my_motifs = c("motif_1", "motif_4","motif_2", "motif_6", "motif_5")
+my_motifs = c("motif_1")
+Anchor_triplets = c("GAT")
+Query_triplets = c("AAA", "TAA" ,"ATA" ,"TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+for (motif in my_motifs){
+  print(motif)
+  df.all=data.frame(matrix(nrow = 0, ncol = 6))  
+  for (Anchor_triplet in Anchor_triplets){
+    print(Anchor_triplet)
+    df.peak.dis.all=data.frame(matrix(nrow = 0, ncol = 6))  
+  for (Query_triplet in Query_triplets){
+    print(Query_triplet)
+    df.peak.dis = data.frame(matrix(nrow = 0, ncol = 6))     
+    colnames(df.peak.dis) = c("dis","anchor_3mer", "query_3mer", "status", "abs.dis", "actual_freq")
+    for (closest_2nd_dis in Sys.glob(file.path(paste0("./closest.2nd.plus.", Query_triplet, ".to.1st.plus.", Anchor_triplet, ".GATA3.with.", motif, ".bed")))) {
+      print(closest_2nd_dis)
+      temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], Anchor_triplet, Query_triplet, motif)) 
+      colnames(temp) = c("dis", "anchor_3mer", "query_3mer", "status")
+      temp$dis=as.integer(temp$dis)
+      temp$abs.dis=abs(temp$dis)
+      actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+      temp1= merge(temp, actual_frequencies, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+      df.peak.dis = rbind(df.peak.dis,temp1)
+    }
+    df.peak.dis.all=rbind(df.peak.dis.all, df.peak.dis)
+  }
+    df.all=rbind(df.all, df.peak.dis.all)
+  }
+}
+
+str(df.all)
+unique(df.all$anchor_3mer)
+unique(df.all$query_3mer)
+nrow(df.all)
+head(df.all)
+```
+
+DHS: \
+```{r engine='R', eval=F, echo=TRUE}
+Anchor_triplets = c("GAT")
+Query_triplets = c("AAA", "TAA" ,"ATA" ,"TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+for (motif in my_motifs){
+  print(motif)
+  for (Anchor_triplet in Anchor_triplets){
+  print(Anchor_triplet)
+  for (Query_triplet in Query_triplets){
+    print(Query_triplet)
+    df.DHS.dis = data.frame(matrix(nrow = 0, ncol = 6))     
+    colnames(df.DHS.dis) = c("dis","anchor_3mer", "query_3mer", "status", "abs.dis", "actual_freq")
+    for (closest_2nd_dis in Sys.glob(file.path(paste0("./closest.2nd.plus.", Query_triple, ".to.1st.plus.", Anchor_triplet, ".indep.DHS.control.bed")))) {
+      print(closest_2nd_dis)
+      temp = as.data.frame(cbind(read.table(closest_2nd_dis, header=F, comment.char='')[,11], Anchor_triplet, Query_triplet, "indep.DHS.control")) 
+      colnames(temp) = c("dis", "anchor_3mer", "query_3mer", "status")
+      temp$dis=as.integer(temp$dis)
+      temp$abs.dis=abs(temp$dis)
+      actual_frequencies = calculate_actual_frequency(temp$abs.dis)
+      temp1= merge(temp, actual_frequencies, by.x = "abs.dis", by.y = "value", all.x = TRUE)
+      df.DHS.dis = rbind(df.DHS.dis,temp1)
+    }
+    }
+  }
+}
+
+str(df.DHS.dis)
+unique(df.DHS.dis$anchor_3mer)
+unique(df.DHS.dis$query_3mer)
+nrow(df.DHS.dis)
+head(df.DHS.dis)
+```
+
+
+
+
 
 A heatmap with 14 3mer as x and y axies, and color code the density at different distances. \
 A heatmap, y axies is all peaks ranked by intensity, then plot the 1st 3mer and 2nd 3mer coordinates for each peak. \
-
-Summarize the analysis steps and present these steps at the next meeting. \
-
 
 **Heatmap** \
 
@@ -2733,7 +3149,11 @@ levelplot(Value ~ Distance * Peak, data = mat_df,
 ```
 
 
+Automate analysis: \
 
+```{r engine='R', eval=TRUE, echo=TRUE}
+
+```
 
 
 
@@ -4515,4 +4935,469 @@ while read line; do
 done <all_64_df.txt
 
 ```
+
+# loop through other 3mer for GATA3 peaks without motif
+
+### Closest 3mer to peak summits (~2.5h running time)
+
+**Goal: given a prioritized 3mer list, we can generate the closest 3mer coordinates to a given sets of peak summits.** \
+
+240225_closestBed.R: \
+
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/closest_other_3mer) \
+```{r engine='R', eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+# closestBed function
+bedTools.closest.mod <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.sorted.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  #command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  #cat(command2,"\n")
+  #try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+dir1="/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/"
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/"
+
+prioritized_triplets = c("AAA", "TAA" ,"ATA" ,"TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+library(bigWig)
+
+for (triplet in prioritized_triplets){
+  print(triplet)
+  # 3mer genome coordinates
+  plus.triplet.file=read.table(file = Sys.glob(file.path(paste0(dir1,"hg38.3.3.3plus.*_",triplet, ".sorted.bed"))), sep="\t", header=FALSE)
+
+    # peak summits
+    GATA3_peak_summits=center.bed(read.table(paste0(dir2, "without_motifs_123456_78_161bp_mast.bed"), header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+  
+    # closestBed--1st closest plus
+
+    closest.1st.plus.triplet.to.peak=bedTools.closest.mod(bed1 = GATA3_peak_summits[,1:3], bed2 = plus.triplet.file, opt.string = '-d -t first')
+    write.table(closest.1st.plus.triplet.to.peak,file= paste0('closest.1st.plus.',triplet,'.to.GATA3_without_motifs_123456_78_161bp_mast.bed'), quote=F,sep="\t",col.names=F,row.names=F)
+    
+  
+}
+```
+
+runR.sh \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=runR.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR.sh_%j.out
+#SBATCH -e runR.sh_%j.err
+
+module load R/4.1.2
+Rscript 240225_closestBed.R
+```
+
+#### STEP2: remove the closest 3mer coordinates from the whole genome 3mer coordinates on the same strand with `bedtools subtract`. 
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=remove_1st_3mer.sh     # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o remove_1st_3mer.sh_%j.out
+#SBATCH -e remove_1st_3mer.sh_%j.err
+
+
+input_dir1=/labs/Guertin/siyu/Sathyan_GATA3_ChIP_pool1_pool2/overrep_3mer/hg38_full_kmer3_rs1000/seqdump/
+input_dir2=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/closest_other_3mer/
+
+
+prioritized_triplets=("AAA" "TAA" "ATA" "TTA" "AAT" "TAT" "GAT" "ATT" "TTT" "ATC" "AGA" "TCT" "TAG" "CTA")
+
+module load bedtools 
+
+for triplet in "${prioritized_triplets[@]}"
+do
+  echo $triplet
+  
+    # plus
+    awk '{print $4, $5, $6, $7, $8, $9, $10}' ${input_dir2}closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.bed  | awk '{$1=$1}1' OFS="\t" | uniq | sort -k1,1 -k2,2n > closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed
+    
+    bedtools subtract -a ${input_dir1}hg38.3.3.3plus.*${triplet}.sorted.bed -b closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed -f 1.00 -s > hg38.3.3.3plus.${triplet}_without_1st_plus_${triplet}_to_GATA3_without_motifs_123456_78_161bp_mast.bed
+  
+    rm closest.1st.plus.${triplet}.to.GATA3_without_motifs_123456_78_161bp_mast.uniq.sorted.bed
+  
+done
+```
+
+#### STEP3
+
+240226_closestBed_peak_without_mot.R \
+
+```{r engine='R', eval=F, echo=TRUE}
+#!/usr/bin/env Rscript
+
+Args=commandArgs(TRUE)
+
+bedTools.closest.mod <- function(functionstring="/home/FCAM/ssun/packages/bedtools2/bin/closestBed",bed1,bed2,opt.string="") {
+  
+  options(scipen =99) # not use scientific notation when writing out
+  
+  #write bed formatted data.frames to tempfile
+  write.table(bed1,file= 'a.file.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  write.table(bed2,file= 'b.file.sorted.bed', quote=F,sep="\t",col.names=F,row.names=F)
+  
+  # create the command string and call the command using system()
+  # the command sort a and b file by coordinates
+  command1=paste('sort -k1,1 -k2,2n', 'a.file.bed', '> a.file.sorted.bed')
+  cat(command1,"\n") #sort -k1,1 -k2,2n a.file.bed > a.file.sorted.bed
+  try(system(command1))
+  #command2=paste('sort -k1,1 -k2,2n', 'b.file.bed', '> b.file.sorted.bed')
+  #cat(command2,"\n")
+  #try(system(command2))
+  
+  # the command call closestBed on bed1 and bed2
+  command=paste(functionstring, opt.string,"-a",'a.file.sorted.bed',"-b",'b.file.sorted.bed',">",'out.file.bed',sep=" ")
+  cat(command,"\n")
+  try(system(command))
+  
+  res=read.table('out.file.bed',header=F, comment.char='')
+  
+  # remove intermediate files
+  command3=paste('rm', 'a.file.bed', 'a.file.sorted.bed', 'b.file.sorted.bed', 'out.file.bed')
+  cat(command3,"\n")
+  try(system(command3))
+  
+  colnames(res) = c(colnames(bed1), colnames(bed2), 'dis' )
+  return(res)
+}
+
+library(bigWig)
+
+# List of prioritized triplets
+prioritized_triplets <- c("AAA", "TAA", "ATA", "TTA", "AAT", "TAT", "GAT", "ATT", "TTT", "ATC", "AGA", "TCT", "TAG", "CTA")
+
+# List to store non-redundant 6mers
+all_6mers <- list()
+for (i in 1:length(prioritized_triplets)) {
+  for (j in 1:length(prioritized_triplets)) {
+    pair <- c(prioritized_triplets[i], prioritized_triplets[j])
+    # Combine triplets to form a 6mer
+    sixmer <- paste(pair, collapse = "")
+    all_6mers <- c(all_6mers, list(sixmer))
+    
+  }
+}
+
+# Create data frame with first 3 bases and last 3 bases
+first_3_bases <- substr(all_6mers, 1, 3)
+last_3_bases <- substr(all_6mers, 4, 6)
+df <- data.frame(First_3_bases = first_3_bases, Last_3_bases = last_3_bases)
+
+
+dir1="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/closest_other_3mer/"
+dir2="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/closest_other_3mer/closest_2nd_other_3mer/"
+
+
+# DHS regions
+for (i in 1:nrow(df)){
+    pattern1=df[i,1]
+    pattern2=df[i,2]
+    # anchor position: closest +/- pattern1 
+    print(pattern1)
+    closest_plus_3mer_to_peak=fiveprime.bed(read.table(paste0(dir1, "closest.1st.plus.", pattern1, ".to.GATA3_without_motifs_123456_78_161bp_mast.bed"), header=FALSE)[,4:11], upstreamWindow = 0, downstreamWindow = 0)
+  
+    # query 3mer coordinates on genome (without the overlapped closest 3mer coordinates) 
+    print(pattern2)
+    plus.3mer.file=fiveprime.bed(read.table(file = paste0(dir2, "hg38.3.3.3plus.", pattern2, "_without_1st_plus_", pattern2, "_to_GATA3_without_motifs_123456_78_161bp_mast.bed"), sep="\t", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+  
+  # 2nd closest plus 3mer to closest plus 3mer
+  closest.2nd.plus.3mer.to.1st.plus.3mer=bedTools.closest.mod(bed1 = closest_plus_3mer_to_peak[,1:3], bed2 = plus.3mer.file, opt.string = '-d -t first')
+
+  
+  write.table(closest.2nd.plus.3mer.to.1st.plus.3mer, file= paste0("closest.2nd.plus.", pattern2, ".to.1st.plus.", pattern1, ".to.GATA3_without_motifs_123456_78.bed"), quote=F,sep="\t",col.names=F,row.names=F)
+  }
+```
+
+
+runR_peak_without_mot.sh \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=runR_peak_without_mot.sh    # name for job
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o runR_peak_without_mot.sh_%j.out
+#SBATCH -e runR_peak_without_mot.sh_%j.err
+
+hostname
+mkdir peak_without_mot
+cd peak_without_mot
+
+module load R/4.1.2
+Rscript ../240226_closestBed_peak_without_mot.R
+```
+
+
+
+# Testing the MEME spacing penalty parameters (-wg and -ws):
+a. Take ~1000 peaks that are enriched with the widest motif that has not been detected by MEME before (GAT-GAT with 12~13bp relative distance between the two Gs). Run with regular MEME and see if we can get this motif out. \
+b. If get the wide motif out with regular MEME, we will saturate this peak set with ~1000 "peaks without motifs" each time, until I no longer get the wide motif out from the regular MEME. \
+c. The saturated peak set that we no longer identify the wide motif with the regular MEME, is the peak set I will use to test the -ws and -wg parameter. \
+d. Determine the MEME settings where this wide motif could be obtained. \
+
+## Prepare peaks
+
+### Count how many GAT-GAT pair have 12bp or 13bp distance relative to peaks without motifs
+```{r engine='bash', eval=F, echo=TRUE}
+wc -l closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed #37308
+awk '$11 == 12' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed | wc -l #1128
+awk '$11 == 13' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed | wc -l #1031
+```
+
+### Extract peak sets with relative distance between two plus GAT==12bp, and ==13bp
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MEME_wgws) \
+```{r engine='R', eval=F, echo=TRUE}
+module load R/4.1.2
+R
+dir="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/"
+closest_GAT_to_peak = read.table(paste0(dir, "closest.1st.plus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed"), sep="\t", header=FALSE)
+nrow(closest_GAT_to_peak)
+#[1] 37308
+head(closest_GAT_to_peak)
+#    V1      V2      V3   V4      V5      V6 V7 V8 V9 V10 V11
+#1 chr1  827380  827381 chr1  827302  827305 36 36  + GAT  76
+#2 chr1  916769  916770 chr1  916719  916722 36 36  + GAT  48
+#3 chr1  924853  924854 chr1  924740  924743 36 36  + GAT 111
+#4 chr1  966653  966654 chr1  966718  966721 36 36  + GAT  65
+#5 chr1  999508  999509 chr1  999577  999580 36 36  + GAT  69
+#6 chr1 1000536 1000537 chr1 1000627 1000630 36 36  + GAT  91
+
+
+GAT_GAT_distance = read.table(paste0(dir, "closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed"), sep="\t", header=FALSE)
+nrow(GAT_GAT_distance)
+#[1] 37308
+head(GAT_GAT_distance)
+#    V1      V2      V3   V4      V5      V6 V7 V8 V9 V10 V11
+#1 chr1  827302  827303 chr1  827223  827224 36 36  + GAT  79
+#2 chr1  916719  916720 chr1  916704  916705 36 36  + GAT  15
+#3 chr1  924740  924741 chr1  925112  925113 36 36  + GAT 372
+#4 chr1  966718  966719 chr1  967159  967160 36 36  + GAT 441
+#5 chr1  999577  999578 chr1  999624  999625 36 36  + GAT  47
+#6 chr1 1000627 1000628 chr1 1000812 1000813 36 36  + GAT 185
+
+# Filter rows where the value in the 11th column (distance) equals 12 or 13 and select columns 1 and 2
+GAT_GAT_distance_12bp = subset(GAT_GAT_distance, V11 == 12, select = c(V1, V2))
+GAT_GAT_distance_13bp = subset(GAT_GAT_distance, V11 == 13, select = c(V1, V2))
+
+nrow(GAT_GAT_distance_12bp) #[1] 1128
+head(GAT_GAT_distance_12bp)
+#      V1       V2
+#98  chr1  8182615
+#100 chr1  8202363
+#202 chr1 13749416
+#216 chr1 15412309
+#278 chr1 16741287
+#280 chr1 16896764
+nrow(GAT_GAT_distance_13bp) #[1] 1031
+head(GAT_GAT_distance_13bp)
+#      V1      V2
+#79  chr1 7494226
+#96  chr1 8120752
+#110 chr1 8494114
+#113 chr1 8607069
+#126 chr1 8915589
+#145 chr1 9827996
+
+# subset rows in closest_GAT_to_peak and select columns of peak summit coordinates info
+peak_summit_12bp = merge(closest_GAT_to_peak, GAT_GAT_distance_12bp, by.x = c("V4", "V5"), by.y = c("V1", "V2"))[, c("V1","V2", "V3")]
+peak_summit_13bp = merge(closest_GAT_to_peak, GAT_GAT_distance_13bp, by.x = c("V4", "V5"), by.y = c("V1", "V2"))[, c("V1","V2", "V3")]
+  
+
+nrow(peak_summit_12bp) #[1] 1128
+head(peak_summit_12bp)
+#    V1        V2        V3
+#1 chr1 101004283 101004284
+#2 chr1 101371400 101371401
+#3 chr1 107739059 107739060
+#4 chr1 108661336 108661337
+#5 chr1 109546472 109546473
+#6 chr1 110004245 110004246
+
+nrow(peak_summit_13bp) #[1] 1035. # 4 extra rows than GAT_GAT_distance_13bp
+head(peak_summit_13bp) 
+#    V1        V2        V3
+#1 chr1 101004283 101004284
+#2 chr1 101371400 101371401
+#3 chr1 107739059 107739060
+#4 chr1 108661336 108661337
+#5 chr1 109546472 109546473
+#6 chr1 110004245 110004246
+
+
+##########################################COHERENCE CHECK: 
+# different peak with same 3mer coordinates: 
+df=merge(closest_GAT_to_peak, GAT_GAT_distance_13bp, by.x = c("V4", "V5"), by.y = c("V1", "V2"))
+duplicated_rows <- duplicated(df[, c("V1", "V2")])
+peak_with_same_3mer <- df[duplicated_rows, ]
+#      V4       V5   V1       V2       V3       V6 V7 V8 V9 V10   V11
+#737 chr4 68822242 chr4 68906038 68906039 68822245 36 36  + GAT 83794
+#739 chr4 68822242 chr4 68865205 68865206 68822245 36 36  + GAT 42961
+#954 chr8    73419 chr8    73204    73205    73422 36 36  + GAT   215
+#956 chr8    73419 chr8    73368    73369    73422 36 36  + GAT    51
+
+##########################################
+
+# use bigWig package to expand the peak summit to 161bp
+library(bigWig)
+peak_161bp_12bp=center.bed(peak_summit_12bp, upstreamWindow = 80, downstreamWindow = 80)
+peak_161bp_13bp=center.bed(peak_summit_13bp, upstreamWindow = 80, downstreamWindow = 80)
+
+nrow(peak_161bp_12bp) #[1] 1128
+head(peak_161bp_12bp)
+#    V1        V2        V3
+#1 chr1 101004203 101004364
+#2 chr1 101371320 101371481
+#3 chr1 107738979 107739140
+#4 chr1 108661256 108661417
+#5 chr1 109546392 109546553
+#6 chr1 110004165 110004326
+
+nrow(peak_161bp_13bp) #[1] 1035
+head(peak_161bp_13bp)
+#    V1        V2        V3
+#1 chr1  10507572  10507733
+#2 chr1 109504024 109504185
+#3 chr1 110214539 110214700
+#4 chr1 111976930 111977091
+#5 chr1 113405743 113405904
+#6 chr1 114756731 114756892
+
+write.table(peak_161bp_12bp, file = "GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed", quote=F, sep="\t", col.names=F, row.names=F)
+write.table(peak_161bp_13bp, file = "GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.bed", quote=F, sep="\t", col.names=F, row.names=F)
+
+```
+
+
+## Regular MEME
+
+convert to fasta file. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+#fasta-get-markov -m 3 $genome > hg38_bkgrnd.txt
+#fasta-get-markov -m 2 $genome > hg38_bkgrnd_2mer.txt
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.fasta
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.fasta
+```
+
+coherence check: \
+```{r engine='bash', eval=F, echo=TRUE}
+head GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.fasta
+>chr1:101004203-101004364
+TTCAGTGAATCCTGGAACATTATGCAAACAATTTCACCATATGTCAATACCTCAAAGAACAAAAGAACCAGTTCTTTGTGTTTCACAATCGAAGGGCTTACCAGTGAACTATACTAGAGCAAAGTCACACAGTGATGAGAACTGAGATTGCAGAAGCCTAA
+>chr1:101371320-101371481
+CATTCATGTGGCCTCTGTCACCTCTCTGAGTCATATGGGAAAGCAAATCTAGGTTCACAGATTTGGCAACTGATAGGCTTAGTTTATTTCCAGAGCAGTTTCTCAGTATGAGTCATATCTGGGAGCATTTGATAGGACACCTTACTCTGAGCTCTGATGGG
+>chr1:107738979-107739140
+AACAACAGATGAAAGGCTCTGTTATAAAGCCTCAGGGAAACAAACACTAATTCAGCTTACTAATTTTATTTGCATTTAGTTTTAACCAGGGTAATGCTTATTTGCTGATGGAAATTTCGATATCATCCTTTGCTCTTCCTCCTGCCTGTGACTTCTCCTTC
+>chr1:108661256-108661417
+CAGTTCCAAGGCGTCGGTTTTGCGTCTCGTAACGGCCGCTGTGGCGCATGCCCAGAAGCCATTTTCAAGGTCCTCTTCCGAACCTTGGCGAGGACCCCTGCGCCTGCCGCGCCGTTGACCCCGCTAGCGTGCGGCTGCGACGCGGCACGGTACGGCAGCTG
+>chr1:109546392-109546553
+ACTCTTCTTTCAAACACCACTGATCAGCTATTAGATCCAAGGAATTGCCAGCAGGTGGCAGTGTGAGCCCAATGGAAGGAGGAAAGGCGAGTGTACGTGGTGGGAGGAGGAAGGGGAGGGCATTAAACATTGCCTGGCAGCCATTTTGTTAATTTATTTTG
+
+
+head GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.fasta
+>chr1:10507572-10507733
+TGTGATGTCTATATAGCAAGGTGCTATGCCCCTGGTAGCTTCTAGGGGGCAGCAGCCGCTTGTTGTTCTGTCTCTTGCTGGCGGGGAGAAGGTTGGACAATTGAGCAATTTGCTCTGGACTCCAGCTCTTAAAGTGGTGCCTGCAGGTCTCCAGGGAGTCA
+>chr1:109504024-109504185
+tgtttgctgaccccGGTCCATCTTAATGCCTAGATGTGTATTTCACCCATGTCCGTACAATAGCACTTAAAGATTTTCTTCCTAGATAGGACACACCCTTCTGAGGTACAGTGAACCCCACCCACAGGCTGAAAAAATAAACCAGTCAGATTGTGCCAGAA
+>chr1:110214539-110214700
+aatctctaatcctcccaataaacttaaaacccggtgattatccccgtttaatagattgaggctgtgagaaggtaaacaacttgcctgagatcacacagccagatagtggccaggctttgaatcaaagccagagtccctgactcccaagcccttgctcttgt
+>chr1:111976930-111977091
+ataagtgttgaacgaatgaaAGATTCCTTGTTGAGATGCAGTTCTGCACCCTCTCTTAAGAATTTCAGCACCAGAGAACTGTCAACAAAGAAATGTCAACAGAGAAATGTCAACAAAGAAAAGGCTTTGAGGTCGTTTGTTCCCAATAGGTGTCCTAAGAT
+>chr1:113405743-113405904
+GATTTGCTCCCTCTGCAGTTTTGTTTTCTCTGTACTCCGATTGCTTCTCCCATGCTTCTCTGCTTTCCAAAGAAAAAACTGACCTTGTATAGATCCTGTCAGCTGATTGCAGTGCTCTTAACTTCTCCATTGTGAGTTGTTCAGTCTGAGGAGTTAGGTAT
+
+
+
+#cp /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/hg38_bkgrnd_2mer.txt .
+#cp /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/hg38_bkgrnd.txt .
+```
+
+
+Perform regular MEME. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme_regular.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme_regular.sh_%j.out
+#SBATCH -e meme_regular.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 4 -oc GATA3_without_mot_12bp_regular_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.fasta
+
+meme -p 4 -oc GATA3_without_mot_13bp_regular_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.fasta
+```
+
+
+
+
 
