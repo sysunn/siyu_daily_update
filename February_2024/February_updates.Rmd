@@ -4591,7 +4591,7 @@ CDF plots already made. \
 
 **xy plots** \
 GATA3 peaks without motifs in quantile 1: \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 calculate_actual_frequency <- function(data) {
   # Use table() to create a frequency table
   actual_frequencies <- table(data)/length(data)
@@ -4629,7 +4629,7 @@ df.peak.nomotif$status="GATA3_peak_without_motifs_quantile1"
 
 
 DHS regions (neg ctrl): \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.ctrl = data.frame(matrix(nrow = 0, ncol = 5))     
 colnames(df.ctrl) = c("dis","anchor_3mer", "query_3mer","abs.dis", "actual_freq")
 for (closest_2nd_dis in Sys.glob(file.path("./closest.2nd.plus*.to.1st.plus.*.indep.DHS.control.bed"))) {
@@ -4658,7 +4658,7 @@ df.ctrl$status="MCF7_DHS_regions"
 ```
 
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.plot=rbind(df.peak.nomotif, df.ctrl)
 df.plot$pattern = paste0(df.plot$anchor_3mer, "-", df.plot$query_3mer)
 
@@ -4670,7 +4670,7 @@ nrow(df.plot[!duplicated(df.plot), ])
 summary(df.plot[!duplicated(df.plot), ])
 ```
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 pdf('xy_closest_2nd_3mer_to_closest_1st_3mer_to_GATA3_peaks_without_motifs_quantile1.pdf', width=15,height=5)
@@ -4713,7 +4713,7 @@ dev.off()
 
 Relative enrichment by subtracting the actual frequency of GATA3 peaks from that of the DHS regions at each relative distance. \
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 # GATA3 peaks
 uniq.df.peak.nomotif=df.peak.nomotif[!duplicated(df.peak.nomotif), 1:5]
   
@@ -4771,7 +4771,7 @@ dev.off()
 
 **GATA3 peaks without motifs in other quantile**: \
 DHS regions (neg ctrl): \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 calculate_actual_frequency <- function(data) {
   # Use table() to create a frequency table
   actual_frequencies <- table(data)/length(data)
@@ -4806,7 +4806,7 @@ df.ctrl$status="MCF7_DHS_regions"
 ```
 
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 quantiles=c("quantile0.8", "quantile0.6", "quantile0.4", "quantile0.2")
 
 for (quantile in quantiles){
@@ -4887,7 +4887,7 @@ dev.off()
 **xy plot** \
 
 GATA3 peaks without motifs: \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 calculate_actual_frequency <- function(data) {
   # Use table() to create a frequency table
   actual_frequencies <- table(data)/length(data)
@@ -4922,7 +4922,7 @@ df.peak.nomotif$status="GATA3_peak_without_motifs_quantile1"
 ```
 
 DHS regions (neg ctrl): \
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.ctrl = data.frame(matrix(nrow = 0, ncol = 5))     
 colnames(df.ctrl) = c("dis","closest_3mer", "abs.dis", "actual_freq")
 for (closest_1st_dis in Sys.glob(file.path("./closest.1st.*.to.indep.DHS.control.consensus.bed"))) {
@@ -4948,7 +4948,7 @@ df.ctrl$status="MCF7_DHS_regions"
 
 ```
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.plot=rbind(df.peak.nomotif, df.ctrl)
 
 df.plot$closest_3mer = factor(df.plot$closest_3mer, levels = c("plus.GAT", "minus.ATC" , "minus.GAT", "plus.ATC"))
@@ -4959,7 +4959,7 @@ nrow(df.plot[!duplicated(df.plot), ])
 summary(df.plot[!duplicated(df.plot), ])
 ```
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 library(lattice)
 library(latticeExtra)
 pdf('xy_closest_1st_3mer_to_peaks_without_motifs_quantile1.pdf', width=15,height=5)
@@ -5003,7 +5003,7 @@ dev.off()
 
 Again, we can demonstrate the relative enrichment of closest 3mer by subtracting the actual frequency of GATA3 peaks from that of the DHS regions at each relative distance. \
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 # GATA3 peaks
 uniq.df.peak.nomotif=df.peak.nomotif[!duplicated(df.peak.nomotif), 1:4]
   
