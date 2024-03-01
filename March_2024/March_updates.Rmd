@@ -1,0 +1,984 @@
+---
+title: \sf February_updates
+header-includes:
+- \usepackage{color}
+- \usepackage{float}
+- \DeclareUnicodeCharacter{2212}{-}
+date: "February 05, 2024"
+output:
+  bookdown::html_document2:
+    toc: true
+fontsize: 14pt
+geometry: margin=1in
+---
+
+```{css, echo=FALSE}
+body .main-container {
+  max-width: 1200px !important;
+  width: 1200px !important;
+}
+body {
+  max-width: 1200px !important;
+}
+
+pre {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightcyan;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.revision {
+  background-color: #FFF4F2;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.highlighted
+{
+   color:red;
+}
+
+.highlighted2
+{
+   color:blue;
+}
+```
+
+```{r engine='R', eval=TRUE, echo=F}
+knitr::opts_chunk$set(class.source = "watch-out")
+```
+
+
+# Install required packages
+Install `bigWig` and `latticeExtra` package \
+```{r engine='R', eval=F, echo=T}
+install.packages("devtools", quiet = TRUE)
+library(devtools)
+devtools::install_github('andrelmartins/bigWig',
+              subdir='bigWig')
+library(bigWig)
+
+install.packages("DESeq2", quiet = TRUE)
+install.packages("dplyr", quiet = TRUE)
+```
+
+Install `bedtools` \
+```{r engine='bash', eval=F, echo=T}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install bedtools
+```
+
+Install `Biostrings` \
+```{r engine='R', eval=F, echo=T}
+if (!requireNamespace("Biostrings", quietly = TRUE)) {
+  if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  BiocManager::install("Biostrings")
+}
+```
+
+Install `latticeExtra` \
+```{r engine='R', eval=TRUE, echo=T}
+install.packages("latticeExtra", quiet = TRUE)
+```
+
+# Mar 1st
+
+# Testing the MEME spacing penalty parameters (-wg and -ws):
+a. Take ~1000 peaks that are enriched with the widest motif that has not been detected by MEME before (GAT-GAT with 12~13bp relative distance between the two Gs). Run with regular MEME and see if we can get this motif out. \
+b. If get the wide motif out with regular MEME, we will saturate this peak set with ~1000 "peaks without motifs" each time, until I no longer get the wide motif out from the regular MEME. \
+c. The saturated peak set that we no longer identify the wide motif with the regular MEME, is the peak set I will use to test the -ws and -wg parameter. \
+d. Determine the MEME settings where this wide motif could be obtained. \
+
+## Prepare peaks
+
+### Count how many GAT-GAT pair have 12bp or 13bp distance relative to peaks without motifs
+```{r engine='bash', eval=F, echo=TRUE}
+wc -l closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed #37308
+awk '$11 == 12' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed | wc -l #1128
+awk '$11 == 13' closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed | wc -l #1031
+```
+
+### Extract peak sets with relative distance between two plus GAT==12bp, and ==13bp
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MEME_wgws) \
+```{r engine='R', eval=F, echo=TRUE}
+module load R/4.1.2
+R
+dir="/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/GAT_ATC_240218/"
+closest_GAT_to_peak = read.table(paste0(dir, "closest.1st.plus.GAT.to.GATA3_without_motifs_123456_78_161bp_mast.bed"), sep="\t", header=FALSE)
+nrow(closest_GAT_to_peak)
+#[1] 37308
+head(closest_GAT_to_peak)
+#    V1      V2      V3   V4      V5      V6 V7 V8 V9 V10 V11
+#1 chr1  827380  827381 chr1  827302  827305 36 36  + GAT  76
+#2 chr1  916769  916770 chr1  916719  916722 36 36  + GAT  48
+#3 chr1  924853  924854 chr1  924740  924743 36 36  + GAT 111
+#4 chr1  966653  966654 chr1  966718  966721 36 36  + GAT  65
+#5 chr1  999508  999509 chr1  999577  999580 36 36  + GAT  69
+#6 chr1 1000536 1000537 chr1 1000627 1000630 36 36  + GAT  91
+
+
+GAT_GAT_distance = read.table(paste0(dir, "closest.2nd.plus.GAT.to.1st.plus.GAT.GATA3_without_motifs_123456_78_161bp_mast.bed"), sep="\t", header=FALSE)
+nrow(GAT_GAT_distance)
+#[1] 37308
+head(GAT_GAT_distance)
+#    V1      V2      V3   V4      V5      V6 V7 V8 V9 V10 V11
+#1 chr1  827302  827303 chr1  827223  827224 36 36  + GAT  79
+#2 chr1  916719  916720 chr1  916704  916705 36 36  + GAT  15
+#3 chr1  924740  924741 chr1  925112  925113 36 36  + GAT 372
+#4 chr1  966718  966719 chr1  967159  967160 36 36  + GAT 441
+#5 chr1  999577  999578 chr1  999624  999625 36 36  + GAT  47
+#6 chr1 1000627 1000628 chr1 1000812 1000813 36 36  + GAT 185
+
+# Filter rows where the value in the 11th column (distance) equals 12 or 13 and select columns 1 and 2
+GAT_GAT_distance_12bp = subset(GAT_GAT_distance, V11 == 12, select = c(V1, V2))
+GAT_GAT_distance_13bp = subset(GAT_GAT_distance, V11 == 13, select = c(V1, V2))
+
+nrow(GAT_GAT_distance_12bp) #[1] 1128
+head(GAT_GAT_distance_12bp)
+#      V1       V2
+#98  chr1  8182615
+#100 chr1  8202363
+#202 chr1 13749416
+#216 chr1 15412309
+#278 chr1 16741287
+#280 chr1 16896764
+nrow(GAT_GAT_distance_13bp) #[1] 1031
+head(GAT_GAT_distance_13bp)
+#      V1      V2
+#79  chr1 7494226
+#96  chr1 8120752
+#110 chr1 8494114
+#113 chr1 8607069
+#126 chr1 8915589
+#145 chr1 9827996
+
+# subset rows in closest_GAT_to_peak do not match with either GAT_GAT_distance_12bp or GAT_GAT_distance_13bp
+library(dplyr)
+temp=rbind(GAT_GAT_distance_12bp, GAT_GAT_distance_13bp)
+colnames(temp)=c("V4", "V5")
+peak_summit_other = anti_join(closest_GAT_to_peak, temp, by= c("V4", "V5"))[, c("V1","V2", "V3")]
+nrow(peak_summit_other) #[1] 35149
+head(peak_summit_other)
+#    V1      V2      V3   
+#1 chr1  827380  827381 
+#2 chr1  916769  916770 
+#3 chr1  924853  924854
+#4 chr1  966653  966654 
+#5 chr1  999508  999509 
+#6 chr1 1000536 1000537
+
+# subset rows in closest_GAT_to_peak and select columns of peak summit coordinates info
+peak_summit_12bp = merge(closest_GAT_to_peak, GAT_GAT_distance_12bp, by.x = c("V4", "V5"), by.y = c("V1", "V2"))[, c("V1","V2", "V3")]
+peak_summit_13bp = merge(closest_GAT_to_peak, GAT_GAT_distance_13bp, by.x = c("V4", "V5"), by.y = c("V1", "V2"))[, c("V1","V2", "V3")]
+  
+
+nrow(peak_summit_12bp) #[1] 1128
+head(peak_summit_12bp)
+#    V1        V2        V3
+#1 chr1 101004283 101004284
+#2 chr1 101371400 101371401
+#3 chr1 107739059 107739060
+#4 chr1 108661336 108661337
+#5 chr1 109546472 109546473
+#6 chr1 110004245 110004246
+
+nrow(peak_summit_13bp) #[1] 1035. # 4 extra rows than GAT_GAT_distance_13bp
+head(peak_summit_13bp) 
+#    V1        V2        V3
+#1 chr1 101004283 101004284
+#2 chr1 101371400 101371401
+#3 chr1 107739059 107739060
+#4 chr1 108661336 108661337
+#5 chr1 109546472 109546473
+#6 chr1 110004245 110004246
+
+
+##########################################COHERENCE CHECK: 
+# different peak with same 3mer coordinates: 
+df=merge(closest_GAT_to_peak, GAT_GAT_distance_13bp, by.x = c("V4", "V5"), by.y = c("V1", "V2"))
+duplicated_rows <- duplicated(df[, c("V1", "V2")])
+peak_with_same_3mer <- df[duplicated_rows, ]
+#      V4       V5   V1       V2       V3       V6 V7 V8 V9 V10   V11
+#737 chr4 68822242 chr4 68906038 68906039 68822245 36 36  + GAT 83794
+#739 chr4 68822242 chr4 68865205 68865206 68822245 36 36  + GAT 42961
+#954 chr8    73419 chr8    73204    73205    73422 36 36  + GAT   215
+#956 chr8    73419 chr8    73368    73369    73422 36 36  + GAT    51
+
+##########################################
+
+# use bigWig package to expand the peak summit to 161bp
+library(bigWig)
+peak_161bp_12bp=center.bed(peak_summit_12bp, upstreamWindow = 80, downstreamWindow = 80)
+peak_161bp_13bp=center.bed(peak_summit_13bp, upstreamWindow = 80, downstreamWindow = 80)
+peak_161bp_other=center.bed(peak_summit_other, upstreamWindow = 80, downstreamWindow = 80)
+
+nrow(peak_161bp_12bp) #[1] 1128
+head(peak_161bp_12bp)
+#    V1        V2        V3
+#1 chr1 101004203 101004364
+#2 chr1 101371320 101371481
+#3 chr1 107738979 107739140
+#4 chr1 108661256 108661417
+#5 chr1 109546392 109546553
+#6 chr1 110004165 110004326
+
+nrow(peak_161bp_13bp) #[1] 1035
+head(peak_161bp_13bp)
+#    V1        V2        V3
+#1 chr1  10507572  10507733
+#2 chr1 109504024 109504185
+#3 chr1 110214539 110214700
+#4 chr1 111976930 111977091
+#5 chr1 113405743 113405904
+#6 chr1 114756731 114756892
+
+nrow(peak_161bp_other) #[1] 35149
+head(peak_161bp_other)
+#    V1      V2      V3
+#1 chr1  827300  827461
+#2 chr1  916689  916850
+#3 chr1  924773  924934
+#4 chr1  966573  966734
+#5 chr1  999428  999589
+#6 chr1 1000456 1000617
+
+write.table(peak_161bp_12bp, file = "GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed", quote=F, sep="\t", col.names=F, row.names=F)
+write.table(peak_161bp_13bp, file = "GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.bed", quote=F, sep="\t", col.names=F, row.names=F)
+write.table(peak_161bp_other, file = "GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_other.bed", quote=F, sep="\t", col.names=F, row.names=F)
+
+```
+
+
+## Regular MEME
+
+convert to fasta file. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+#fasta-get-markov -m 3 $genome > hg38_bkgrnd.txt
+#fasta-get-markov -m 2 $genome > hg38_bkgrnd_2mer.txt
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.fasta
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.fasta
+```
+
+
+
+coherence check: \
+```{r engine='bash', eval=F, echo=TRUE}
+head GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.fasta
+>chr1:101004203-101004364
+TTCAGTGAATCCTGGAACATTATGCAAACAATTTCACCATATGTCAATACCTCAAAGAACAAAAGAACCAGTTCTTTGTGTTTCACAATCGAAGGGCTTACCAGTGAACTATACTAGAGCAAAGTCACACAGTGATGAGAACTGAGATTGCAGAAGCCTAA
+>chr1:101371320-101371481
+CATTCATGTGGCCTCTGTCACCTCTCTGAGTCATATGGGAAAGCAAATCTAGGTTCACAGATTTGGCAACTGATAGGCTTAGTTTATTTCCAGAGCAGTTTCTCAGTATGAGTCATATCTGGGAGCATTTGATAGGACACCTTACTCTGAGCTCTGATGGG
+>chr1:107738979-107739140
+AACAACAGATGAAAGGCTCTGTTATAAAGCCTCAGGGAAACAAACACTAATTCAGCTTACTAATTTTATTTGCATTTAGTTTTAACCAGGGTAATGCTTATTTGCTGATGGAAATTTCGATATCATCCTTTGCTCTTCCTCCTGCCTGTGACTTCTCCTTC
+>chr1:108661256-108661417
+CAGTTCCAAGGCGTCGGTTTTGCGTCTCGTAACGGCCGCTGTGGCGCATGCCCAGAAGCCATTTTCAAGGTCCTCTTCCGAACCTTGGCGAGGACCCCTGCGCCTGCCGCGCCGTTGACCCCGCTAGCGTGCGGCTGCGACGCGGCACGGTACGGCAGCTG
+>chr1:109546392-109546553
+ACTCTTCTTTCAAACACCACTGATCAGCTATTAGATCCAAGGAATTGCCAGCAGGTGGCAGTGTGAGCCCAATGGAAGGAGGAAAGGCGAGTGTACGTGGTGGGAGGAGGAAGGGGAGGGCATTAAACATTGCCTGGCAGCCATTTTGTTAATTTATTTTG
+
+
+head GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.fasta
+>chr1:10507572-10507733
+TGTGATGTCTATATAGCAAGGTGCTATGCCCCTGGTAGCTTCTAGGGGGCAGCAGCCGCTTGTTGTTCTGTCTCTTGCTGGCGGGGAGAAGGTTGGACAATTGAGCAATTTGCTCTGGACTCCAGCTCTTAAAGTGGTGCCTGCAGGTCTCCAGGGAGTCA
+>chr1:109504024-109504185
+tgtttgctgaccccGGTCCATCTTAATGCCTAGATGTGTATTTCACCCATGTCCGTACAATAGCACTTAAAGATTTTCTTCCTAGATAGGACACACCCTTCTGAGGTACAGTGAACCCCACCCACAGGCTGAAAAAATAAACCAGTCAGATTGTGCCAGAA
+>chr1:110214539-110214700
+aatctctaatcctcccaataaacttaaaacccggtgattatccccgtttaatagattgaggctgtgagaaggtaaacaacttgcctgagatcacacagccagatagtggccaggctttgaatcaaagccagagtccctgactcccaagcccttgctcttgt
+>chr1:111976930-111977091
+ataagtgttgaacgaatgaaAGATTCCTTGTTGAGATGCAGTTCTGCACCCTCTCTTAAGAATTTCAGCACCAGAGAACTGTCAACAAAGAAATGTCAACAGAGAAATGTCAACAAAGAAAAGGCTTTGAGGTCGTTTGTTCCCAATAGGTGTCCTAAGAT
+>chr1:113405743-113405904
+GATTTGCTCCCTCTGCAGTTTTGTTTTCTCTGTACTCCGATTGCTTCTCCCATGCTTCTCTGCTTTCCAAAGAAAAAACTGACCTTGTATAGATCCTGTCAGCTGATTGCAGTGCTCTTAACTTCTCCATTGTGAGTTGTTCAGTCTGAGGAGTTAGGTAT
+
+
+
+#cp /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/hg38_bkgrnd_2mer.txt .
+#cp /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/hg38_bkgrnd.txt .
+```
+
+
+Perform regular MEME. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme_regular.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme_regular.sh_%j.out
+#SBATCH -e meme_regular.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 4 -oc GATA3_without_mot_12bp_regular_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.fasta
+
+meme -p 4 -oc GATA3_without_mot_13bp_regular_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_13bp.fasta
+```
+
+The top enriched motif for GATA3_without_mot_12bp peaks are exactly GAT-GAT with 12bp relative distances. \
+The top enriched motif for GATA3_without_mot_13bp peaks are exactly GAT-GAT with 13bp relative distances. \
+
+## Saturating peak
+
+Saturate the peak with 12bp wide motif with 1000 or 2000 or 3000 other peak sequences. \
+```{r engine='bash', eval=F, echo=TRUE}
+(head -n 1000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_other.bed && cat GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed) > GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add1000.bed #2128
+
+(head -n 2000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_other.bed && cat GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed) > GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add2000.bed #3128
+
+(head -n 3000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_other.bed && cat GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp.bed) > GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add3000.bed #4128
+
+```
+
+
+convert to fasta \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add1000.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add1000.fasta
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add2000.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add2000.fasta
+
+fastaFromBed -fi $genome -bed GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add3000.bed -fo GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add3000.fasta
+```
+
+coherence check: \
+```{r engine='bash', eval=F, echo=TRUE}
+wc -l GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add1000.fasta #4256/2=2128
+head GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add1000.fasta
+>chr1:827300-827461
+CAGATCTGGCAGCTGAGCGACAGGCTTCGGAGCATTTCCGGGCGTCGCGGGACTCCCCGCCGACAGGAGGGCGGTTGCCGAGCCTGTGACATCCGCGGAGACCAGCAGACCCCGGGTGTGGAGGACGCCGCAGGGAGGGGACTGCGTGGCTGGGTTTGGCC
+>chr1:916689-916850
+CCTGGCAGCATGAGCGATGGCAGGCCCAGCGATAAGAAACTAATAATTTATGCTTCCAGCTCCCGGGGCCGGCGCCGAGGGAAGGTTGGGCCACAGCCTCCCCCGCACTGAGCGGCTGCAGTCCTTTATTGCACAAATTATTAACGACCAGAGAATGAATG
+>chr1:924773-924934
+TGCATCGAGGTGGAGTGCGGCGCCAACCGCGCGCTGCTCTACGTGCGCAAACTCTGCCAGGGCAGCAAGGGCCCGTCCATCCGCCACCGCGGCGAGTGGCTCACGCCCAACGAGTTCCAGTTCGTCAGCGGCCGCGAGACGGCCAAGGACTGGAAGCGCAG
+>chr1:966573-966734
+CGGGCCTCCTTCTCCAGAAAGCCCTCGCTGAAGGGAAACAGGTGAGCGGGGCGTGGGTGCGGCCACCTGGGCGCAGGGCTCCCCCACCCGCTCCGGGGCCAAGCCACGAGACCCCTTGCCTTGTCCCCAGAGAGGACAGCGCGCGGATGTCGGCCGGCCTG
+>chr1:999428-999589
+GCGGCTGCGGGAGCGACACAGGAGGAGAGGTCGGTGCCGGGTCCCGGGGGTcccgcgccctccccccgcctccaagccgccgccgcccgcgccTCACCCGTCACCTGCACGCGACGCAGGCTCCGCAGGTGTCTCACGGTCATCTCCAGGATGTCCGCCTT
+
+```
+
+
+Perform regular MEME. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme_regular1.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme_regular1.sh_%j.out
+#SBATCH -e meme_regular1.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 4 -oc GATA3_without_mot_12bp_regular_meme_output1 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add1000.fasta
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme_regular2.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme_regular2.sh_%j.out
+#SBATCH -e meme_regular2.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 4 -oc GATA3_without_mot_12bp_regular_meme_output2 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add2000.fasta
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme_regular3.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme_regular3.sh_%j.out
+#SBATCH -e meme_regular3.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 4 -oc GATA3_without_mot_12bp_regular_meme_output3 -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add3000.fasta
+```
+
+
+
+## including -wg/-ws in MEME
+From MEME suite: \
+Once a candidate motif has been found, the multiple alignment method performs a separate pairwise alignment of the site with the highest probability and each other possible site (the alignment includes width/2 positions on either side of the sites). \
+
+The pairwise alignments are then combined and the method determines the widest section of the motif with no insertions or deletions. If this alignment is shorter than minw, it tries to find an alignment allowing up to one insertion/deletion per motif column. This continues (allowing up to 2, 3 ... insertions/deletions per motif column) until an alignment of width at least minw is found. \
+
+The switches -nomatrim, -wg, -ws and -noendgaps control trimming of motifs using the multiple alignment method. Specifying the -nomatrim option causes MEME to skip trimming altogether. The -wg and -ws options set the costs of including gaps in the alignments and the -noendgaps allows gaps at the beginning and end to be treated specially. \
+
+After trimming, the number of occurrences is then adjusted to maximize the motif E-value, and then the motif width is further shortened to optimize the E-value. \
+
+**-ws**: The gap opening cost for creating the alignments used to trim the motif. Defalt==11. \
+
+**-wg**: The gap extension cost for creating the alignments used to trim the motif. Defalt==1. \
+
+test_meme.sh \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=test_meme_ws_XXXXXX_wg_YYYYYY.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=40G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o test_meme_ws_XXXXXX_wg_YYYYYY.sh_%j.out
+#SBATCH -e test_meme_ws_XXXXXX_wg_YYYYYY.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+test_ws=XXXXXX
+test_wg=YYYYYY
+
+meme -p 8 -oc GATA3_without_mot_12bp_test_ws_XXXXXX_wg_YYYYYY_meme_output -nmotifs 5 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 25 -ws ${test_ws} -wg ${test_wg} -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 100000000 GATA3_without_motifs_123456_78_161bp_pGAT_pGAT_dis_12bp_add2000.fasta
+```
+
+parallel running: \
+```{r engine='bash', eval=F, echo=TRUE}
+sh_file=test_meme.sh
+
+ws_value=("10" "9" "8" "7" "6" "5" "4" "3" "2" "1")
+wg_value=("1")
+
+for test_ws in "${ws_value[@]}"
+do
+    echo $test_ws
+    for test_wg in "${wg_value[@]}"
+    do
+      echo $test_wg
+      sed -e "s/XXXXXX/${test_ws}/g" -e "s/YYYYYY/${test_wg}/g" "$sh_file" > test_meme_ws_${test_ws}_wg_${test_wg}.sh  
+      sbatch test_meme_ws_${test_ws}_wg_${test_wg}.sh  
+      sleep 1
+    done
+done
+```
+
+
+# peak without motif rank by intensity
+
+refer to January_updates section 3.1 Parse peak based on Intensity: \
+```{r engine='bash', eval=F, echo=TRUE}
+cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678
+module load R/4.1.2 
+R 
+load('240108_GATA3_ChIP_deseq.Rdata')
+length(peak.intensities)
+#[1] 37308
+options(scipen = 999)
+head(peak.intensities)
+#  chr1:827180-827581   chr1:916569-916970   chr1:924653-925054 
+#            45.32469             36.69993             30.44684 
+#  chr1:966453-966854   chr1:999308-999709 chr1:1000336-1000737 
+#            26.87016             21.22455             24.34263
+chr = sapply(strsplit(names(peak.intensities), ":"), "[", 1)
+rnge = sapply(strsplit(names(peak.intensities), ":"), "[", 2)
+start = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 200
+end = as.numeric(sapply(strsplit(rnge, "-"), "[", 2)) - 200
+
+peak=data.frame(chr, start, end, peak.intensities)
+head(peak)
+#                      chr   start     end peak.intensities
+#chr1:827180-827581   chr1  827380  827381         45.32469
+#chr1:916569-916970   chr1  916769  916770         36.69993
+#chr1:924653-925054   chr1  924853  924854         30.44684
+#chr1:966453-966854   chr1  966653  966654         26.87016
+#chr1:999308-999709   chr1  999508  999509         21.22455
+#chr1:1000336-1000737 chr1 1000536 1000537         24.34263
+nrow(peak)
+#[1] 37308
+ranked_peak <- peak[order(-peak[, 4]), ]
+
+write.table(ranked_peak, file = 'peak_without_motifs_123456_78_summits_rank_by_DESeq2_intensity.bed', sep = '\t', quote=FALSE, col.names=FALSE, row.names=FALSE )
+```
+
+## top 10,000
+
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MEME_wgws) \
+```{r engine='bash', eval=F, echo=TRUE}
+cp /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/peak_161_without_motifs_12345678/peak_without_motifs_123456_78_summits_rank_by_DESeq2_intensity.bed .
+
+# expand window to 101bp
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+bedtools slop -i peak_without_motifs_123456_78_summits_rank_by_DESeq2_intensity.bed -g $sizes -b 50 > without_motifs_101bp.bed
+```
+
+meme_top10000.sh: \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme_top10000.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 64
+#SBATCH -p himem
+#SBATCH --qos=himem
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme_top10000.sh_%j.out
+#SBATCH -e meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+
+module load meme/5.4.1
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+#most=10000
+
+#head -n $most without_motifs_101bp.bed > without_motifs_101bp_${most}.bed
+#fastaFromBed -fi $genome -bed without_motifs_101bp_${most}.bed -fo without_motifs_101bp_${most}.fasta
+
+meme -p 64 without_motifs_101bp_10000.fasta -oc without_motifs_101bp_top_10000_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+
+```
+
+
+# Pre-STREME peaks
+refer to GATA3_ChIP_motif_analysis section 2.8 \
+
+```{r engine='bash', eval=F, echo=TRUE}
+wc -l /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta #20000
+```
+
+## Failed
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=96prestreme_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 96prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 96prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 96 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1
+```
+
+Failed due to MPI error. \
+
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=120prestreme_meme_top10000.sh
+#SBATCH -N 10
+#SBATCH -n 10
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 120prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 120prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+module load gnu-parallel/20160622
+
+meme -p 120 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_120 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1
+```
+
+Failed MPI error. \
+
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=72.1prestreme_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72.1prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 72.1prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+module load gnu-parallel/20160622
+
+meme -p 72 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_72_1 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1
+```
+
+Failed MPI error. \
+
+## Completed MEME
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=72prestreme_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 72prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 72 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_72 -nmotifs 5 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1
+```
+
+Complete. \
+Top5 motifs have really low matched sites and almost the same IC at each base. \
+
+### ExhaustiveMEME round 7
+change to 10 to 30 width, and markov model of 3: \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=72.2prestreme_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=35G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72.2prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 72.2prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 72 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_72_2 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+
+```
+
+Good outputs, the third motif is a GAT-AGATA with 12bp relative distances. \
+Conclusion: changing the background model to 3 and increase the minw to 10 really helps the motif identification. \
+
+### Mast
+
+changed the folder name from without_motifs_123456_top10000_101bp_meme_output_72_2 to without_motifs_123456_top10000_101bp_meme_output; \
+and saved in /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MEME_pre_streme. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i without_motifs_123456_top10000_101bp_meme_output/meme.txt
+        # GATBNNDNNDNWGATAAN_meme.txt    ---motif7 (match to GATA3)
+#mkdir individual_meme
+cp GATBNNDNNDNWGATAAN_meme.txt individual_meme/GATAmotif7_meme.txt
+rm *meme.txt
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+cat GATBNNDNNDNWGATAAN_meme.txt
+MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
+
+ALPHABET= ACGT
+
+strands: + -
+
+A 0.295 C 0.205 G 0.205 T 0.295
+
+MOTIF	GATBNNDNNDNWGATAAN
+letter-probability matrix: alength= 4 w= 18 nsites= 1376 E= 8.0e-588 
+ 0.000000  0.001453  0.998547  0.000000 
+ 0.999273  0.000000  0.000000  0.000727 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.102471  0.238372  0.345203  0.313953 
+ 0.220930  0.179506  0.244186  0.355378 
+ 0.283430  0.260901  0.205669  0.250000 
+ 0.407703  0.162791  0.216570  0.212936 
+ 0.364826  0.192587  0.227471  0.215116 
+ 0.307413  0.199855  0.191134  0.301599 
+ 0.336483  0.152616  0.256541  0.254360 
+ 0.260174  0.295058  0.215843  0.228924 
+ 0.553779  0.031977  0.038517  0.375727 
+ 0.000000  0.000000  1.000000  0.000000 
+ 1.000000  0.000000  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.679506  0.031250  0.005087  0.284157 
+ 0.534157  0.066860  0.192587  0.206395 
+ 0.294331  0.252180  0.257994  0.195494 
+```
+
+Then use MAST to query GATA3-like motif7 from GATA3 peaks without motif 123456. \
+The output contains the motif coordinated within peak regions (101bp). \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+# Mast find peaks with motif7
+mast -hit_list -best individual_meme//GATAmotif7_meme.txt /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456.fasta > mast_GATA3_PSWM_in_peaks_round7.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round7.txt
+wc -l mast_GATA3_PSWM_in_peaks_round7.txt #4113
+wc -l mast_GATA3_PSWM_in_peaks_round7.bed #4110
+```
+
+Use `intersectBed` with `-v` option to find peaks without motif 1234567. \
+
+And convert to fasta. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks (without motif1, 2, 3, 4, 5, 6), exclude peaks with motif7
+intersectBed -v -a /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456.bed -b mast_GATA3_PSWM_in_peaks_round7.bed > without_motifs_1234567.bed #51928
+fastaFromBed -fi $genome -bed without_motifs_1234567.bed -fo without_motifs_1234567.fasta
+
+
+wc -l without_motifs_1234567.bed #51928
+head without_motifs_1234567.bed
+wc -l without_motifs_1234567.fasta #103856
+head without_motifs_1234567.fasta
+```
+
+
+### ExhaustiveMEME round 8
+sort and select top 10000 from peaks without motif 1234567. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_1234567.bed | head -n 10000 > without_motifs_1234567_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_1234567_top10000.bed -fo without_motifs_1234567_top10000.fasta
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=72without_motifs_1234567_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72without_motifs_1234567_meme_top10000.sh_%j.out
+#SBATCH -e 72without_motifs_1234567_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 72 without_motifs_1234567_top10000.fasta -oc without_motifs_1234567_top10000_101bp_meme_output_72 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+
+```
+
+
+The fourth meme motif is a AGAT-AGATA with 13bp relative distances. \
+
+
+### Mast
+
+changed the folder name from without_motifs_1234567_top10000_101bp_meme_output_72 to without_motifs_1234567_top10000_101bp_meme_output; \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i without_motifs_1234567_top10000_101bp_meme_output/meme.txt
+        # NAGATBDNWRDNNNWGATA_meme.txt    ---motif8 (match to GATA3)
+#mkdir individual_meme
+cp NAGATBDNWRDNNNWGATA_meme.txt individual_meme/GATAmotif8_meme.txt
+rm *meme.txt
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+cat GATAmotif8_meme.txt
+MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
+
+ALPHABET= ACGT
+
+strands: + -
+
+A 0.295 C 0.205 G 0.205 T 0.295
+
+MOTIF	NAGATBDNWRDNNNWGATA
+letter-probability matrix: alength= 4 w= 19 nsites= 862 E= 1.4e-222 
+ 0.255220  0.319026  0.252900  0.172854 
+ 0.744780  0.012761  0.000000  0.242459 
+ 0.005800  0.000000  0.994200  0.000000 
+ 0.981439  0.004640  0.009281  0.004640 
+ 0.002320  0.006961  0.009281  0.981439 
+ 0.099768  0.295824  0.315545  0.288863 
+ 0.341067  0.109049  0.238979  0.310905 
+ 0.276102  0.251740  0.259861  0.212297 
+ 0.421114  0.156613  0.201856  0.220418 
+ 0.428074  0.119490  0.248260  0.204176 
+ 0.389791  0.185615  0.215777  0.208817 
+ 0.240139  0.177494  0.243619  0.338747 
+ 0.325986  0.185615  0.258701  0.229698 
+ 0.258701  0.320186  0.248260  0.172854 
+ 0.600928  0.012761  0.011601  0.374710 
+ 0.013921  0.003480  0.977958  0.004640 
+ 0.965197  0.008121  0.012761  0.013921 
+ 0.010441  0.018561  0.009281  0.961717 
+ 0.810905  0.011601  0.033643  0.143852 
+```
+
+Then use MAST to query GATA3-like motif7 from GATA3 peaks without motif 123456. \
+The output contains the motif coordinated within peak regions (101bp). \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+# Mast find peaks with motif7
+mast -hit_list -best individual_meme//GATAmotif8_meme.txt without_motifs_1234567.fasta > mast_GATA3_PSWM_in_peaks_round8.txt
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round8.txt
+wc -l mast_GATA3_PSWM_in_peaks_round8.txt #4382
+wc -l mast_GATA3_PSWM_in_peaks_round8.bed #4379
+```
+
+Use `intersectBed` with `-v` option to find peaks without motif 12345678. \
+
+And convert to fasta. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks (without motif1, 2, 3, 4, 5, 6, 7), exclude peaks with motif8
+intersectBed -v -a without_motifs_1234567.bed -b mast_GATA3_PSWM_in_peaks_round8.bed > without_motifs_12345678.bed #47549
+fastaFromBed -fi $genome -bed without_motifs_12345678.bed -fo without_motifs_12345678.fasta
+
+
+wc -l without_motifs_12345678.bed #47549
+head without_motifs_12345678.bed
+wc -l without_motifs_12345678.fasta #95098
+head without_motifs_12345678.fasta
+```
+
+
+### ExhaustiveMEME round 9
+sort and select top 10000 from peaks without motif 12345678. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 10000
+sort -nrk5,5 without_motifs_12345678.bed | head -n 10000 > without_motifs_12345678_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345678_top10000.bed -fo without_motifs_12345678_top10000.fasta
+```
+
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=72without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_top10000.fasta -oc without_motifs_12345678_top10000_101bp_meme_output_72 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+
+```
+
+
+
+
+## Running job
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=96.1prestreme_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G 
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 96.1prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 96.1prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 96 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_96_1 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1
+```
+
+
+
+
