@@ -3149,7 +3149,7 @@ nrow(df.all.DHS)
 head(df.all.DHS)
 ```
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.all.DHS.unique=df.all.DHS[!duplicated(df.all.DHS), ]
 df.all.DHS.unique$pattern=paste0(df.all.DHS.unique$anchor_3mer, "-", df.all.DHS.unique$query_3mer)
 
@@ -3157,7 +3157,7 @@ unique(df.all.DHS.unique$pattern)
 df.all.DHS.unique$pattern = factor(df.all.DHS.unique$pattern, levels = c("GAT-AAA" ,"GAT-TAA", "GAT-ATA", "GAT-TTA", "GAT-AAT", "GAT-TAT", "GAT-GAT", "GAT-ATT", "GAT-TTT", "GAT-ATC", "GAT-AGA", "GAT-TCT", "GAT-TAG", "GAT-CTA"))
 ```
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.plot=rbind(df.all.unique, df.all.DHS.unique)
 df.plot$status= factor(df.plot$status, levels=c("motif_1", "indep.DHS.control"))
 library(lattice)
@@ -3248,7 +3248,7 @@ head(df.all)
 ```
 
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.all.unique=df.all[!duplicated(df.all), ]
 df.all.unique$pattern=paste0(df.all.unique$anchor_3mer, "-", df.all.unique$query_3mer)
 
@@ -3260,7 +3260,7 @@ df.all.unique$status = factor(df.all.unique$status, levels = c("motif_4","motif_
 ```
 
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 my_motifs = c("motif_4","motif_2", "motif_6", "motif_5")
 for (motif in my_motifs){
   print(motif)
