@@ -62,6 +62,137 @@ knitr::opts_chunk$set(class.source = "watch-out")
 
 # Install required packages
 
+
+# SeqOutbias 3mer coordinates generation
+
+## hg38 with 10,000 read size
+
+**3mer_df**: generating a .txt file where the first column are all 64 3mer, second column are the index, and the third column are the corresponding reversed 3mer’s index (indexrc). \
+
+```{r engine='R', eval=F, echo=TRUE}
+#define function to output the reverse compliment sequence
+revcomp <- function(sequence) {
+  complement_mapping <- c("A" = "T", "T" = "A", "C" = "G", "G" = "C")
+  complemented_sequence <- sapply(strsplit(rev(strsplit(sequence, "")[[1]]), NULL), function(base) complement_mapping[base])
+  complemented_sequence <- paste(complemented_sequence, collapse = "")
+  return(complemented_sequence)
+}
+
+# 64 3mer with index
+all.64 = expand.grid(rep(list(c('A','C','G','T')), 3))
+all.64.df = data.frame(apply(all.64, 1 , paste, collapse = ""))
+all.64.df[,1] = all.64.df[order(all.64.df[,1]),]
+all.64.df[,2] = 1:64
+
+# 64 reversed 3mer with indexrc
+rev.df = data.frame(as.character(all.64.df[,1]))
+rev.df[] = apply(rev.df, 1, revcomp)
+rev.df[,2] = 1:64
+colnames(rev.df)= c('rc', 'indexrc')
+
+
+colnames(all.64.df) = c('three_mer', 'index')
+all.64.df.rc = merge(all.64.df, rev.df, by.x = 'three_mer', by.y = 'rc')
+write.table(all.64.df.rc, file = 'all_64_df.txt', quote=FALSE, row.names =FALSE, col.names = FALSE, sep = '\t')
+```
+
+Ref Genome is the full hg38 genome; \
+Use read-size=10,000 –kmer-size=3 –plus-offset=3 –minus-offset=3 \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#! /bin/sh
+
+#SBATCH --job-name=getfull3mer_10000.sh     
+#SBATCH -N 1                  
+#SBATCH -n 1                 
+#SBATCH -c 32                  
+#SBATCH -p general           
+#SBATCH --qos=general      
+#SBATCH --mem=128G               
+#SBATCH --mail-type=ALL 
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o getfull3mer_10000.sh_%j.out
+#SBATCH -e getfull3mer_10000.sh_%j.err
+
+hostname
+export PATH=$PATH:/home/FCAM/ssun/packages/://home/FCAM/ssun/scripts
+module load genometools/1.5.10
+module load ucsc_genome/2012.05.22
+module load rust
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+seqOutBias seqtable ${genome} --read-size=10000 --kmer-size=3 --plus-offset=3 --minus-offset=3 --out=hg38.3.3.3.tbl
+seqOutBias dump hg38.3.3.3.tbl > hg38.3.3.3.dump.txt
+mkdir seqdump
+mv hg38.3.3.3.dump.txt seqdump
+mv all_64_df.txt seqdump
+cd seqdump
+
+while read line; do
+ mer=$(echo $line | awk -F" " '{print $1}')
+ idx=$(echo $line | awk -F" " '{print $2}')
+ rcidx=$(echo $line | awk -F" " '{print $3}')
+ echo $mer
+ echo $idx
+ echo $rcidx
+ python /home/FCAM/ssun/scripts/dump_to_kmer.py -i hg38.3.3.3.dump.txt -p $idx -m $rcidx -s $mer
+done <all_64_df.txt
+
+```
+
+## T2T with 10,000 read size
+
+T2T-CHM13v2.0/hs1 genome as the input reference genome; \
+```{r engine='bash', eval=F, echo=TRUE}
+#cd /home/FCAM/ssun/Genome/
+wget https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.fa.gz
+gunzip hs1.fa.gz
+```
+
+use read-size=10,000 –kmer-size=3 –plus-offset=3 –minus-offset=3 \
+```{r engine='bash', eval=F, echo=TRUE}
+#! /bin/sh
+
+#SBATCH --job-name=T2T_getfull3mer_10000.sh     
+#SBATCH -N 1                  
+#SBATCH -n 1                 
+#SBATCH -c 32                  
+#SBATCH -p general           
+#SBATCH --qos=general      
+#SBATCH --mem=128G               
+#SBATCH --mail-type=ALL 
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o T2T_getfull3mer_10000.sh_%j.out
+#SBATCH -e T2T_getfull3mer_10000.sh_%j.err
+
+hostname
+export PATH=$PATH:/home/FCAM/ssun/packages/://home/FCAM/ssun/scripts
+module load genometools/1.5.10
+module load ucsc_genome/2012.05.22
+module load rust
+
+genome=/home/FCAM/ssun/Genome/hs1.fa
+
+seqOutBias seqtable ${genome} --read-size=10000 --kmer-size=3 --plus-offset=3 --minus-offset=3 --out=hs1.3.3.3.tbl
+seqOutBias dump hs1.3.3.3.tbl > hs1.3.3.3.dump.txt
+mkdir seqdump
+mv hs1.3.3.3.dump.txt seqdump
+mv all_64_df.txt seqdump
+cd seqdump
+
+while read line; do
+ mer=$(echo $line | awk -F" " '{print $1}')
+ idx=$(echo $line | awk -F" " '{print $2}')
+ rcidx=$(echo $line | awk -F" " '{print $3}')
+ echo $mer
+ echo $idx
+ echo $rcidx
+ python /home/FCAM/ssun/scripts/dump_to_kmer.py -i hs1.3.3.3.dump.txt -p $idx -m $rcidx -s $mer
+done <all_64_df.txt
+
+```
+
 # GATA3 ChIP-seq
 
 ## Align to the T2T human genome
@@ -87,11 +218,9 @@ I am only processing the three GATA_CC libraries and the four IgG libraries. \
 
 ```{r engine='bash', eval=F, echo=TRUE}
 #cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/ChIP_GATA3_CC_IgG_MCF7_align_to_T2T
-cp ../ChIP1_Sathyan_MCF7_GATA3/1_DataProcessing_\&Alignment/ChIP1_Sathyan_MCF7_GATA3/MCF7_dTAGGATA522_GATA_CC_rep*_PE*_no_adapt.fastq.gz .
-cp ../ChIP1_Sathyan_MCF7_GATA3/1_DataProcessing_\&Alignment/ChIP1_Sathyan_MCF7_GATA3/MCF7_dTAGGATA522_IgG_*_no_adapt.fastq.gz .
+cp ../ChIP1_Sathyan_MCF7_GATA3/1_DataProcessing_\&Alignment/MCF7_dTAGGATA522_GATA_CC_rep*_PE*_no_adapt.fastq.gz .
+cp ../ChIP1_Sathyan_MCF7_GATA3/1_DataProcessing_\&Alignment/MCF7_dTAGGATA522_IgG_*_no_adapt.fastq.gz .
 cp ../ChIP2_Sathyan_MCF7_GATA3/no_adapt/MCF7_dTAGGATA522_IgG_CC_rep4_PE*_no_adapt.fastq.gz .
-
-gunzip *.gz
 ```
 
 
@@ -131,8 +260,8 @@ genome_index=/home/FCAM/ssun/Genome/hs1_bt2/hs1
 ncore=32 
 tallymer=hs1.tal_42.gtTxt.gz
 
-#gzip -d ${name}_PE1_no_adapt.fastq.gz
-#gzip -d ${name}_PE2_no_adapt.fastq.gz
+gzip -d ${name}_PE1_no_adapt.fastq.gz
+gzip -d ${name}_PE2_no_adapt.fastq.gz
 bowtie2 -p $ncore --maxins 800 -x $genome_index -1 ${name}_PE1_no_adapt.fastq -2 ${name}_PE2_no_adapt.fastq | samtools sort -@ $ncore -n -o ${name}.bw.bam
 gzip ${name}_PE1_no_adapt.fastq
 gzip ${name}_PE2_no_adapt.fastq
@@ -166,7 +295,7 @@ We need to know the read size of our library. Here the read size is 42.\
 ```{r engine='bash', eval=F, echo=TRUE}
 #Compute mappability for the given read length and the k-mer that corresponds to each possible read alignment position
 #time-consuming but only need to run this one time
-seqOutBias seqtable hs1.fa --read-size=42
+seqOutBias seqtable /home/FCAM/ssun/Genome/hs1.fa --read-size=42
 mkdir -p ${HOME}/temp
 
 file=T2T_chip_alignment_240220.sh  
@@ -191,8 +320,8 @@ done
 #SBATCH --job-name=GATA_chip_peak_calling.sh    
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -c 2
-#SBATCH -p amd
+#SBATCH -c 8
+#SBATCH -p general
 #SBATCH --qos=general
 #SBATCH --mem=32G
 #SBATCH --mail-type=ALL
