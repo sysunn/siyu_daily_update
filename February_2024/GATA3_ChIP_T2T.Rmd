@@ -190,7 +190,6 @@ while read line; do
  echo $rcidx
  python /home/FCAM/ssun/scripts/dump_to_kmer.py -i hs1.3.3.3.dump.txt -p $idx -m $rcidx -s $mer
 done <all_64_df.txt
-
 ```
 
 # GATA3 ChIP-seq
