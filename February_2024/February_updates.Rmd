@@ -3505,7 +3505,7 @@ unique(df.all.unique$status)
 ```
 
 
-```{r engine='R', eval=TRUE, echo=TRUE}
+```{r engine='R', eval=F, echo=TRUE}
 df.plot=rbind(df.all.unique, df.all.DHS.unique)
 df.plot$status= factor(df.plot$status, levels=c("peak_without_motif", "indep.DHS.control"))
 library(lattice)
