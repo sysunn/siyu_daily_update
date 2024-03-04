@@ -728,16 +728,33 @@ function toggle_visibility(id1) {
 <li><a href="#pre-streme-peaks" id="toc-pre-streme-peaks"><span class="toc-section-number">5</span> Pre-STREME peaks</a>
 <ul>
 <li><a href="#failed" id="toc-failed"><span class="toc-section-number">5.1</span> Failed</a></li>
-<li><a href="#completed-meme" id="toc-completed-meme"><span class="toc-section-number">5.2</span> Completed MEME</a>
+<li><a href="#side-job" id="toc-side-job"><span class="toc-section-number">5.2</span> Side job</a></li>
+<li><a href="#completed-meme" id="toc-completed-meme"><span class="toc-section-number">5.3</span> Completed MEME</a>
 <ul>
-<li><a href="#exhaustivememe-round-7" id="toc-exhaustivememe-round-7"><span class="toc-section-number">5.2.1</span> ExhaustiveMEME round 7</a></li>
-<li><a href="#mast" id="toc-mast"><span class="toc-section-number">5.2.2</span> Mast</a></li>
-<li><a href="#exhaustivememe-round-8" id="toc-exhaustivememe-round-8"><span class="toc-section-number">5.2.3</span> ExhaustiveMEME round 8</a></li>
-<li><a href="#mast-1" id="toc-mast-1"><span class="toc-section-number">5.2.4</span> Mast</a></li>
-<li><a href="#exhaustivememe-round-9" id="toc-exhaustivememe-round-9"><span class="toc-section-number">5.2.5</span> ExhaustiveMEME round 9</a></li>
+<li><a href="#exhaustivememe-round-7" id="toc-exhaustivememe-round-7"><span class="toc-section-number">5.3.1</span> ExhaustiveMEME round 7</a></li>
+<li><a href="#mast" id="toc-mast"><span class="toc-section-number">5.3.2</span> Mast</a></li>
+<li><a href="#exhaustivememe-round-8" id="toc-exhaustivememe-round-8"><span class="toc-section-number">5.3.3</span> ExhaustiveMEME round 8</a></li>
+<li><a href="#mast-1" id="toc-mast-1"><span class="toc-section-number">5.3.4</span> Mast</a></li>
+<li><a href="#exhaustivememe-round-9" id="toc-exhaustivememe-round-9"><span class="toc-section-number">5.3.5</span> ExhaustiveMEME round 9</a></li>
+<li><a href="#streme-round9" id="toc-streme-round9"><span class="toc-section-number">5.3.6</span> STREME round9</a></li>
 </ul></li>
-<li><a href="#running-job" id="toc-running-job"><span class="toc-section-number">5.3</span> Running job</a></li>
 </ul></li>
+<li><a href="#increase-the-peak-region-window-from-101bp-to-131bp" id="toc-increase-the-peak-region-window-from-101bp-to-131bp"><span class="toc-section-number">6</span> Increase the peak region window from 101bp to 131bp</a>
+<ul>
+<li><a href="#meme-on-full-131-bp-region" id="toc-meme-on-full-131-bp-region"><span class="toc-section-number">6.1</span> MEME on full 131 bp region</a></li>
+<li><a href="#meme-on-spanned-region-only" id="toc-meme-on-spanned-region-only"><span class="toc-section-number">6.2</span> MEME on spanned region only</a></li>
+<li><a href="#streme" id="toc-streme"><span class="toc-section-number">6.3</span> STREME</a></li>
+</ul></li>
+<li><a href="#increase-the-peak-region-window-from-101bp-to-161bp" id="toc-increase-the-peak-region-window-from-101bp-to-161bp"><span class="toc-section-number">7</span> Increase the peak region window from 101bp to 161bp</a>
+<ul>
+<li><a href="#meme-on-full-161window" id="toc-meme-on-full-161window"><span class="toc-section-number">7.1</span> MEME on full 161window</a></li>
+<li><a href="#meme-on-spanned-region-only-1" id="toc-meme-on-spanned-region-only-1"><span class="toc-section-number">7.2</span> MEME on spanned region only</a></li>
+</ul></li>
+<li><a href="#increase-the-peak-region-window-from-101bp-to-201bp" id="toc-increase-the-peak-region-window-from-101bp-to-201bp"><span class="toc-section-number">8</span> Increase the peak region window from 101bp to 201bp</a>
+<ul>
+<li><a href="#meme-on-full-201window" id="toc-meme-on-full-201window"><span class="toc-section-number">8.1</span> MEME on full 201window</a></li>
+</ul></li>
+<li><a href="#try-the-second-top10000-peaks" id="toc-try-the-second-top10000-peaks"><span class="toc-section-number">9</span> try the second top10,000 peaks</a></li>
 </ul>
 </div>
 
@@ -1352,8 +1369,31 @@ meme -p 72 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MA
 <p>Failed MPI error.<br />
 </p>
 </div>
-<div id="completed-meme" class="section level2" number="5.2">
-<h2><span class="header-section-number">5.2</span> Completed MEME</h2>
+<div id="side-job" class="section level2" number="5.2">
+<h2><span class="header-section-number">5.2</span> Side job</h2>
+<p>Using the 2-orderred background file is not ideal:<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=96.1prestreme_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 16
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G 
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 96.1prestreme_meme_top10000.sh_%j.out
+#SBATCH -e 96.1prestreme_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 96 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_96_1 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1</code></pre>
+</div>
+<div id="completed-meme" class="section level2" number="5.3">
+<h2><span class="header-section-number">5.3</span> Completed MEME</h2>
 <pre class="bash watch-out"><code>#!/bin/bash
 #SBATCH --job-name=72prestreme_meme_top10000.sh
 #SBATCH -N 6
@@ -1375,8 +1415,8 @@ meme -p 72 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MA
 <p>Complete.<br />
 Top5 motifs have really low matched sites and almost the same IC at each base.<br />
 </p>
-<div id="exhaustivememe-round-7" class="section level3" number="5.2.1">
-<h3><span class="header-section-number">5.2.1</span> ExhaustiveMEME round 7</h3>
+<div id="exhaustivememe-round-7" class="section level3" number="5.3.1">
+<h3><span class="header-section-number">5.3.1</span> ExhaustiveMEME round 7</h3>
 <p>change to 10 to 30 width, and markov model of 3:<br />
 </p>
 <pre class="bash watch-out"><code>#!/bin/bash
@@ -1402,8 +1442,8 @@ meme -p 72 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MA
 Conclusion: changing the background model to 3 and increase the minw to 10 really helps the motif identification.<br />
 </p>
 </div>
-<div id="mast" class="section level3" number="5.2.2">
-<h3><span class="header-section-number">5.2.2</span> Mast</h3>
+<div id="mast" class="section level3" number="5.3.2">
+<h3><span class="header-section-number">5.3.2</span> Mast</h3>
 <p>changed the folder name from without_motifs_123456_top10000_101bp_meme_output_72_2 to without_motifs_123456_top10000_101bp_meme_output;<br />
 and saved in /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/GAT_3mer_analaysis/MEME_pre_streme.<br />
 </p>
@@ -1468,8 +1508,8 @@ head without_motifs_1234567.bed
 wc -l without_motifs_1234567.fasta #103856
 head without_motifs_1234567.fasta</code></pre>
 </div>
-<div id="exhaustivememe-round-8" class="section level3" number="5.2.3">
-<h3><span class="header-section-number">5.2.3</span> ExhaustiveMEME round 8</h3>
+<div id="exhaustivememe-round-8" class="section level3" number="5.3.3">
+<h3><span class="header-section-number">5.3.3</span> ExhaustiveMEME round 8</h3>
 <p>sort and select top 10000 from peaks without motif 1234567.<br />
 </p>
 <pre class="bash watch-out"><code># select top 10000
@@ -1497,8 +1537,8 @@ meme -p 72 without_motifs_1234567_top10000.fasta -oc without_motifs_1234567_top1
 <p>The fourth meme motif is a AGAT-AGATA with 13bp relative distances.<br />
 </p>
 </div>
-<div id="mast-1" class="section level3" number="5.2.4">
-<h3><span class="header-section-number">5.2.4</span> Mast</h3>
+<div id="mast-1" class="section level3" number="5.3.4">
+<h3><span class="header-section-number">5.3.4</span> Mast</h3>
 <p>changed the folder name from without_motifs_1234567_top10000_101bp_meme_output_72 to without_motifs_1234567_top10000_101bp_meme_output;<br />
 </p>
 <pre class="bash watch-out"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
@@ -1543,7 +1583,7 @@ The output contains the motif coordinated within peak regions (101bp).<br />
 <pre class="bash watch-out"><code>module load meme/5.4.1
 module load R/4.1.2
 # Mast find peaks with motif7
-mast -hit_list -best individual_meme//GATAmotif8_meme.txt without_motifs_1234567.fasta &gt; mast_GATA3_PSWM_in_peaks_round8.txt
+mast -hit_list -best individual_meme/GATAmotif8_meme.txt without_motifs_1234567.fasta &gt; mast_GATA3_PSWM_in_peaks_round8.txt
 Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round8.txt
 wc -l mast_GATA3_PSWM_in_peaks_round8.txt #4382
 wc -l mast_GATA3_PSWM_in_peaks_round8.bed #4379</code></pre>
@@ -1563,8 +1603,8 @@ head without_motifs_12345678.bed
 wc -l without_motifs_12345678.fasta #95098
 head without_motifs_12345678.fasta</code></pre>
 </div>
-<div id="exhaustivememe-round-9" class="section level3" number="5.2.5">
-<h3><span class="header-section-number">5.2.5</span> ExhaustiveMEME round 9</h3>
+<div id="exhaustivememe-round-9" class="section level3" number="5.3.5">
+<h3><span class="header-section-number">5.3.5</span> ExhaustiveMEME round 9</h3>
 <p>sort and select top 10000 from peaks without motif 12345678.<br />
 </p>
 <pre class="bash watch-out"><code># select top 10000
@@ -1589,29 +1629,313 @@ module load meme/5.4.1
 
 meme -p 72 without_motifs_12345678_top10000.fasta -oc without_motifs_12345678_top10000_101bp_meme_output_72 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
 </code></pre>
-</div>
-</div>
-<div id="running-job" class="section level2" number="5.3">
-<h2><span class="header-section-number">5.3</span> Running job</h2>
+<p>change -ws to 0.5<br />
+</p>
 <pre class="bash watch-out"><code>#!/bin/bash
-#SBATCH --job-name=96.1prestreme_meme_top10000.sh
+#SBATCH --job-name=72_1without_motifs_12345678_meme_top10000.sh
 #SBATCH -N 6
 #SBATCH -n 6
-#SBATCH -c 16
+#SBATCH -c 12
 #SBATCH -p general
 #SBATCH --qos=general
-#SBATCH --mem=80G 
+#SBATCH --mem=80G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o 96.1prestreme_meme_top10000.sh_%j.out
-#SBATCH -e 96.1prestreme_meme_top10000.sh_%j.err
+#SBATCH -o 72_1without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72_1without_motifs_12345678_meme_top10000.sh_%j.err
 
 hostname
 export TMPDIR=&quot;${HOME}/temp&quot;
 module load meme/5.4.1
 
-meme -p 96 /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/Exhaustive_MEME_MAST_round1to8/without_motifs_123456_top10000.fasta -oc without_motifs_123456_top10000_101bp_meme_output_96_1 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd_2mer.txt -maxsize 10000000 -wg 1 -ws 1</code></pre>
+meme -p 72 without_motifs_12345678_top10000.fasta -oc without_motifs_12345678_top10000_101bp_meme_output_72_1 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 0.5
+</code></pre>
+<p>try increase maxw<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=72_2without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72_2without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72_2without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_top10000.fasta -oc without_motifs_12345678_top10000_101bp_meme_output_72_2 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 40 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 0.5
+</code></pre>
+<p>try increase minw<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=72_3without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72_3without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72_3without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_top10000.fasta -oc without_motifs_12345678_top10000_101bp_meme_output_72_3 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 15 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
 </div>
+<div id="streme-round9" class="section level3" number="5.3.6">
+<h3><span class="header-section-number">5.3.6</span> STREME round9</h3>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=without_motifs_12345678_streme.sh
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 36
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o without_motifs_12345678_streme.sh_%j.out
+#SBATCH -e without_motifs_12345678_streme.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+
+module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7, 8) (101bp window)
+streme --o GATA3_without_12345678_streme_output --nmotifs 20 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 30 --p without_motifs_12345678.fasta</code></pre>
+</div>
+</div>
+</div>
+<div id="increase-the-peak-region-window-from-101bp-to-131bp" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Increase the peak region window from 101bp to 131bp</h1>
+<div id="meme-on-full-131-bp-region" class="section level2" number="6.1">
+<h2><span class="header-section-number">6.1</span> MEME on full 131 bp region</h2>
+<pre class="bash watch-out"><code>module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+slopBed -b 15 -i without_motifs_12345678.bed -g $sizes  | sort -k1,1 -k2,2n &gt; without_motifs_12345678_131bpwindow.bed
+
+fastaFromBed -fi $genome -bed without_motifs_12345678_131bpwindow.bed -fo without_motifs_12345678_131bpwindow.fasta
+</code></pre>
+<p>sort and select top 10000 from peaks without motif 12345678.<br />
+</p>
+<pre class="bash watch-out"><code># select top 10000
+sort -nrk5,5 without_motifs_12345678_131bpwindow.bed | head -n 10000 &gt; without_motifs_12345678_131bpwindow_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345678_131bpwindow_top10000.bed -fo without_motifs_12345678_131bpwindow_top10000.fasta</code></pre>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=72_4without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72_4without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72_4without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_131bpwindow_top10000.fasta -oc without_motifs_12345678_top10000_131bp_meme_output_72_4 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
+</div>
+<div id="meme-on-spanned-region-only" class="section level2" number="6.2">
+<h2><span class="header-section-number">6.2</span> MEME on spanned region only</h2>
+<p>At this point, we aim to expand the width to 161 total bases, replacing the central 81 bases with ‘NNNs’, followed by a classic MEME analysis. This adjustment will enable MEME to explore potential GATA3 binding sites in the flanking regions without compromising sensitivity, considering we have thoroughly examined the central sequences and identified no additional GATA-like motifs.</p>
+<p>We chose to replace only 81 bases instead of the full 100bp to maintain a 10bp buffer at each end. This approach allows for potential binding sites that partially overlap the edges of the 100bp window to be accounted for.</p>
+<pre class="bash watch-out"><code>#131window flank with central 81bp substituted with 50 Ns. 
+awk &#39;!/^&gt;/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 41) &quot;NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN&quot; substr($0, mid + 41); } 1&#39; without_motifs_12345678_131bpwindow_top10000.fasta &gt; without_motifs_12345678_131bpwindow_top10000_81NNN.fasta
+head -8 without_motifs_12345678_131bpwindow_top10000.fasta
+head -8 without_motifs_12345678_131bpwindow_top10000_81NNN.fasta</code></pre>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=N72_4without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o N72_4without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e N72_4without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_131bpwindow_top10000_81NNN.fasta -oc without_motifs_12345678_top10000_131bp_meme_output_72_4_81NNN -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
+</div>
+<div id="streme" class="section level2" number="6.3">
+<h2><span class="header-section-number">6.3</span> STREME</h2>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=win131_without_motifs_12345678_streme.sh
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 36
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=128G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o win131_without_motifs_12345678_streme.sh_%j.out
+#SBATCH -e win131_without_motifs_12345678_streme.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+
+module load meme/5.4.1
+# perform STREME on peaks (without motif 1,2,3,4,5,6, 7, 8) (101bp window)
+streme --o GATA3_without_12345678_streme_output --nmotifs 20 --objfun de --bfile hg38_bkgrnd.txt --dna --minw 4 --maxw 30 --p without_motifs_12345678.fasta</code></pre>
+</div>
+</div>
+<div id="increase-the-peak-region-window-from-101bp-to-161bp" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Increase the peak region window from 101bp to 161bp</h1>
+<div id="meme-on-full-161window" class="section level2" number="7.1">
+<h2><span class="header-section-number">7.1</span> MEME on full 161window</h2>
+<pre class="bash watch-out"><code>module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+slopBed -b 30 -i without_motifs_12345678.bed -g $sizes  | sort -k1,1 -k2,2n &gt; without_motifs_12345678_161bpwindow.bed
+
+fastaFromBed -fi $genome -bed without_motifs_12345678_161bpwindow.bed -fo without_motifs_12345678_161bpwindow.fasta
+</code></pre>
+<p>sort and select top 10000 from peaks without motif 12345678.<br />
+</p>
+<pre class="bash watch-out"><code># select top 10000
+sort -nrk5,5 without_motifs_12345678_161bpwindow.bed | head -n 10000 &gt; without_motifs_12345678_161bpwindow_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345678_161bpwindow_top10000.bed -fo without_motifs_12345678_161bpwindow_top10000.fasta</code></pre>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=72_5without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72_5without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72_5without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_161bpwindow_top10000.fasta -oc without_motifs_12345678_top10000_161bp_meme_output_72_5 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
+</div>
+<div id="meme-on-spanned-region-only-1" class="section level2" number="7.2">
+<h2><span class="header-section-number">7.2</span> MEME on spanned region only</h2>
+<pre class="bash watch-out"><code>#131window flank with central 81bp substituted with 50 Ns. 
+awk &#39;!/^&gt;/ { mid = int(length($0) / 2); $0 = substr($0, 1, mid - 41) &quot;NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN&quot; substr($0, mid + 41); } 1&#39; without_motifs_12345678_161bpwindow_top10000.fasta &gt; without_motifs_12345678_161bpwindow_top10000_81NNN.fasta
+head -8 without_motifs_12345678_161bpwindow_top10000.fasta
+head -8 without_motifs_12345678_161bpwindow_top10000_81NNN.fasta</code></pre>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=N72_5without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o N72_5without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e N72_5without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_161bpwindow_top10000_81NNN.fasta -oc without_motifs_12345678_top10000_161bp_meme_output_72_5_81NNN -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
+</div>
+</div>
+<div id="increase-the-peak-region-window-from-101bp-to-201bp" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Increase the peak region window from 101bp to 201bp</h1>
+<div id="meme-on-full-201window" class="section level2" number="8.1">
+<h2><span class="header-section-number">8.1</span> MEME on full 201window</h2>
+<pre class="bash watch-out"><code>module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+
+slopBed -b 50 -i without_motifs_12345678.bed -g $sizes  | sort -k1,1 -k2,2n &gt; without_motifs_12345678_201bpwindow.bed
+
+fastaFromBed -fi $genome -bed without_motifs_12345678_201bpwindow.bed -fo without_motifs_12345678_201bpwindow.fasta
+</code></pre>
+<p>sort and select top 10000 from peaks without motif 12345678.<br />
+</p>
+<pre class="bash watch-out"><code># select top 10000
+sort -nrk5,5 without_motifs_12345678_201bpwindow.bed | head -n 10000 &gt; without_motifs_12345678_201bpwindow_top10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345678_201bpwindow_top10000.bed -fo without_motifs_12345678_201bpwindow_top10000.fasta</code></pre>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=72_6without_motifs_12345678_meme_top10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72_6without_motifs_12345678_meme_top10000.sh_%j.out
+#SBATCH -e 72_6without_motifs_12345678_meme_top10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_201bpwindow_top10000.fasta -oc without_motifs_12345678_top10000_201bp_meme_output_72_6 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
+</div>
+</div>
+<div id="try-the-second-top10000-peaks" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> try the second top10,000 peaks</h1>
+<p>sort and select the second top 10,000 from peaks without motif 12345678.<br />
+</p>
+<pre class="bash watch-out"><code># select top 20,000
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sort -nrk5,5 without_motifs_12345678.bed | head -n 20000 | tail -n 10000 &gt; without_motifs_12345678_second10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345678_second10000.bed -fo without_motifs_12345678_second10000.fasta</code></pre>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=72without_motifs_12345678_meme_second10000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o 72without_motifs_12345678_meme_second10000.sh_%j.out
+#SBATCH -e 72without_motifs_12345678_meme_second10000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12345678_second10000.fasta -oc without_motifs_12345678_second10000_101bp_meme_output_72 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+</code></pre>
 </div>
 
 
