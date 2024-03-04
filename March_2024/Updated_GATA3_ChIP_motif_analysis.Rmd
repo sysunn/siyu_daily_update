@@ -1,0 +1,568 @@
+---
+title: \sf Updated_GATA3_ChIP_motif_analysis
+header-includes:
+- \usepackage{color}
+- \usepackage{float}
+- \DeclareUnicodeCharacter{2212}{-}
+date: "March 04, 2024"
+output:
+  bookdown::html_document2:
+    toc: true
+fontsize: 14pt
+geometry: margin=1in
+---
+
+```{css, echo=FALSE}
+body .main-container {
+  max-width: 1200px !important;
+  width: 1200px !important;
+}
+body {
+  max-width: 1200px !important;
+}
+
+pre {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightcyan;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.revision {
+  background-color: #FFF4F2;
+  border: 3px solid lightgrey;
+  font-weight: bold;
+}
+
+.highlighted
+{
+   color:red;
+}
+
+.highlighted2
+{
+   color:blue;
+}
+```
+
+```{r engine='R', eval=TRUE, echo=F}
+knitr::opts_chunk$set(class.source = "watch-out")
+```
+
+
+# Install required packages
+Install `bigWig` and `latticeExtra` package \
+```{r engine='R', eval=F, echo=T}
+install.packages("devtools", quiet = TRUE)
+library(devtools)
+devtools::install_github('andrelmartins/bigWig',
+              subdir='bigWig')
+library(bigWig)
+
+install.packages("DESeq2", quiet = TRUE)
+install.packages("dplyr", quiet = TRUE)
+```
+
+Install `bedtools` \
+```{r engine='bash', eval=F, echo=T}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install bedtools
+```
+
+Install `Biostrings` \
+```{r engine='R', eval=F, echo=T}
+if (!requireNamespace("Biostrings", quietly = TRUE)) {
+  if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  BiocManager::install("Biostrings")
+}
+```
+
+Install `latticeExtra` \
+```{r engine='R', eval=TRUE, echo=T}
+install.packages("latticeExtra", quiet = TRUE)
+```
+
+# Peak calling
+
+## calling GATA peaks with `Macs3`
+We want to call a set of universal peaks for the same ChIP factors. The reasons are: taking intersection of peaks between replicates/conditions will result in high false negative rates. We may lose important binding regions for transcription factor analysis. Here we are doing a compromise to call every peaks on all files and later in downstream analysis we will decide the functional peaks. \
+
+We use `Macs3 callpeaks` to identify TF binding sites. It takes the treatment files against the control genomic input. \
+`-t/--treatment FILENAME` takes your treatment file. If there is more than one alignment file, we can specify them as `-t A B C`. MACS will pool up all these files together. \
+`-c/--control` takes the control file. Here we pool all the IgG file. \
+`-n/--name` is the output name we give. \
+`-f/--format FORMAT` we specify BAMPE format for the output. \
+`-g/--gsize` is the mappable genome size or effective genome size. The actual mappable genome size is ~70% to 90% of the genome size due to the repetitive features on the chromosomes. Here we use the default hs --2.7e9 (for human genome). \
+`-q/--qvalue` is the FDR cutoff to call signidicant regions. \
+
+**GATA peaks**
+```{r engine='bash', eval=F, echo=TRUE}
+#! /bin/sh
+#SBATCH --job-name=GATA_chip_peak_calling.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 2
+#SBATCH -p amd
+#SBATCH --qos=general
+#SBATCH --mem=32G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o chip_peak_calling.sh_%j.out
+#SBATCH -e chip_peak_calling.sh_%j.err
+
+hostname
+module load macs3
+
+mkdir temp_macs
+directory=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+# GATA_CC against IgG
+macs3 callpeak --call-summits -t ${directory}*_GATA_CC*sorted.bam -c ${directory}*IgG*sorted.bam -n GATA_ChIP -g hs -q 0.01 --keep-dup all -f BAMPE --nomodel --tempdir temp_macs
+
+#wc -l GATA_ChIP_summits.bed
+#99289 
+```
+
+## Removing peaks on contigs and within blacklisted regions
+
+Google "blacklisted genomic regions" we can find a
+set of region in the genome in `bed` format that have an over-representation of
+reads regardless of the experiment. We also remove peaks on non-canonical chromosomes with
+`grep -v`. \
+
+All intervals in the summits file span one base, and we use `bedtools slop` to change boundaries by adding a fixed number of bases in each direction (`-b`). These 101 base intervals will be used as input for de novo motif analysis. The 401 base intervals will be used to calculate peak intensity. The rationale for a smaller window for motif analysis is the following: \
+1) the motif is typically very close to the peak summit, \
+2) larger window increases the computation time substantially, and \
+3) the flanking sequence is less enriched for the relevant motifs and de novo motif analysis is less sensitive with higher noise relative to background. \
+
+We use a standard window size to calculate peak intensity, but we use a much wider window because signal 200 bases up or downstream can result from signal. We could increase the window to 600 bases and that would be fine as well. You can vary this window systematically and determine if varying the window affects the relative peak intensity rank. We use the same window size for each peak because otherwise wider windows (note the narrowPeaks file outputs are variable width) would inherently have more reads. 
+
+```{r engine='bash', eval=F, echo=TRUE}
+#! /bin/sh
+#SBATCH --job-name=remove_peak.sh     
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 2
+#SBATCH -p amd
+#SBATCH --qos=general
+#SBATCH --mem=32G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o remove_peak.sh_%j.out
+#SBATCH -e remove_peak.sh_%j.err
+module load deeptools/3.5.0
+module load bedtools
+wget https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz
+gunzip hg38-blacklist.v2.bed.gz
+blacklist=hg38-blacklist.v2.bed
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+
+for i in *_summits.bed
+do
+	name=$(echo $i | awk -F"/" '{print $NF}' | awk -F"_summits.bed" '{print $1}')
+	echo $name
+	grep -v "random" ${name}_summits.bed | grep -v "chrUn" | grep -v "chrEBV" | grep -v "chrM" | grep -v "alt" | intersectBed -v -a - -b $blacklist > ${name}_summits_final.bed
+	slopBed -b 50 -i ${name}_summits_final.bed -g $sizes  | sort -k1,1 -k2,2n > ${name}_summit_100window.bed
+  slopBed -b 200 -i ${name}_summits_final.bed -g $sizes  | sort -k1,1 -k2,2n > ${name}_summit_400window.bed
+done
+```
+
+**peak numbers** 
+```{r engine='bash', eval=F, echo=TRUE}
+wc -l GATA_ChIP_summits_final.bed
+#96868 
+wc -l GATA_ChIP_summit_100window.bed #96868
+wc -l GATA_ChIP_summit_400window.bed #96868
+```
+
+
+# Peak Intensity
+There are two things we need to consider regarding peak intensities. The first is peak region; the second is dynamic range. Imaging a peak that is very intense but within a narrow range, the other peak is not so intense but can span its signals across a very long distance. We need to consider this region differences while calling any peak to be intense or not. \
+## Counting reads in peaks (400bp window) with `DeSeq2`
+
+
+```{r, engine='R', eval=F, echo=TRUE}
+# mkdir GATA_Deseq2
+# cd GATA_Deseq2/
+
+# calculate the size factors 
+module load samtools/1.12
+
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/sorted.bam_final/
+for i in GATA
+do
+  echo $i
+  > ${i}_header.txt
+  > ${i}_reads.txt
+  for j in ${dir}MCF7_dTAGGATA522*_${i}_*.sorted.bam
+  do
+    echo $j
+    name=$(echo $j | awk -F $dir '{print $2}' | awk -F".sorted.bam" '{print $1}')
+    echo $name | paste ${i}_header.txt - > ${i}_tmp.txt 
+    mv ${i}_tmp.txt ${i}_header.txt
+    reads=`samtools view -c -f 0x3 $j` #reads paired and mapped in proper pair
+    echo $reads | paste ${i}_reads.txt - > ${i}_tmp.txt 
+    mv ${i}_tmp.txt ${i}_reads.txt
+  done  
+  cat ${i}_header.txt ${i}_reads.txt > ${i}_tmp.txt
+  mv ${i}_tmp.txt ${i}_reads.txt
+  rm ${i}_header.txt
+done 
+```
+
+R; load packages
+```{r, engine='R', eval=F, echo=TRUE}
+mkdir GATA_deseq
+cd GATA_deseq
+module load R/4.1.2 # this version of `R` on Xanadu has many of our libraries pre-installed. 
+R 
+
+#libraries
+library(DESeq2)
+library(lattice)
+library(dplyr)
+library(ggplot2)
+library(limma)
+library(bigWig)
+
+#functions on github
+source('https://raw.githubusercontent.com/mjg54/znf143_pro_seq_analysis/master/docs/ZNF143_functions.R')
+
+#new functions
+get.counts.interval <- function(df, path.to.bigWig, file.prefix = 'H') {
+    vec.names = c()
+    inten.df=data.frame(matrix(ncol = 0, nrow = nrow(df)))
+    
+    for (mod.bigWig in Sys.glob(file.path(path.to.bigWig, paste(file.prefix, "*.bigWig", sep ='')))) {
+        factor.name = strsplit(strsplit(mod.bigWig, "/")[[1]][length(strsplit(mod.bigWig, "/")[[1]])], '.bigWig')[[1]][1]
+        print(factor.name)
+        vec.names = c(vec.names, factor.name)
+        loaded.bw = load.bigWig(mod.bigWig)
+        print(mod.bigWig)
+        mod.inten = bed.region.bpQuery.bigWig(loaded.bw, df, abs.value = TRUE)
+        inten.df = cbind(inten.df, mod.inten)
+    }
+    colnames(inten.df) = vec.names
+    r.names = paste(df[,1], ':', df[,2], '-', df[,3], sep='')
+    row.names(inten.df) = r.names
+    return(inten.df)
+}
+```
+
+
+DeSeq count read size and parse into different quantile \
+```{r, engine='R', eval=F, echo=TRUE}
+# recall that these summit_XXXwindow.bed has the peak region info.
+a =  read.table('/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_call/GATA_ChIP_summit_400window.bed', sep = "\t", header=FALSE)
+#normalized signal
+#GATA.signal.df= get.counts.interval(a, "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/bigWigs/normalized_bw","MCF")
+#non-normalized counts
+GATA.counts.df= get.counts.interval(a, "/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/bigWigs/Seqoutbias_bw","MCF")
+GATA.analysis.regions=GATA.counts.df[,grepl("_GATA_",colnames(GATA.counts.df))] # non-normalized counts
+# identical(rownames(GATA.analysis.regions),rownames(GATA.counts.df))
+# [1] TRUE
+
+sample.conditions = factor(sapply(strsplit(colnames(GATA.analysis.regions), '_rep'), '[', 1))
+deseq.counts.table = DESeqDataSetFromMatrix(countData = GATA.analysis.regions, # DESeqDataSet needs countData to be non-negative integers; non-normalized counts are integer, normalized signals has decimals.
+                colData = as.data.frame(sample.conditions),
+                design = ~ sample.conditions)
+
+
+GATA.SF <- read.table("GATA_reads.txt", sep = '\t', header = TRUE)[,-1] # GATA size factors from read depth
+GATA.size.factors = estimateSizeFactorsForMatrix(GATA.SF) # size factor transformed to smaller ratios
+#MCF7_dTAGGATA522_GATA_CC_rep1 0.5385594  
+#MCF7_dTAGGATA522_GATA_CC_rep2 0.5169334 
+#MCF7_dTAGGATA522_GATA_CC_rep3 0.5469193  
+#MCF7_dTAGGATA522_GATA_CE_rep1 0.8108480 
+#MCF7_dTAGGATA522_GATA_CE_rep2 2.3452478 
+#MCF7_dTAGGATA522_GATA_CE_rep3 2.1708044
+                                       
+sizeFactors(deseq.counts.table) <- GATA.size.factors 
+# assign to each column of the count matrix (deseq.counts.table) the size factor to bring each column to a common scale
+dds <- DESeq(deseq.counts.table)
+
+normalized.counts.GATA3 = counts(dds, normalized=TRUE)
+peak.intensities = rowMeans(normalized.counts.GATA3[,1:3]) # we want to get the average read counts for CC groups
+
+quantile(peak.intensities, probs = seq(.05, 1.00, by = .05))
+#         5%         10%         15%         20%         25%         30% 
+#   25.03477    29.26822    32.24003    34.85009    37.44833    40.19495 
+#        35%         40%         45%         50%         55%         60% 
+#   43.16713    46.62380    50.27567    54.50266    59.81136    66.40026 
+#        65%         70%         75%         80%         85%         90% 
+#   74.63208    86.00656   102.11487   125.08599   160.58147   222.03676 
+#        95%        100% 
+#  348.55000 15936.61845 
+
+
+names(peak.intensities) = rownames(normalized.counts.GATA3)
+chr = sapply(strsplit(names(peak.intensities), ":"), "[", 1)
+rnge = sapply(strsplit(names(peak.intensities), ":"), "[", 2)
+start = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 200
+end = as.numeric(sapply(strsplit(rnge, "-"), "[", 2)) - 200
+
+
+
+# 1bp summit quantile file
+j =0 
+q=seq(.05, 1.00, by = .05)
+count=0
+for (i in quantile(peak.intensities, probs = seq(.05, 1.00, by =
+.05)))
+{
+count = count +1
+
+write.table(file = paste0('quantile', as.character(q[count]), '_summits.bed'), data.frame(chr[peak.intensities > j & peak.intensities <= i], start[peak.intensities > j & peak.intensities <= i], end[peak.intensities > j & peak.intensities <= i], peak.intensities[peak.intensities > j & peak.intensities <= i]), sep = '\t', quote=FALSE, col.names=FALSE, row.names=FALSE )
+j = i
+}
+
+# making 100 window quantile file
+start1 = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 150
+end1 = as.numeric(sapply(strsplit(rnge, "-"), "[", 2)) - 150
+j =0 
+q=seq(.05, 1.00, by = .05)
+count=0
+for (i in quantile(peak.intensities, probs = seq(.05, 1.00, by =
+.05)))
+{
+count = count +1
+
+write.table(file = paste0('quantile', as.character(q[count]), '_summits_100window.bed'), data.frame(chr[peak.intensities > j & peak.intensities <= i], start1[peak.intensities > j & peak.intensities <= i], end1[peak.intensities > j & peak.intensities <= i], peak.intensities[peak.intensities > j & peak.intensities <= i]), sep = '\t', quote=FALSE, col.names=FALSE, row.names=FALSE )
+j = i
+}
+
+save.image('231004_GATA3_ChIP_deseq.Rdata') 
+```
+
+```{r, engine='R', eval=F, echo=TRUE}
+load('231004_GATA3_ChIP_deseq.Rdata')
+options(scipen = 999)
+quantile(peak.intensities, probs = seq(.05, 1.00, by = .05))
+#         5%         10%         15%         20%         25%         30% 
+#   25.03477    29.26822    32.24003    34.85009    37.44833    40.19495 
+#        35%         40%         45%         50%         55%         60% 
+#   43.16713    46.62380    50.27567    54.50266    59.81136    66.40026 
+#        65%         70%         75%         80%         85%         90% 
+#   74.63208    86.00656   102.11487   125.08599   160.58147   222.03676 
+#        95%        100% 
+#  348.55000 15936.61845 
+
+
+names(peak.intensities) = rownames(normalized.counts.GATA3)
+chr = sapply(strsplit(names(peak.intensities), ":"), "[", 1)
+rnge = sapply(strsplit(names(peak.intensities), ":"), "[", 2)
+start = as.numeric(sapply(strsplit(rnge, "-"), "[", 1)) + 200
+end = as.numeric(sapply(strsplit(rnge, "-"), "[", 2)) - 200
+
+# 1bp summit all GATA3 peaks
+peak=data.frame(chr, start, end, peak.intensities)
+head(peak)
+#                    chr  start    end peak.intensities
+#chr1:827180-827581 chr1 827380 827381         45.32469
+#chr1:845596-845997 chr1 845796 845797        530.34196
+#chr1:869297-869698 chr1 869497 869498         18.62632
+#chr1:916569-916970 chr1 916769 916770         36.69993
+#chr1:917334-917735 chr1 917534 917535        124.64502
+#chr1:924653-925054 chr1 924853 924854         30.44684
+nrow(peak)
+#[1] 96868
+ranked_peak <- peak[order(-peak[, 4]), ]
+write.table(ranked_peak, file = 'GATA_ChIP_summits_final_DESeq2_ranked_intensity.bed', sep = '\t', quote=FALSE, col.names=FALSE, row.names=FALSE )
+```
+
+
+
+Now we have a ChIP-seq peak summits file that are properly ranked by its intensity calculated from 400window Deseq2. \
+"GATA_ChIP_summits_final_DESeq2_ranked_intensity.bed" \
+Saved in directory: /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2 \
+
+
+# Exhaustive MEME -MAST for GATA3
+
+## 3-ordered Markov Background Model
+
+GATA3 TF binding sites are short, commonly seen are 3-mer GAT/ATC or 4-mer GATA/GATC. \
+To account for this fact, we want to generate the markov background model from the reference genome, which estimates the probability of a candidate motif appearing in the dataset by chance. \
+
+I use fasta-get-markov with -m 3 option to generate a 3-ordered Markov Background Model for hg38 ref genome. The output file defines all k-mer frequencies from 1-mer to 4-mer. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+fasta-get-markov -m 3 $genome > hg38_bkgrnd.txt
+```
+
+```{r, engine='bash', eval=F, echo=TRUE}
+head hg38_bkgrnd.txt 
+# 3-order Markov frequencies from file /home/FCAM/ssun/Genome/hg38.fa
+# seqs: 455    min: 970    max: 248956422    avg: 7053376.1    sum: 3209286105    alph: DNA
+# order 0
+A 2.950e-01
+C 2.050e-01
+G 2.050e-01
+T 2.950e-01
+# order 1
+AA 9.775e-02
+AC 5.051e-02
+
+
+tail hg38_bkgrnd.txt 
+TTCG 5.959e-04
+TTCT 7.919e-03
+TTGA 5.214e-03
+TTGC 3.789e-03
+TTGG 4.440e-03
+TTGT 5.559e-03
+TTTA 8.075e-03
+TTTC 7.574e-03
+TTTG 7.358e-03
+TTTT 1.533e-02
+
+```
+
+
+<!--
+## 101window
+
+```{r, engine='bash', eval=F, echo=TRUE}
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/
+head ${dir}GATA_ChIP_summits_final_DESeq2_ranked_intensity.bed
+chr17	61231384	61231385	15936.6184521741
+chr20	57264400	57264401	12166.7947008285
+chr20	54456658	54456659	11926.1802605615
+chr17	61219540	61219541	10340.3616996713
+chr20	50764408	50764409	8164.47826610042
+chr17	61236076	61236077	7391.51505715346
+chr20	53774104	53774105	7166.66522528761
+chr17	61725015	61725016	6641.5850441495
+chr20	53786233	53786234	6270.21535416316
+chr20	53786498	53786499	6051.79992360185
+
+```
+
+(cd GATA3_ChIP_PRO_July2023/ChIP_final/new_Exhaustive_MEME_MAST_round1to8_240304/) \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/
+
+slopBed -b 50 -i ${dir}GATA_ChIP_summits_final_DESeq2_ranked_intensity.bed -g $sizes  | sort -k1,1 -k2,2n > GATA_ChIP_summits_final_DESeq2_ranked_intensity_101bpwindow.bed #96868
+
+fastaFromBed -fi $genome -bed GATA_ChIP_summits_final_DESeq2_ranked_intensity_101bpwindow.bed -fo GATA_ChIP_summits_final_DESeq2_ranked_intensity_101bpwindow.fasta
+
+```
+
+-->
+
+
+## 161window
+
+(cd GATA3_ChIP_PRO_July2023/ChIP_final/new_Exhaustive_MEME_MAST_round1to8_240304/) \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/
+
+slopBed -b 80 -i ${dir}GATA_ChIP_summits_final_DESeq2_ranked_intensity.bed -g $sizes  | sort -k1,1 -k2,2n > GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed #96868
+
+fastaFromBed -fi $genome -bed GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed -fo GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.fasta
+
+```
+
+
+## MEME-round1:
+
+
+Sort peaks by intensity, and select top 5000 peaks. \
+```{r engine='bash', eval=F, echo=TRUE}
+# sort out the top 10000 GATA peaks and search for top 1 motif
+sort -nrk4,4 GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed | head -n 5000 > GATA_ChIP_top5000_161window.bed #5000
+```
+
+Convert this top 5000 peak bed file to .fasta file with `fastaFromBed`. \
+```{r engine='bash', eval=F, echo=TRUE}
+fastaFromBed -fi $genome -bed GATA_ChIP_top5000_161window.bed -fo GATA_ChIP_top5000_161window.fasta
+```
+
+Perform MEME on top 5000 GATA3 peaks with -minw 4, -maxw 35 and the 3-ordered Markov Background Model. \
+And the default wg/ws setting: \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=r1_meme_top5000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o r1_meme_top5000.sh_%j.out
+#SBATCH -e r1_meme_top5000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 72 GATA_ChIP_top5000_161window.fasta -oc GATA_ChIP_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+
+```
+
+A small wg/ws setting: \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=r1ws1_meme_top5000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o r1ws1_meme_top5000.sh_%j.out
+#SBATCH -e r1ws1_meme_top5000.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 72 GATA_ChIP_top5000_161window.fasta -oc GATA_ChIP_top5000_161window_ws1_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+
+```
+
+
+
+### MAST (p<0.0005)
+
+
+
+## MEME-round2:
+## MEME-round3:
+## MEME-round4:
+## MEME-round5:
+## MEME-round6:
+## MEME-round7:
+## MEME-round8:
+
+
