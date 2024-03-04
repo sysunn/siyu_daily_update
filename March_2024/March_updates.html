@@ -754,7 +754,6 @@ function toggle_visibility(id1) {
 <ul>
 <li><a href="#meme-on-full-201window" id="toc-meme-on-full-201window"><span class="toc-section-number">8.1</span> MEME on full 201window</a></li>
 </ul></li>
-<li><a href="#try-the-second-top10000-peaks" id="toc-try-the-second-top10000-peaks"><span class="toc-section-number">9</span> try the second top10,000 peaks</a></li>
 </ul>
 </div>
 
@@ -1905,19 +1904,24 @@ module load meme/5.4.1
 
 meme -p 72 without_motifs_12345678_201bpwindow_top10000.fasta -oc without_motifs_12345678_top10000_201bp_meme_output_72_6 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
 </code></pre>
-</div>
-</div>
-<div id="try-the-second-top10000-peaks" class="section level1" number="9">
-<h1><span class="header-section-number">9</span> try the second top10,000 peaks</h1>
-<p>sort and select the second top 10,000 from peaks without motif 12345678.<br />
-</p>
-<pre class="bash watch-out"><code># select top 20,000
+<!--
+# try the second top10,000 peaks
+
+sort and select the second top 10,000 from peaks without motif 12345678. \
+
+```{.bash .watch-out}
+# select top 20,000
 module load bedtools
 sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
 genome=/home/FCAM/ssun/Genome/hg38.fa
-sort -nrk5,5 without_motifs_12345678.bed | head -n 20000 | tail -n 10000 &gt; without_motifs_12345678_second10000.bed
-fastaFromBed -fi $genome -bed without_motifs_12345678_second10000.bed -fo without_motifs_12345678_second10000.fasta</code></pre>
-<pre class="bash watch-out"><code>#!/bin/bash
+sort -nrk5,5 without_motifs_12345678.bed | head -n 20000 | tail -n 10000 > without_motifs_12345678_second10000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345678_second10000.bed -fo without_motifs_12345678_second10000.fasta
+```
+
+
+
+```{.bash .watch-out}
+#!/bin/bash
 #SBATCH --job-name=72without_motifs_12345678_meme_second10000.sh
 #SBATCH -N 6
 #SBATCH -n 6
@@ -1931,11 +1935,15 @@ fastaFromBed -fi $genome -bed without_motifs_12345678_second10000.bed -fo withou
 #SBATCH -e 72without_motifs_12345678_meme_second10000.sh_%j.err
 
 hostname
-export TMPDIR=&quot;${HOME}/temp&quot;
+export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 meme -p 72 without_motifs_12345678_second10000.fasta -oc without_motifs_12345678_second10000_101bp_meme_output_72 -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
-</code></pre>
+
+```
+
+-->
+</div>
 </div>
 
 
