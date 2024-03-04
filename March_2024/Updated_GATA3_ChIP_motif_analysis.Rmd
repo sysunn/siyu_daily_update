@@ -524,7 +524,6 @@ export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 meme -p 72 GATA_ChIP_top5000_161window.fasta -oc GATA_ChIP_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
-
 ```
 
 A small wg/ws setting: \
@@ -548,7 +547,6 @@ export TMPDIR="${HOME}/temp"
 module load meme/5.4.1
 
 meme -p 72 GATA_ChIP_top5000_161window.fasta -oc GATA_ChIP_top5000_161window_ws1_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
-
 ```
 
 
