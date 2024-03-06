@@ -723,7 +723,10 @@ function toggle_visibility(id1) {
 <ul>
 <li><a href="#mast-p0.0005" id="toc-mast-p0.0005"><span class="toc-section-number">4.3.1</span> MAST (p&lt;0.0005)</a></li>
 </ul></li>
-<li><a href="#meme-round2" id="toc-meme-round2"><span class="toc-section-number">4.4</span> MEME-round2:</a></li>
+<li><a href="#meme-round2" id="toc-meme-round2"><span class="toc-section-number">4.4</span> MEME-round2:</a>
+<ul>
+<li><a href="#mast-p0.0005-1" id="toc-mast-p0.0005-1"><span class="toc-section-number">4.4.1</span> MAST (p&lt;0.0005)</a></li>
+</ul></li>
 <li><a href="#meme-round3" id="toc-meme-round3"><span class="toc-section-number">4.5</span> MEME-round3:</a></li>
 <li><a href="#meme-round4" id="toc-meme-round4"><span class="toc-section-number">4.6</span> MEME-round4:</a></li>
 <li><a href="#meme-round5" id="toc-meme-round5"><span class="toc-section-number">4.7</span> MEME-round5:</a></li>
@@ -1221,12 +1224,12 @@ meme -p 72 GATA_ChIP_top5000_161window.fasta -oc GATA_ChIP_top5000_161window_ws1
 <div id="mast-p0.0005" class="section level3" number="4.3.1">
 <h3><span class="header-section-number">4.3.1</span> MAST (p&lt;0.0005)</h3>
 <p>Here we are performing MAST to find peaks with the top GATA3-like motifs of the four.<br />
-<strong>Concatenate MEME PSWMs</strong><br />
+<strong>Extract MEME PSWMs</strong><br />
 First isolate the PSWMs associated with GATA-like motifs. There are four GATA-like motifs in first round MEME:<br />
 </p>
 <pre class="bash watch-out"><code>wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
 python MEME_individual_from_db_python3.py -i GATA_ChIP_top5000_161window_meme_output/meme.txt
-#WGATAAVATCW_meme.txt
+#WGATAAVATCW_meme.txt -- top enriched GATA-like motif in round1
 #GATAADVATCW_meme.txt
 #HTTATCTNYHHATCT_meme.txt
 #ATCWGATAAVN_meme.txt
@@ -1307,6 +1310,8 @@ export TMPDIR=&quot;${HOME}/temp&quot;
 module load meme/5.4.1
 
 meme -p 72 without_motifs_1_top5000.fasta -oc GATA_ChIP_without_motifs_1_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000</code></pre>
+<p>This time, the top enriched motif is the second GATA-like motif in the first round.<br />
+</p>
 <p><strong>A small wg/ws setting:</strong><br />
 </p>
 <pre class="bash watch-out"><code>#!/bin/bash
@@ -1327,9 +1332,90 @@ export TMPDIR=&quot;${HOME}/temp&quot;
 module load meme/5.4.1
 
 meme -p 72 without_motifs_1_top5000.fasta -oc GATA_ChIP_without_motifs_1_top5000_161window_ws1_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1</code></pre>
+<div id="mast-p0.0005-1" class="section level3" number="4.4.1">
+<h3><span class="header-section-number">4.4.1</span> MAST (p&lt;0.0005)</h3>
+<p>Here we are performing MAST to find peaks with the top GATA3-like motifs of the three.<br />
+<strong>Extract MEME PSWMs</strong><br />
+First isolate the PSWMs associated with GATA-like motifs. There are four GATA-like motifs in first round MEME:<br />
+</p>
+<pre class="bash watch-out"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_without_motifs_1_top5000_161window_meme_output/meme.txt
+#AGATBYTTATC_meme.txt -- top enriched GATA-like motif in round2
+
+
+mkdir individual_meme
+cp individual_meme_round1/GATAmotif1_1_meme.txt individual_meme/GATAmotif1_meme.txt # save round1 motif to this folder
+cp AGATBYTTATC_meme.txt individual_meme/GATAmotif2_meme.txt
+rm *meme.txt</code></pre>
+<p>We will MAST only the top enriched motif, with a P-value&lt;0.0005.<br />
+</p>
+<pre class="bash watch-out"><code>cat individual_meme/GATAmotif2_meme.txt 
+MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
+
+ALPHABET= ACGT
+
+strands: + -
+
+A 0.295 C 0.205 G 0.205 T 0.295
+
+MOTIF   AGATBYTTATC
+letter-probability matrix: alength= 4 w= 11 nsites= 1080 E= 3.9e-629 
+ 0.652778  0.026852  0.000000  0.320370 
+ 0.000000  0.000000  1.000000  0.000000 
+ 0.999074  0.000926  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.092593  0.261111  0.248148  0.398148 
+ 0.180556  0.250000  0.179630  0.389815 
+ 0.069444  0.190741  0.086111  0.653704 
+ 0.224074  0.000000  0.019444  0.756481 
+ 1.000000  0.000000  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.000000  1.000000  0.000000  0.000000</code></pre>
+<pre class="bash watch-out"><code>module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif2_meme.txt without_motifs_1.fasta &gt; mast_GATA3_PSWM_in_peaks_round2.txt #16778
+Rscript /home/FCAM/ssun/scripts/parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round2.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round2.bed 
+#16775</code></pre>
+<p>Use <code>intersectBed</code> to find GATA3 peaks without motif 1.<br />
+And convert to .fasta<br />
+</p>
+<pre class="bash watch-out"><code>module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif1 exclude peaks with motif2
+intersectBed -v -a without_motifs_1.bed -b mast_GATA3_PSWM_in_peaks_round2.bed &gt; without_motifs_12.bed #52334
+fastaFromBed -fi $genome -bed without_motifs_12.bed -fo without_motifs_12.fasta</code></pre>
+</div>
 </div>
 <div id="meme-round3" class="section level2" number="4.5">
 <h2><span class="header-section-number">4.5</span> MEME-round3:</h2>
+<p>sort and select top 5000 from peaks without motif 1 and motif2.<br />
+</p>
+<pre class="bash watch-out"><code># select top 5000
+sort -nrk4,4 without_motifs_12.bed | head -n 5000 &gt; without_motifs_12_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_12_top5000.bed -fo without_motifs_12_top5000.fasta</code></pre>
+<p>Perform MEME on top 5000 GATA3 peaks without motif1 and motif2 with -minw 4, -maxw 35 and the 3-ordered Markov Background Model.<br />
+<strong>And the default wg/ws setting</strong>:<br />
+</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=r3_meme_top5000.sh
+#SBATCH -N 6
+#SBATCH -n 6
+#SBATCH -c 12
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=80G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o r3_meme_top5000.sh_%j.out
+#SBATCH -e r3_meme_top5000.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+meme -p 72 without_motifs_12_top5000.fasta -oc GATA_ChIP_without_motifs_12_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000</code></pre>
 </div>
 <div id="meme-round4" class="section level2" number="4.6">
 <h2><span class="header-section-number">4.6</span> MEME-round4:</h2>
