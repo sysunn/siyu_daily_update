@@ -710,7 +710,10 @@ function toggle_visibility(id1) {
 <ul>
 <li><a href="#install-required-packages" id="toc-install-required-packages"><span class="toc-section-number">1</span> Install required packages</a></li>
 <li><a href="#april-18th" id="toc-april-18th"><span class="toc-section-number">2</span> April 18th</a></li>
-<li><a href="#finalized-exhaustive-de-novo-motif-analysis-for-gata3-chip-seq-data" id="toc-finalized-exhaustive-de-novo-motif-analysis-for-gata3-chip-seq-data"><span class="toc-section-number">3</span> Finalized Exhaustive de novo motif analysis for GATA3 ChIP-seq Data</a></li>
+<li><a href="#finalized-exhaustive-de-novo-motif-analysis-for-gata3-chip-seq-data" id="toc-finalized-exhaustive-de-novo-motif-analysis-for-gata3-chip-seq-data"><span class="toc-section-number">3</span> Finalized Exhaustive de novo motif analysis for GATA3 ChIP-seq Data</a>
+<ul>
+<li><a href="#updated-parse_mast_to_coordinates.r" id="toc-updated-parse_mast_to_coordinates.r"><span class="toc-section-number">3.1</span> Updated parse_mast_to_coordinates.R</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -783,6 +786,56 @@ brew install bedtools</code></pre>
 </div>
 <div id="finalized-exhaustive-de-novo-motif-analysis-for-gata3-chip-seq-data" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> Finalized Exhaustive de novo motif analysis for GATA3 ChIP-seq Data</h1>
+<div id="updated-parse_mast_to_coordinates.r" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> Updated parse_mast_to_coordinates.R</h2>
+<p>Path to file: /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R<br />
+</p>
+<pre class="r watch-out"><code>#!/usr/bin/env Rscript
+args = commandArgs(trailingOnly=TRUE)
+
+file = args[[1]]
+
+#the latest version of mast output changes a bit, so I updated this function:
+parse.mast &lt;- function(file, motif.num = 1) {
+  mast.data = read.table(file, colClasses = c(&#39;character&#39;,&#39;character&#39;,&#39;character&#39;,&#39;character&#39;, &#39;integer&#39;,&#39;integer&#39;,&#39;numeric&#39;,&#39;numeric&#39;))
+  filename = paste(strsplit(file, &#39;.txt&#39;)[[1]][1], &#39;.bed&#39;, sep=&#39;&#39;)
+  print(filename)
+  chrom = vector(mode=&quot;character&quot;, length = nrow(mast.data))
+  start = vector(mode=&quot;integer&quot;, length = nrow(mast.data))
+  end = vector(mode=&quot;integer&quot;, length = nrow(mast.data))
+  strand.motif = vector(mode=&quot;integer&quot;, length = nrow(mast.data))
+  score = vector(mode=&quot;numeric&quot;, length = nrow(mast.data))
+  pval = vector(mode=&quot;numeric&quot;, length = nrow(mast.data))
+
+  for (j in 1:nrow(mast.data)) {
+    chrom[j] = strsplit(mast.data[j,1], &quot;:&quot;)[[1]][1]
+    start[j] = as.numeric(strsplit(strsplit(mast.data[j,1], &quot;:&quot;)[[1]][2], &quot;-&quot;)[[1]][1]) + mast.data[j,5] -1
+    end[j] = as.numeric(strsplit(strsplit(mast.data[j,1], &quot;:&quot;)[[1]][2], &quot;-&quot;)[[1]][1]) + mast.data[j,6]
+    strand.motif[j] = as.character(mast.data[j,2])
+    score[j] = mast.data[j,7]
+    pval[j] = mast.data[j,8]
+  }
+  
+  arg = data.frame(cbind(chrom, start, end, score, pval, strand.motif))
+  arg = arg[arg$strand.motif == paste(&#39;+&#39;, motif.num, sep=&#39;&#39;) | arg$strand.motif ==  paste(&#39;-&#39;, motif.num, sep=&#39;&#39;),]
+
+  strand = vector(mode=&quot;character&quot;, length = nrow(arg))
+  motif = vector(mode=&quot;character&quot;, length = nrow(arg))
+  for (j in 1:nrow(arg)) {
+    strand[j] = strsplit(as.character(arg[j,6]), &quot;&quot;)[[1]][1]
+    motif[j] = strsplit(as.character(arg[j,6]), &quot;&quot;)[[1]][2]
+  }
+  res = cbind(arg[,c(T,T,T,T,T,F)], strand, motif)
+  colnames(res) = c(&#39;chr&#39;, &#39;start&#39;, &#39;end&#39;, &#39;score&#39;, &#39;pval&#39;, &#39;strand&#39;, &#39;motif&#39;)
+  res$start = as.numeric(as.character(res$start))
+  res$end = as.numeric(as.character(res$end))
+
+  write.table(res, file=filename, sep=&#39;\t&#39;, quote=F, row.names=F, col.names=F)
+  return(res)
+}
+
+parse.mast(file)</code></pre>
+</div>
 </div>
 
 
