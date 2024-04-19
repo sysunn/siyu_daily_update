@@ -769,6 +769,7 @@ wc -l mast_GATA3_PSWM_in_peaks_round8.bed
 
 
 Use `intersectBed` to find GATA3 peaks without motif 12345678. \
+
 And convert to FASTA \
 ```{r engine='bash', eval=F, echo=TRUE}
 module load bedtools
