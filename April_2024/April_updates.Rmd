@@ -97,6 +97,28 @@ install.packages("latticeExtra", quiet = TRUE)
 
 # Finalized Exhaustive de novo motif analysis for GATA3 ChIP-seq Data
 
+Working directory: /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/final_Exhaustive_denovomotif_analysis_240418 \
+
+## 3-ordered Markov Background Model
+
+GATA3 TF binding sites are short, commonly seen as 4-mer GATA/GATC. \
+To account for this fact, we want to generate the markov background model from the reference genome, which estimates the probability of a candidate motif appearing in the dataset by chance. \
+
+I use `fasta-get-markov` with `-m 3` option to generate a 3-ordered Markov Background Model for hg38 ref genome. The output file defines all k-mer frequencies from 1-mer to 4-mer. \
+
+```{r, engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load bedtools
+module load R/4.1.2
+
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+
+fasta-get-markov -m 3 $genome > hg38_bkgrnd.txt
+```
+
+MEME also provide a internal parameter `-markov_order 3` that will creates a 3-order Markov model using an add-one prior from the input primary sequences. \
+
 ## Updated parse_mast_to_coordinates.R
 
 Path to file: /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R \
@@ -149,5 +171,619 @@ parse.mast <- function(file, motif.num = 1) {
 parse.mast(file)
 ```
 
+When parsing the MAST output to the BED file, we calculate the motif coordinates from the TXT file using some hard-coded R scripts. The output BED file from the current `parse_mast_to_coordinates.R` script generates a BED file with motif coordinates. However, there is a discrepancy of one base when transforming the output BED to the FASTA format with `fastaFromBed`. \
+
+What I changed is that while calculating the start of motif coordinates, I added a `-1` to the original script:\
+```{r engine='R', eval=F, echo=TRUE}
+start[j] = as.numeric(strsplit(strsplit(mast.data[j,1], ":")[[1]][2], "-")[[1]][1]) + mast.data[j,5] -1
+```
+
+Now, the output BED file will be one base ahead.\
+The updated parse_mast_to_coordinates1.R file correctly reflect the actual coordinates of the motifs. \
+
+## Input sequences: GATA3 ChIP-seq data in MCF7 cells
+
+These peak regions are generated from `MACS3 peak calling` using the default stringency and have removed peaks on contigs and within blacklisted regions. The peak intensity is normalized with DeSeq2. \
+Peaks are centered at the summit/center of the peak with a 161bp window flanking the center. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+#cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/final_Exhaustive_denovomotif_analysis_240418 
+module load bedtools
+sizes=/home/FCAM/ssun/Genome/hg38.chrom.sizes
+genome=/home/FCAM/ssun/Genome/hg38.fa
+dir=/home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/peak_Intensity/GATA_Deseq2/
+
+# extend the peak region to 161bp window centered on the summit
+slopBed -b 80 -i ${dir}GATA_ChIP_summits_final_DESeq2_ranked_intensity.bed -g $sizes  | sort -k1,1 -k2,2n > GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed #96868
+
+# convert to FASTA
+fastaFromBed -fi $genome -bed GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed -fo GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.fasta #193736
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+head -5 GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed
+#chr1	827300	827461	45.324686100056
+#chr1	845716	845877	530.34195637027
+#chr1	869417	869578	18.626318257943
+#chr1	916689	916850	36.6999257213148
+#chr1	917454	917615	124.645017626695
+```
+
+The first three columns in the bed file are the peak coordinates, notice that they are all 161bp width. The forth column is the peak intensity normaloized via DeSeq2. \
+The total number of GATA3 peaks is 96868. \
+
+## MEME-round1:
+
+**Generation of the top 5000 peak set with 161bp window** \
+
+Sort peaks by intensity, and select top 5000 peaks. \
+```{r engine='bash', eval=F, echo=TRUE}
+sort -nrk4,4 GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed | head -n 5000 > GATA_ChIP_top5000_161window.bed #5000
+```
+
+Convert this top 5000 peak BED file to a FASTA file with `fastaFromBed`. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed GATA_ChIP_top5000_161window.bed -fo GATA_ChIP_top5000_161window.fasta
+```
+
+**Perform MEME on top 5000 GATA3 peaks (161win) with -minw 4, -maxw 35, the 3-ordered Markov Background Model and the default wg/ws setting**: \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+
+meme -p 72 GATA_ChIP_top5000_161window.fasta -oc GATA_ChIP_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+```
+
+MEME identifies 4 GATA3-like motifs. \
+
+### MAST (p<0.0005)
+
+Here we are performing MAST against all peaks with 161 window to find peaks with the top GATA3-like motifs of the four. \
+
+**Extract MEME PWM** \
+
+First isolate the PWM associated with each GATA-like motif. There are four GATA-like motifs in the first round of MEME, but we only took the most significant one (smallest E-value) to perform MAST. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_top5000_161window_meme_output/meme.txt
+#WGATAAVATCW_meme.txt -- top enriched GATA-like motif in round1 (E-value: 3.8e-740)
+#GATAADVATCW_meme.txt                                           (E-value: 5.8e-397)
+#HTTATCTNYHHATCT_meme.txt                                       (E-value: 1.0e-134)
+#ATCWGATAAVN_meme.txt                                           (E-value: 1.0e-083)
+
+
+mkdir individual_meme
+cp WGATAAVATCW_meme.txt individual_meme/GATAmotif1_meme.txt
+rm *meme.txt
+```
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 1"}
+library(knitr)
+knitr::include_graphics("./GATAmotif1_meme.png") 
+```
+
+
+```{r engine='bash', eval=F, echo=F}
+MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
+
+ALPHABET= ACGT
+
+strands: + -
+
+A 0.295 C 0.205 G 0.205 T 0.295
+
+MOTIF	WGATAAVATCW
+letter-probability matrix: alength= 4 w= 11 nsites= 1090 E= 3.8e-740 
+ 0.600000  0.044954  0.046789  0.308257 
+ 0.000000  0.000000  1.000000  0.000000 
+ 1.000000  0.000000  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.837615  0.000000  0.000000  0.162385 
+ 0.555046  0.131193  0.185321  0.128440 
+ 0.273394  0.363303  0.238532  0.124771 
+ 1.000000  0.000000  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.000000  1.000000  0.000000  0.000000 
+ 0.433945  0.000917  0.023853  0.541284 
+```
+
+We will MAST only the top enriched motif, with a P-value<0.0005, against the 161bp window peaks. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif1_meme.txt GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.fasta > mast_GATA3_PSWM_in_peaks_round1.txt #27756
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round1.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round1.bed 
+#27753
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 1. \
+And convert to .fasta \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From all peaks (161win) exclude peaks with motif1 
+intersectBed -v -a GATA_ChIP_summits_final_DESeq2_ranked_intensity_161bpwindow.bed -b mast_GATA3_PSWM_in_peaks_round1.bed > without_motifs_1.bed #69112
+fastaFromBed -fi $genome -bed without_motifs_1.bed -fo without_motifs_1.fasta
+```
+
+
+
+## MEME-round2:
+sort by normalized intensity and select top 5000 from peaks without motif 1. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 5000
+sort -nrk4,4 without_motifs_1.bed | head -n 5000 > without_motifs_1_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_1_top5000.bed -fo without_motifs_1_top5000.fasta
+```
+
+Perform MEME on top 5000 GATA3 peaks without motif1 with -minw 4, -maxw 35 and the 3-ordered Markov Background Model. \
+**And the default wg/ws setting**: \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+meme -p 72 without_motifs_1_top5000.fasta -oc GATA_ChIP_without_motifs_1_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+```
+
+This time, the top enriched motif is the second GATA-like motif in round1. \
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 2"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif2_meme.png") 
+```
+
+### MAST (p<0.0005)
+
+**Extract MEME PWM** \
+
+First isolate the PWM associated with GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_without_motifs_1_top5000_161window_meme_output/meme.txt
+#AGATBYTTATC_meme.txt -- top enriched GATA-like motif in round2 (E-value: 3.9e-629)
+
+cp AGATBYTTATC_meme.txt individual_meme/GATAmotif2_meme.txt
+rm *meme.txt
+```
+
+
+```{r engine='bash', eval=F, echo=F}
+MEME version 5.4.1 (Release date: Sat Aug 21 19:23:23 2021 -0700)
+
+ALPHABET= ACGT
+
+strands: + -
+
+A 0.295 C 0.205 G 0.205 T 0.295
+
+MOTIF	AGATBYTTATC
+letter-probability matrix: alength= 4 w= 11 nsites= 1080 E= 3.9e-629 
+ 0.652778  0.026852  0.000000  0.320370 
+ 0.000000  0.000000  1.000000  0.000000 
+ 0.999074  0.000926  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.092593  0.261111  0.248148  0.398148 
+ 0.180556  0.250000  0.179630  0.389815 
+ 0.069444  0.190741  0.086111  0.653704 
+ 0.224074  0.000000  0.019444  0.756481 
+ 1.000000  0.000000  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.000000  1.000000  0.000000  0.000000
+```
+
+We will MAST the motif against peaks (161win) without motif1, with a P-value<0.0005. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif2_meme.txt without_motifs_1.fasta > mast_GATA3_PSWM_in_peaks_round2.txt #16778
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round2.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round2.bed 
+#16775
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 12. \
+And convert to FASTA \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif1 exclude peaks with motif2
+intersectBed -v -a without_motifs_1.bed -b mast_GATA3_PSWM_in_peaks_round2.bed > without_motifs_12.bed #52334
+fastaFromBed -fi $genome -bed without_motifs_12.bed -fo without_motifs_12.fasta
+```
+
+
+## MEME-round3:
+
+sort and select top 5000 from peaks without motif 1 and motif2. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 5000
+sort -nrk4,4 without_motifs_12.bed | head -n 5000 > without_motifs_12_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_12_top5000.bed -fo without_motifs_12_top5000.fasta
+```
+
+Perform MEME on top 5000 GATA3 peaks without motif1 and motif2 with -minw 4, -maxw 35 and the 3-ordered Markov Background Model. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+meme -p 72 without_motifs_12_top5000.fasta -oc GATA_ChIP_without_motifs_12_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+```
+
+The second motif is the GATA-like motif, two GATA sites with 5 spacings. \
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 3"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif3_meme.png") 
+```
+
+### MAST (p<0.0005)
+
+Here we are performing MAST to find peaks with the top GATA3-like motifs of the three. \
+**Extract MEME PSWMs** \
+First isolate the PSWMs associated with GATA-like motifs. There are four GATA-like motifs in first round MEME: \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_without_motifs_12_top5000_161window_meme_output/meme.txt
+#AGATDDDNAGATAAD_meme.txt -- top enriched GATA-like motif in round3 (E-value: 3.6e-259)
+
+cp AGATDDDNAGATAAD_meme.txt individual_meme/GATAmotif3_meme.txt
+rm *meme.txt
+```
+
+We will MAST only the top enriched motif, with a P-value<0.0005. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif3_meme.txt without_motifs_12.fasta > mast_GATA3_PSWM_in_peaks_round3.txt #9430
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round3.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round3.bed 
+#9427
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 123. \
+And convert to .fasta \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif12 exclude peaks with motif3
+intersectBed -v -a without_motifs_12.bed -b mast_GATA3_PSWM_in_peaks_round3.bed > without_motifs_123.bed #42904
+fastaFromBed -fi $genome -bed without_motifs_123.bed -fo without_motifs_123.fasta
+```
+
+
+## MEME-round4:
+sort and select the top 5000 peaks from peaks without motif 1, 2, 3. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 5000
+sort -nrk4,4 without_motifs_123.bed | head -n 5000 > without_motifs_123_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_123_top5000.bed -fo without_motifs_123_top5000.fasta
+```
+
+Perform MEME on top 5000 GATA3 peaks without motif123 with -minw 4, -maxw 35 and the 3-ordered Markov Background Model. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+meme -p 72 without_motifs_123_top5000.fasta -oc GATA_ChIP_without_motifs_123_top5000_161window_meme_output -nmotifs 10 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+```
+
+The ninth motif is a GATA-like motif which is GAT-GAT with 6 spacings. \
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 4"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif4_meme.png") 
+```
+
+
+### MAST (p<0.0005)
+
+**Extract MEME PWM** \
+First isolate the PWM associated with the GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_without_motifs_123_top5000_161window_meme_output/meme.txt
+#TTATCTBYNNVATCT_meme.txt -- top enriched GATA-like motif in round4 (E-value:5.3e-232)
+
+cp TTATCTBYNNVATCT_meme.txt individual_meme/GATAmotif4_meme.txt
+rm *meme.txt
+```
+
+We will MAST the motif against peaks (161win) without motifs 123, with a P-value<0.0005. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif4_meme.txt without_motifs_123.fasta > mast_GATA3_PSWM_in_peaks_round4.txt #7434
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round4.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round4.bed 
+#7431
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 1234. \
+And convert to FASTA. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif1 exclude peaks with motif2
+intersectBed -v -a without_motifs_123.bed -b mast_GATA3_PSWM_in_peaks_round4.bed > without_motifs_1234.bed #35473
+fastaFromBed -fi $genome -bed without_motifs_1234.bed -fo without_motifs_1234.fasta
+```
+
+## MEME-round5:
+
+sort and select top 5000 from peaks without motif 1, 2, 3, 4. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 5000
+sort -nrk4,4 without_motifs_1234.bed | head -n 5000 > without_motifs_1234_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_1234_top5000.bed -fo without_motifs_1234_top5000.fasta
+```
+
+Perform MEME on top 5000 GATA3 peaks without motif1234 with -minw 4, -maxw 35 and the 3-ordered Markov Background Model. \
+
+**default wg/ws setting, search for 20 motifs**: \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+
+meme -p 72 without_motifs_1234_top5000.fasta -oc GATA_ChIP_without_motifs_1234_top5000_161window_20_meme_output -nmotifs 20 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+```
+
+
+Initially, the top 10 motifs did not yield a GATA-like motif. Therefore, I increased the motif search number from 10 to 20 and also conducted additional MEME analysis with a small wg/ws parameter (-wg 1 -ws 1). However, the small wg/ws parameter did not generate any GATA-like motifs. Fortunately, the default MEME search for 20 motifs revealed the 14th motif to be GATA-like: GAT-ATC with 1 spacing. Its E-value is 1.2e-065, indicating its significance. \
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 5"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif5_meme.png") 
+```
+
+
+### MAST (p<0.0005)
+
+**Extract MEME PWM** \
+First isolate the PWM associated with GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_without_motifs_1234_top5000_161window_20_meme_output/meme.txt
+#NCTTATCWGAT_meme.txt -- top enriched GATA-like motif in round5 (E-value: 1.2e-065)
+
+cp NCTTATCWGAT_meme.txt individual_meme/GATAmotif5_meme.txt
+rm *meme.txt
+```
+
+We will MAST only the top enriched motif, with a P-value<0.0005. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif5_meme.txt without_motifs_1234.fasta > mast_GATA3_PSWM_in_peaks_round5.txt #4654
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round5.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round5.bed 
+#4651
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 12345. \
+And convert to FASTA \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif1234 exclude peaks with motif
+intersectBed -v -a without_motifs_1234.bed -b mast_GATA3_PSWM_in_peaks_round5.bed > without_motifs_12345.bed #30822
+fastaFromBed -fi $genome -bed without_motifs_12345.bed -fo without_motifs_12345.fasta
+```
+
+## MEME-round6:
+sort and select top 5000 from peaks without motif 1, 2, 3, 4, 5. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 5000
+sort -nrk4,4 without_motifs_12345.bed | head -n 5000 > without_motifs_12345_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_12345_top5000.bed -fo without_motifs_12345_top5000.fasta
+```
+
+I attempted to use MEME to search for 20 motifs on the top 5000 GATA3 peaks without motifs 12345, employing the 3-ordered Markov Background Model, with motif widths ranging from 4 to 35 (-minw 4, -maxw 35). I conducted trials with both default ws/wg settings and smaller ws/wg (-wg 1 -ws 1), but none of these attempts generated GATA-like motifs. \
+
+Subsequently, I widened the motif search range from 4-35 to 10-35 and increased the motif count to 25, still using both default and smaller ws/wg settings. Fortunately, the default MEME search for 25 motifs with motif widths ranging from 10 to 35 revealed the 19th motif to be GATA-like: GAT-ATC with a spacing of 13. Its E-value is 2.7e-218, indicating its significance. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+
+#meme -p 72 without_motifs_12345_top5000.fasta -oc GATA_ChIP_without_motifs_12345_top5000_161window_20_meme_output -nmotifs 20 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+#meme -p 72 without_motifs_12345_top5000.fasta -oc GATA_ChIP_without_motifs_12345_top5000_161window_20ws1_meme_output -nmotifs 20 -csites 20000 -objfun classic -searchsize 0 -minw 4 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+#meme -p 72 without_motifs_12345_top5000.fasta -oc GATA_ChIP_without_motifs_12345_top5000_161window_25ws1_meme_output -nmotifs 25 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 1
+
+meme -p 72 without_motifs_12345_top5000.fasta -oc GATA_ChIP_without_motifs_12345_top5000_161window_25_meme_output -nmotifs 25 -csites 20000 -objfun classic -searchsize 0 -minw 10 -maxw 35 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000
+```
+
+The 19th is the GAT-GAT with 13 spacings. \
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 6"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif6_meme.png") 
+```
+
+### MAST (p<0.0005)
+
+**Extract MEME PWM** \
+First isolate the PWM associated with GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA_ChIP_without_motifs_12345_top5000_161window_25_meme_output/meme.txt
+#AGATBNNNNNNVNWGATAA_meme.txt -- top enriched GATA-like motif in round6
+
+cp AGATBNNNNNNVNWGATAA_meme.txt individual_meme/GATAmotif6_meme.txt
+rm *meme.txt
+```
+
+We will MAST only the top enriched motif, with a P-value<0.0005. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif6_meme.txt without_motifs_12345.fasta > mast_GATA3_PSWM_in_peaks_round6.txt #3810
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round6.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round6.bed 
+#3807
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 12345. \
+And convert to .fasta \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif12345 exclude peaks with motif
+intersectBed -v -a without_motifs_12345.bed -b mast_GATA3_PSWM_in_peaks_round6.bed > without_motifs_123456.bed #27014
+fastaFromBed -fi $genome -bed without_motifs_123456.bed -fo without_motifs_123456.fasta
+
+```
+
+
+## MEME-round7:
+
+sort and select top 5000 from peaks without motif 1, 2, 3, 4, 5, 6. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 5000
+sort -nrk4,4 without_motifs_123456.bed | head -n 5000 > without_motifs_123456_top5000.bed
+fastaFromBed -fi $genome -bed without_motifs_123456_top5000.bed -fo without_motifs_123456_top5000.fasta
+```
+
+Perform MEME on top 5000 GATA3 peaks without motif123456 with -minw 15, -maxw 30 and the 3-ordered Markov Background Model. \
+Increase the search number to 25, and -wg 1 -ws 0.1 \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+
+meme -p 72 without_motifs_123456_top5000.fasta -oc try16_72_meme_output -nmotifs 25 -csites 20000 -objfun classic -searchsize 0 -minw 15 -maxw 30 -revcomp -dna -bfile hg38_bkgrnd.txt -maxsize 10000000 -wg 1 -ws 0.1
+```
+
+
+The 16th motif is a GATA-like motif with 12bp relative distance. \
+7.2e-075, 496/5000 sites. \
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 7"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif7_meme.png") 
+```
+
+### MAST (p<0.0005)
+
+**Extract MEME PWMs** \
+First isolate the PSWMs associated with GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i try16_72_meme_output/meme.txt
+#NAGATBNNARNNVWGATA_meme.txt -- top enriched GATA-like motif in round7
+
+cp NAGATBNNARNNVWGATA_meme.txt individual_meme/GATAmotif7_meme.txt
+rm *meme.txt
+```
+
+We will MAST only the top enriched motif, with a P-value<0.0005. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif7_meme.txt without_motifs_123456.fasta > mast_GATA3_PSWM_in_peaks_round7.txt #3022
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round7.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round7.bed 
+#3019
+```
+
+Use `intersectBed` to find GATA3 peaks without motif 123456. \
+And convert to .fasta \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif123456 exclude peaks with motif7
+intersectBed -v -a without_motifs_123456.bed -b mast_GATA3_PSWM_in_peaks_round7.bed > without_motifs_1234567.bed #23994
+fastaFromBed -fi $genome -bed without_motifs_1234567.bed -fo without_motifs_1234567.fasta
+
+```
+
+
+## MEME-round8:
+
+To enhance sensitivity and reduce software running time, I intend to select the top 2000 peaks instead of the top 5000. I will then conduct MEME analysis with various parameters, including zoops/opps, different objective functions, different combinations of ws/wg settings and using either hg38_3/2_order or shuffling the input data. \
+
+Sort and select top 2000 from peaks without motif 1, 2, 3, 4, 5, 6, 7. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 2000
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+sort -nrk4,4 without_motifs_1234567.bed | head -n 2000 > without_motifs_1234567_top2000.bed
+fastaFromBed -fi $genome -bed without_motifs_1234567_top2000.bed -fo without_motifs_1234567_top2000.fasta
+```
+
+Initially I was trying the 161bp window peaks, but the results are not ideal. I then tried the 81bp window around peak summit to identify motifs. \
+
+```{r engine='R', eval=F, echo=TRUE}
+module load R/4.1.2
+R
+library(bigWig)
+options(scipen = 999)
+GATA3_peak_summits=center.bed(read.table("without_motifs_1234567_top2000.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_81win=center.bed(GATA3_peak_summits, upstreamWindow = 40, downstreamWindow = 40)
+write.table(GATA3_peak_81win,file= "without_motifs_1234567_81win_top2000.bed", quote=F,sep="\t",col.names=F,row.names=F)
+```
+
+Convert to FASTA. \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed without_motifs_1234567_81win_top2000.bed -fo without_motifs_1234567_81win_top2000.fasta
+```
+
+I found the 10-spacings GATA3-like motif (E-value: 7.0e-017) with the setting of: \
+```{r engine='bash', eval=F, echo=TRUE}
+meme -oc GATA3_without_mot_81bp_top2000_ws_0.5_wg_11_classic_zoops_input3_meme_output -nmotifs 20 -evt 0.05 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -ws 0.5 -wg 11 -revcomp -dna -markov_order 3 -maxsize 100000000 without_motifs_1234567_81win_top2000.fasta
+```
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 8"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif8_meme.png") 
+```
+
+### MAST (p<0.0005)
+
+**Extract MEME PWM** \
+First isolate the PSWMs associated with GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA3_without_mot_81bp_top2000_ws_0.5_wg_11_classic_zoops_input3_meme_output/meme.txt
+#YTTATCTYYNNHVATCT_meme.txt -- top enriched GATA-like motif in round8 
+
+cp YTTATCTYYNNHVATCT_meme.txt individual_meme/GATAmotif8_meme.txt
+rm *meme.txt
+```
+
+**MAST against the 161bp peaks** \
+Although we have identified the motif in 81bp-window peaks, we intend to apply the motif PWM to 161bp-window peaks using `MAST`. This aligns with our previous workflow. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif8_meme.txt without_motifs_1234567.fasta > mast_GATA3_PSWM_in_peaks_round8.txt #1639
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round8.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round8.bed 
+#1636
+```
+
+
+Use `intersectBed` to find GATA3 peaks without motif 12345678. \
+And convert to FASTA \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif123456 exclude peaks with motif7
+intersectBed -v -a without_motifs_1234567.bed -b mast_GATA3_PSWM_in_peaks_round8.bed > without_motifs_12345678.bed #22358
+fastaFromBed -fi $genome -bed without_motifs_12345678.bed -fo without_motifs_12345678.fasta
+```
+
+## MEME-round9:
+
+sort and select top 2000 from peaks without motif 1, 2, 3, 4, 5, 6, 7, 8. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 2000
+sort -nrk4,4 without_motifs_12345678.bed | head -n 2000 > without_motifs_12345678_top2000.bed # 161win
+```
 
 
