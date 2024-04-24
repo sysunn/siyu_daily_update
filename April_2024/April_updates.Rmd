@@ -809,6 +809,12 @@ GATA3_peak_81win=center.bed(GATA3_peak_summits, upstreamWindow = 40, downstreamW
 write.table(GATA3_peak_81win,file= "without_motifs_12345678_81win_top2000.bed", quote=F,sep="\t",col.names=F,row.names=F)
 ```
 
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed without_motifs_12345678_81win_top2000.bed -fo without_motifs_12345678_81win_top2000.fasta
+```
+
 3-ordered input sequence as background: \
 default setting with `se` model identified a single AGATAA site. (E-value: 2.1e-007) \
 default setting with `de` model also identified a single GATAA site. (E-value: 1.3e-002) \
@@ -2074,3 +2080,133 @@ knitr::include_graphics("./xy_closest_2nd_3mer_to_closest_1st_3mer_to_GATA3_peak
 ```
 
 There are GAT-GAT/ATC-ATC with 7bp or 11bp distance identified to be enriched in GATA3 peaks without motif1-8 (top20%) with the customized kmer analysis. This indicates that we may not have exhausted the MEME settings yet, and we should expect to find a GAT-GAT with an 7bp or 11bp distance before the single GATA site. \
+
+# MEME-round9 - change background model
+
+Previously, we have ran MEME with either a background model of 2 or 3. However, since GATA motif is a relative small motif, a 3-ordered or 2-ordered background model might mask the real biology of GAT/GATA enrichment. \
+
+Try a 0-ordered background model instead: \
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme.sh_%j.out
+#SBATCH -e meme.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 4 -oc GATA3_without_mot12345678_81bp_top2000_meme_output -nmotifs 25 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_12345678_81win_top2000.fasta
+
+# shuf 1
+meme -p 4 -oc GATA3_without_mot12345678_81bp_top2000_meme_output1 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 4 -maxw 20 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_12345678_81win_top2000.fasta
+
+# shuf 1 minw maxw
+meme -p 4 -oc GATA3_without_mot12345678_81bp_top2000_meme_output2 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 13 -maxw 16 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_12345678_81win_top2000.fasta
+```
+
+Only the third MEME command, with both a 0-order Markov model, and motif width restricted to 13-16, gives GATA3-like motifs. \
+This motif is what we expected to see based on the kmer analysis, a ATC-ATC with 11bp distance. \
+
+```{r  out.width = "80%", echo=F, fig.align = "center", fig.cap="GATA3 motif 9"}
+#library(knitr)
+knitr::include_graphics("./GATAmotif9_meme.png") 
+```
+
+### MAST (p<0.0005)
+
+**Extract MEME PWM** \
+First isolate the PSWMs associated with GATA-like motifs. \
+```{r engine='bash', eval=F, echo=TRUE}
+#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i GATA3_without_mot12345678_81bp_top2000_meme_output2/meme.txt
+#TATCTBNNDDMVATCT_meme.txt -- top enriched GATA-like motif in round9 (E-value: 1.7e-013) 
+
+cp TATCTBNNDDMVATCT_meme.txt individual_meme/GATAmotif9_meme.txt
+rm *meme.txt
+```
+
+**MAST against the 161bp peaks** \
+Although we have identified the motif in 81bp-window peaks, we intend to apply the motif PWM to 161bp-window peaks using `MAST`. This aligns with our previous workflow. \
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif9_meme.txt without_motifs_12345678.fasta > mast_GATA3_PSWM_in_peaks_round9.txt #1657
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round9.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round9.bed 
+#1654
+```
+
+
+Use `intersectBed` to find GATA3 peaks without motif 123456789. \
+
+And convert to FASTA \
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif12345678 exclude peaks with motif9
+intersectBed -v -a without_motifs_12345678.bed -b mast_GATA3_PSWM_in_peaks_round9.bed > without_motifs_123456789.bed #20704
+fastaFromBed -fi $genome -bed without_motifs_123456789.bed -fo without_motifs_123456789.fasta
+```
+
+sort and select top 2000 from peaks without motif 1, 2, 3, 4, 5, 6, 7, 8, 9. \
+```{r engine='bash', eval=F, echo=TRUE}
+# select top 2000
+sort -nrk4,4 without_motifs_123456789.bed | head -n 2000 > without_motifs_123456789_top2000.bed # 161win
+```
+
+### 81win
+```{r engine='R', eval=F, echo=TRUE}
+#module load R/4.1.2
+#R
+library(bigWig)
+options(scipen = 999)
+GATA3_peak_summits=center.bed(read.table("without_motifs_123456789_top2000.bed", header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_81win=center.bed(GATA3_peak_summits, upstreamWindow = 40, downstreamWindow = 40)
+write.table(GATA3_peak_81win,file= "without_motifs_123456789_81win_top2000.bed", quote=F,sep="\t",col.names=F,row.names=F)
+```
+
+```{r engine='bash', eval=F, echo=TRUE}
+module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed without_motifs_123456789_81win_top2000.bed -fo without_motifs_123456789_81win_top2000.fasta
+```
+
+## MEME-round10:
+```{r engine='bash', eval=F, echo=TRUE}
+#!/bin/bash
+#SBATCH --job-name=meme10_2.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 8
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o meme10_2.sh_%j.out
+#SBATCH -e meme10_2.sh_%j.err
+
+hostname
+export TMPDIR="${HOME}/temp"
+module load meme/5.4.1
+
+meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 13 -maxw 16 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
+
+meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output1 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 8 -maxw 12 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
+
+meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output2 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 10 -maxw 12 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
+```
+
+
+
