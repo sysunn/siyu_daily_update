@@ -792,8 +792,16 @@ function toggle_visibility(id1) {
 <li><a href="#meme-round9---change-background-model" id="toc-meme-round9---change-background-model"><span class="toc-section-number">7</span> MEME-round9 - change background model</a>
 <ul>
 <li><a href="#mast-p0.0005-8" id="toc-mast-p0.0005-8"><span class="toc-section-number">7.0.1</span> MAST (p&lt;0.0005)</a></li>
-<li><a href="#win-2" id="toc-win-2"><span class="toc-section-number">7.0.2</span> 81win</a></li>
-<li><a href="#meme-round10" id="toc-meme-round10"><span class="toc-section-number">7.1</span> MEME-round10:</a></li>
+</ul></li>
+<li><a href="#meme-round10" id="toc-meme-round10"><span class="toc-section-number">8</span> MEME-round10:</a>
+<ul>
+<li><a href="#win--top2000" id="toc-win--top2000"><span class="toc-section-number">8.0.1</span> 81win -top2000</a></li>
+<li><a href="#win---top4000" id="toc-win---top4000"><span class="toc-section-number">8.0.2</span> 81win - top4000</a></li>
+<li><a href="#mast-p0.0005-9" id="toc-mast-p0.0005-9"><span class="toc-section-number">8.0.3</span> MAST (p&lt;0.0005)</a></li>
+</ul></li>
+<li><a href="#meme-round11" id="toc-meme-round11"><span class="toc-section-number">9</span> MEME-round11:</a>
+<ul>
+<li><a href="#win--top2000-1" id="toc-win--top2000-1"><span class="toc-section-number">9.0.1</span> 81win -top2000</a></li>
 </ul></li>
 </ul>
 </div>
@@ -2645,22 +2653,7 @@ Figure 11: <span class="caption-title">Enrichment plot (xy plot) for 3mer-3mer i
 </p>
 <p>Try a 0-ordered background model instead:<br />
 </p>
-<pre class="bash watch-out"><code>#!/bin/bash
-#SBATCH --job-name=meme.sh    
-#SBATCH -N 1
-#SBATCH -n 1
-#SBATCH -c 4
-#SBATCH -p general
-#SBATCH --qos=general
-#SBATCH --mem=20G
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o meme.sh_%j.out
-#SBATCH -e meme.sh_%j.err
-
-hostname
-export TMPDIR=&quot;${HOME}/temp&quot;
-module load meme/5.4.1
+<pre class="bash watch-out"><code>module load meme/5.4.1
 
 meme -p 4 -oc GATA3_without_mot12345678_81bp_top2000_meme_output -nmotifs 25 -objfun classic -csites 20000 -searchsize 0 -minw 4 -maxw 20 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_12345678_81win_top2000.fasta
 
@@ -2708,13 +2701,16 @@ genome=/home/FCAM/ssun/Genome/hg38.fa
 # From peaks without motif12345678 exclude peaks with motif9
 intersectBed -v -a without_motifs_12345678.bed -b mast_GATA3_PSWM_in_peaks_round9.bed &gt; without_motifs_123456789.bed #20704
 fastaFromBed -fi $genome -bed without_motifs_123456789.bed -fo without_motifs_123456789.fasta</code></pre>
+</div>
+</div>
+<div id="meme-round10" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> MEME-round10:</h1>
+<div id="win--top2000" class="section level3" number="8.0.1">
+<h3><span class="header-section-number">8.0.1</span> 81win -top2000</h3>
 <p>sort and select top 2000 from peaks without motif 1, 2, 3, 4, 5, 6, 7, 8, 9.<br />
 </p>
 <pre class="bash watch-out"><code># select top 2000
 sort -nrk4,4 without_motifs_123456789.bed | head -n 2000 &gt; without_motifs_123456789_top2000.bed # 161win</code></pre>
-</div>
-<div id="win-2" class="section level3" number="7.0.2">
-<h3><span class="header-section-number">7.0.2</span> 81win</h3>
 <pre class="r watch-out"><code>#module load R/4.1.2
 #R
 library(bigWig)
@@ -2725,11 +2721,8 @@ write.table(GATA3_peak_81win,file= &quot;without_motifs_123456789_81win_top2000.
 <pre class="bash watch-out"><code>module load bedtools
 genome=/home/FCAM/ssun/Genome/hg38.fa
 fastaFromBed -fi $genome -bed without_motifs_123456789_81win_top2000.bed -fo without_motifs_123456789_81win_top2000.fasta</code></pre>
-</div>
-<div id="meme-round10" class="section level2" number="7.1">
-<h2><span class="header-section-number">7.1</span> MEME-round10:</h2>
 <pre class="bash watch-out"><code>#!/bin/bash
-#SBATCH --job-name=meme10_2.sh    
+#SBATCH --job-name=meme10_3.sh    
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 8
@@ -2738,18 +2731,233 @@ fastaFromBed -fi $genome -bed without_motifs_123456789_81win_top2000.bed -fo wit
 #SBATCH --mem=20G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ssun@uchc.edu
-#SBATCH -o meme10_2.sh_%j.out
-#SBATCH -e meme10_2.sh_%j.err
+#SBATCH -o meme10_3.sh_%j.out
+#SBATCH -e meme10_3.sh_%j.err
 
 hostname
 export TMPDIR=&quot;${HOME}/temp&quot;
 module load meme/5.4.1
 
+#-minw 13 -maxw 16
 meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 13 -maxw 16 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
 
+#-minw 8 -maxw 12
 meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output1 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 8 -maxw 12 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
 
-meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output2 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 10 -maxw 12 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta</code></pre>
+# -minw 10 -maxw 12
+meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output2 -nmotifs 25 -objfun classic -shuf 1 -csites 20000 -searchsize 0 -minw 10 -maxw 12 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
+
+# -objfun se
+meme -p 8 -oc GATA3_without_mot123456789_81bp_top2000_meme_output3 -nmotifs 25 -objfun se -shuf 1 -csites 20000 -searchsize 0 -minw 4 -maxw 20 -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 without_motifs_123456789_81win_top2000.fasta
+</code></pre>
+<p><strong>test_meme.sh</strong><br />
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/final_Exhaustive_denovomotif_analysis_240418/round10_test)</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=top2000_win81_meme_min_XXXXXX_max_YYYYYY.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o top2000_win81_meme_min_XXXXXX_max_YYYYYY.sh_%j.out
+#SBATCH -e top2000_win81_meme_min_XXXXXX_max_YYYYYY.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+test_min=XXXXXX
+test_max=YYYYYY
+
+meme -p 4 -oc GATA3_without_mot123456789_81bp_top2000_ws_XXXXXX_wg_YYYYYY_ZZZZZZ_meme_output -nmotifs 20 -shuf 1 -objfun classic -csites 20000 -searchsize 0 -minw ${test_min} -maxw ${test_max} -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 ../without_motifs_123456789_81win_top2000.fasta</code></pre>
+<p>parallel running:<br />
+</p>
+<pre class="bash watch-out"><code>sh_file=test_meme.sh
+
+minw_value=( &quot;4&quot; &quot;6&quot; &quot;8&quot; &quot;10&quot;)
+maxw_value=(&quot;12&quot; &quot;14&quot; &quot;16&quot; &quot;18&quot; &quot;20&quot;)
+
+
+for test_min in &quot;${minw_value[@]}&quot;
+do
+    echo $test_min
+    for test_max in &quot;${maxw_value[@]}&quot;
+    do
+      echo $test_max
+      sed -e &quot;s/XXXXXX/${test_min}/g&quot; -e &quot;s/YYYYYY/${test_max}/g&quot; &quot;$sh_file&quot; &gt; top2000_win81_meme_min_${test_min}_max_${test_max}.sh  
+      sbatch top2000_win81_meme_min_${test_min}_max_${test_max}.sh
+      sleep 1
+    done
+done</code></pre>
+<p>top2000 peaks with different motif width settings only identidy the single GATA site. However, we are still expecting to find a GATA3 motifs with 7bp distance according to the kmer analysis.<br />
+</p>
+<p>Since our kmer-analysis find the 7bp distance GATA3 motif enriched in the top 20% (~4000) peaks, I will increase my peak set from top 2000 to top4000:<br />
+</p>
+</div>
+<div id="win---top4000" class="section level3" number="8.0.2">
+<h3><span class="header-section-number">8.0.2</span> 81win - top4000</h3>
+<p>Took the top 4000 peaks:<br />
+</p>
+<p>sort and select top 4000 from peaks without motif 1, 2, 3, 4, 5, 6, 7, 8, 9.<br />
+</p>
+<pre class="bash watch-out"><code># select top 4000
+sort -nrk4,4 without_motifs_123456789.bed | head -n 4000 &gt; without_motifs_123456789_top4000.bed # 161win</code></pre>
+<pre class="r watch-out"><code>#module load R/4.1.2
+#R
+library(bigWig)
+options(scipen = 999)
+GATA3_peak_summits=center.bed(read.table(&quot;without_motifs_123456789_top4000.bed&quot;, header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_81win=center.bed(GATA3_peak_summits, upstreamWindow = 40, downstreamWindow = 40)
+write.table(GATA3_peak_81win,file= &quot;without_motifs_123456789_81win_top4000.bed&quot;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)</code></pre>
+<pre class="bash watch-out"><code>module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed without_motifs_123456789_81win_top4000.bed -fo without_motifs_123456789_81win_top4000.fasta</code></pre>
+<p><strong>test2_meme.sh</strong><br />
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/final_Exhaustive_denovomotif_analysis_240418/round10_test_4000)</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=top4000_win81_meme_min_XXXXXX_max_YYYYYY.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o top4000_win81_meme_min_XXXXXX_max_YYYYYY.sh_%j.out
+#SBATCH -e top4000_win81_meme_min_XXXXXX_max_YYYYYY.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+test_min=XXXXXX
+test_max=YYYYYY
+
+meme -p 4 -oc GATA3_without_mot123456789_81bp_top4000_min_XXXXXX_max_YYYYYY_meme_output -nmotifs 20 -shuf 1 -objfun classic -csites 20000 -searchsize 0 -minw ${test_min} -maxw ${test_max} -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 ../without_motifs_123456789_81win_top4000.fasta</code></pre>
+<p>parallel running:<br />
+</p>
+<pre class="bash watch-out"><code>sh_file=test2_meme.sh
+
+minw_value=( &quot;4&quot; &quot;6&quot; &quot;8&quot; &quot;10&quot;)
+maxw_value=(&quot;12&quot; &quot;14&quot; &quot;16&quot; &quot;18&quot; &quot;20&quot;)
+
+
+for test_min in &quot;${minw_value[@]}&quot;
+do
+    echo $test_min
+    for test_max in &quot;${maxw_value[@]}&quot;
+    do
+      echo $test_max
+      sed -e &quot;s/XXXXXX/${test_min}/g&quot; -e &quot;s/YYYYYY/${test_max}/g&quot; &quot;$sh_file&quot; &gt; top4000_win81_meme_min_${test_min}_max_${test_max}.sh  
+      sbatch top4000_win81_meme_min_${test_min}_max_${test_max}.sh
+      sleep 1
+    done
+done</code></pre>
+<p>MEME identify a GATA3 motif width 7bp distance when set the motif width to 10-14.<br />
+</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-122"></span>
+<img src="data:image/png;base64,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" alt="GATA3 motif 10" width="80%" />
+<p class="caption">
+Figure 13: <span class="caption-title">GATA3 motif 10</span><br>
+</p>
+</div>
+</div>
+<div id="mast-p0.0005-9" class="section level3" number="8.0.3">
+<h3><span class="header-section-number">8.0.3</span> MAST (p&lt;0.0005)</h3>
+<p><strong>Extract MEME PWM</strong><br />
+First isolate the PSWMs associated with GATA-like motifs.<br />
+</p>
+<pre class="bash watch-out"><code>#wget https://raw.githubusercontent.com/sysunn/siyu_daily_update/main/December_2023/MEME_individual_from_db_python3.py
+python MEME_individual_from_db_python3.py -i round10_test_4000/GATA3_without_mot123456789_81bp_top4000_min_10_max_14_meme_output/meme.txt
+#AGATGRVAGATAA_meme.txt -- top enriched GATA-like motif in round10 (E-value: 3.4e-005) 
+
+cp AGATGRVAGATAA_meme.txt individual_meme/GATAmotif10_meme.txt
+rm *meme.txt</code></pre>
+<p><strong>MAST against the 161bp peaks</strong><br />
+Although we have identified the motif in 81bp-window peaks, we intend to apply the motif PWM to 161bp-window peaks using <code>MAST</code>. This aligns with our previous workflow.<br />
+</p>
+<pre class="bash watch-out"><code>module load meme/5.4.1
+module load R/4.1.2
+mast -mt 0.0005 -hit_list -best individual_meme/GATAmotif10_meme.txt without_motifs_123456789.fasta &gt; mast_GATA3_PSWM_in_peaks_round10.txt #2141
+Rscript /home/FCAM/ssun/scripts/updated_parse_mast_to_coordinates.R mast_GATA3_PSWM_in_peaks_round10.txt
+
+wc -l mast_GATA3_PSWM_in_peaks_round10.bed 
+#2138</code></pre>
+<p>Use <code>intersectBed</code> to find GATA3 peaks without motif 123456789.<br />
+</p>
+<p>And convert to FASTA<br />
+</p>
+<pre class="bash watch-out"><code>module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+# From peaks without motif123456789 exclude peaks with motif10
+intersectBed -v -a without_motifs_123456789.bed -b mast_GATA3_PSWM_in_peaks_round10.bed &gt; without_motifs_12345678910.bed #18566
+fastaFromBed -fi $genome -bed without_motifs_12345678910.bed -fo without_motifs_12345678910.fasta</code></pre>
+</div>
+</div>
+<div id="meme-round11" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> MEME-round11:</h1>
+<div id="win--top2000-1" class="section level3" number="9.0.1">
+<h3><span class="header-section-number">9.0.1</span> 81win -top2000</h3>
+<p>sort and select top 2000 from peaks without motif 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.<br />
+</p>
+<pre class="bash watch-out"><code># select top 2000
+sort -nrk4,4 without_motifs_12345678910.bed | head -n 2000 &gt; without_motifs_12345678910_top2000.bed # 161win</code></pre>
+<pre class="r watch-out"><code>#module load R/4.1.2
+#R
+library(bigWig)
+options(scipen = 999)
+GATA3_peak_summits=center.bed(read.table(&quot;without_motifs_12345678910_top2000.bed&quot;, header=FALSE), upstreamWindow = 0, downstreamWindow = 0)
+GATA3_peak_81win=center.bed(GATA3_peak_summits, upstreamWindow = 40, downstreamWindow = 40)
+write.table(GATA3_peak_81win,file= &quot;without_motifs_12345678910_81win_top2000.bed&quot;, quote=F,sep=&quot;\t&quot;,col.names=F,row.names=F)</code></pre>
+<pre class="bash watch-out"><code>module load bedtools
+genome=/home/FCAM/ssun/Genome/hg38.fa
+fastaFromBed -fi $genome -bed without_motifs_12345678910_81win_top2000.bed -fo without_motifs_12345678910_81win_top2000.fasta</code></pre>
+<p><strong>test_meme.sh</strong><br />
+(cd /home/FCAM/ssun/GATA3_ChIP_PRO_July2023/ChIP_final/final_Exhaustive_denovomotif_analysis_240418/round11_test)</p>
+<pre class="bash watch-out"><code>#!/bin/bash
+#SBATCH --job-name=top2000_win81_meme_min_XXXXXX_max_YYYYYY.sh    
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH -p general
+#SBATCH --qos=general
+#SBATCH --mem=20G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ssun@uchc.edu
+#SBATCH -o top2000_win81_meme_min_XXXXXX_max_YYYYYY.sh_%j.out
+#SBATCH -e top2000_win81_meme_min_XXXXXX_max_YYYYYY.sh_%j.err
+
+hostname
+export TMPDIR=&quot;${HOME}/temp&quot;
+module load meme/5.4.1
+
+test_min=XXXXXX
+test_max=YYYYYY
+
+meme -p 4 -oc GATA3_without_mot12345678910_81bp_top2000_min_XXXXXX_max_YYYYYY_meme_output -nmotifs 20 -shuf 1 -objfun classic -csites 20000 -searchsize 0 -minw ${test_min} -maxw ${test_max} -ws 0.1 -wg 0.5 -revcomp -dna -maxsize 100000000 ../without_motifs_12345678910_81win_top2000.fasta</code></pre>
+<p>parallel running:<br />
+</p>
+<pre class="bash watch-out"><code>sh_file=test_meme.sh
+
+minw_value=( &quot;4&quot; &quot;6&quot; &quot;8&quot; &quot;10&quot;)
+maxw_value=(&quot;12&quot; &quot;14&quot; &quot;16&quot; &quot;18&quot; &quot;20&quot;)
+
+
+for test_min in &quot;${minw_value[@]}&quot;
+do
+    echo $test_min
+    for test_max in &quot;${maxw_value[@]}&quot;
+    do
+      echo $test_max
+      sed -e &quot;s/XXXXXX/${test_min}/g&quot; -e &quot;s/YYYYYY/${test_max}/g&quot; &quot;$sh_file&quot; &gt; top2000_win81_meme_min_${test_min}_max_${test_max}.sh  
+      sbatch top2000_win81_meme_min_${test_min}_max_${test_max}.sh
+      sleep 1
+    done
+done</code></pre>
 </div>
 </div>
 
